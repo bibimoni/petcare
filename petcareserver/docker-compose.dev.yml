@@ -1,0 +1,36 @@
+services:
+  api:
+    build:
+        context: .
+        target: development
+        dockerfile: Dockerfile
+    container_name: petcare
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - db
+    networks:
+      - petcare_network
+  db:
+    image: postgres:16-alpine
+    container_name: petcare_db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_URI=postgresql://postgres:password@localhost:5432/petcare_dev
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - petcare_network
+
+volumes:
+  postgres_data:
+networks:
+  petcare_network:

@@ -21,10 +21,10 @@ Create a `.env` file in the `petcareserver` directory and add the necessary envi
 ## Run Docker Containers
 Make sure Docker is running on your machine. Then, navigate to the `petcareserver` directory and run the following command to start the necessary Docker containers:
 ```bash
-docker-compose up -d
+./scripts/build_docker_local.sh # if you haven't built the image yet
+./scripts/start_docker_local.sh
 ```
-This will start the database and any other services defined in the `docker-compose.yml` file.
+This will start the database and any other services defined in the `docker-compose.dev.yml` file.
 
 ## Validate Database Connection
 Ensure that the backend can connect to the database.You can try making request to `http://localhost:8080/test-db`
-
