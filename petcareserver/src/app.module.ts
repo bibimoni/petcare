@@ -16,7 +16,7 @@ import { envValidationSchema } from './config/env.validation';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        type: 'postgres',
+
         url: configService.get<string>('POSTGRES_URI'),
         autoLoadEntities: true,
         synchronize: true,
