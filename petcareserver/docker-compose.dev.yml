@@ -9,6 +9,8 @@ services:
       - "8080:8080"
     env_file:
       - .env
+    environment:
+      - POSTGRES_URI=postgresql://postgres:password@db:5432/petcare_dev
     volumes:
       - .:/app
       - /app/node_modules
@@ -25,6 +27,7 @@ services:
       - POSTGRES_URI=postgresql://postgres:password@localhost:5432/petcare_dev
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=petcare_dev
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:

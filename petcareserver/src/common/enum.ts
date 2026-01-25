@@ -9,8 +9,8 @@ export enum UserStatus {
 }
 
 export enum CategoryType {
-  PRODUCT = 'PRODUCT', // Hàng hóa vật lý
-  SERVICE = 'SERVICE', // Dịch vụ spa, khám...
+  PRODUCT = 'PRODUCT',
+  SERVICE = 'SERVICE',
 }
 
 export enum OrderStatus {

@@ -28,3 +28,11 @@ This will start the database and any other services defined in the `docker-compo
 
 ## Validate Database Connection
 Ensure that the backend can connect to the database.You can try making request to `http://localhost:8080/test-db`
+
+## Seed admin user
+To create an initial admin user, run the following command on the host (not docker):
+```bash
+npm run seed
+``````
+
+The credentials for the admin user will be displayed in the terminal.
