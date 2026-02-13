@@ -25,13 +25,26 @@ import { CurrentUser, JwtAuthGuard, PermissionsGuard, RequirePermissions } from 
 
 @ApiTags('Stores Management')
 @Controller({ path: 'stores', version: '1' })
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class StoresController {
   constructor(private readonly storesService: StoresService) {}
 
+  @Get()
+  @ApiOperation({
+    summary: 'Get all stores',
+    description: 'Retrieves all stores in the system (public endpoint)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Stores retrieved successfully',
+  })
+  async getAllStores() {
+    return this.storesService.getAllStores();
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Create a new store',
     description: 'Creates a new store and assigns the current user as Store Admin with full store permissions',
@@ -58,7 +71,8 @@ export class StoresController {
 
   @Post(':storeId/invite')
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(PermissionsGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @ApiBearerAuth()
   @RequirePermissions('staff.invite')
   @ApiOperation({
     summary: 'Invite staff member to store',
@@ -121,7 +135,8 @@ export class StoresController {
   }
 
   @Patch(':storeId')
-  @UseGuards(PermissionsGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @ApiBearerAuth()
   @RequirePermissions('store.settings.manage')
   @ApiOperation({
     summary: 'Update store details',
@@ -158,6 +173,8 @@ export class StoresController {
   }
 
   @Get(':storeId/staff')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get store staff members',
     description: 'Retrieves all staff members of a store with their roles',

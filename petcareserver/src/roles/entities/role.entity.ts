@@ -50,7 +50,6 @@ export class Role {
   @UpdateDateColumn()
   updated_at: Date;
 
-  // Relationships
   @OneToMany(() => RolePermission, (rolePermission) => rolePermission.role)
   role_permissions: RolePermission[];
 

@@ -28,10 +28,6 @@ import { RolesModule } from './roles/roles.module';
         url: configService.get<string>('POSTGRES_URI'),
         autoLoadEntities: true,
         synchronize: true,
-        // for local db connection, comment ssl block
-        // ssl: {
-        //   rejectUnauthorized: false,
-        // },
       }),
     }),
     AuthModule,

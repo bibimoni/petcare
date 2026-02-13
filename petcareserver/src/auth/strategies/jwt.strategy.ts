@@ -41,7 +41,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException();
     }
 
-    // Extract permissions from user's role
     const permissions = user.role?.role_permissions?.map(
       (rp) => rp.permission.slug,
     ) || [];

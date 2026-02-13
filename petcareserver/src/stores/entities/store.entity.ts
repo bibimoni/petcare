@@ -57,7 +57,6 @@ export class Store {
   @UpdateDateColumn()
   updated_at: Date;
 
-  // Relationships
   @OneToMany(() => User, (user) => user.store)
   users: User[];
 

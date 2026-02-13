@@ -46,7 +46,6 @@ export class User {
   @JoinColumn({ name: 'role_id' })
   role: Role;
 
-  // Legacy field for backward compatibility - now primarily using role_id
   @Column({ name: 'legacy_role', type: 'enum', enum: UserRole, default: UserRole.STAFF, nullable: true })
   legacy_role: UserRole;
 
@@ -65,7 +64,6 @@ export class User {
   @Column({ type: 'text', nullable: true })
   avatar_url: string;
 
-  // Relationships
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
 

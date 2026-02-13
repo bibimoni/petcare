@@ -1,4 +1,3 @@
-
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Order } from './order.entity';
 import { Product } from '../../products/entities/product.entity';
@@ -22,7 +21,6 @@ export class OrderDetail {
   @JoinColumn({ name: 'order_id' })
   order: Order;
 
-  // Polymorphic relationship: can be either a product or a service
   @Column({ name: 'item_type', type: 'enum', enum: ItemType })
   item_type: ItemType;
 

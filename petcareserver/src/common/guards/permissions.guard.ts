@@ -12,7 +12,6 @@ export class PermissionsGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    // If no permissions are required, allow access
     if (!requiredPermissions || requiredPermissions.length === 0) {
       return true;
     }
@@ -20,14 +19,12 @@ export class PermissionsGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    // Check if user exists and has permissions
     if (!user || !user.permissions) {
       throw new ForbiddenException(
         'Access denied: No permissions found for user',
       );
     }
 
-    // Check if user has all required permissions
     const userPermissions = user.permissions as string[];
     const hasAllPermissions = requiredPermissions.every((permission) =>
       userPermissions.includes(permission),

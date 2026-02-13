@@ -1,7 +1,6 @@
 import * as bcrypt from 'bcrypt';
 import { createConnection } from 'typeorm';
 
-// Entities
 import { User } from '../src/users/entities/user.entity';
 import { Order } from '../src/orders/entities/order.entity';
 import { OrderDetail } from '../src/orders/entities/order-detail.entity';
@@ -16,16 +15,18 @@ import { Permission } from '../src/permissions/entities/permission.entity';
 import { Role } from '../src/roles/entities/role.entity';
 import { RolePermission } from '../src/roles/entities/role-permission.entity';
 
-// Enums and Constants
 import {
   UserRole,
   UserStatus,
+  StoreStatus,
+} from '../src/common/enum';
+
+import {
   ALL_SYSTEM_PERMISSIONS,
   ALL_STORE_PERMISSIONS,
   SYSTEM_ROLES,
   STORE_ROLES,
-  StoreStatus,
-} from '../src/common/enum';
+} from '../src/common/permissions';
 
 async function seedAdmin() {
   console.log('Connecting to database...');
@@ -54,7 +55,6 @@ async function seedAdmin() {
 
   console.log('Database connected successfully');
 
-  // Get repositories
   const userRepository = connection.getRepository(User);
   const storeRepository = connection.getRepository(Store);
   const permissionRepository = connection.getRepository(Permission);
@@ -126,15 +126,11 @@ async function seedAdmin() {
     console.log(` Store Name: ${store.name}`);
   }
 
-  // ==========================================
-  // 3. SEED PERMISSIONS
-  // ==========================================
   console.log('\n=== Seeding Permissions ===');
 
   let systemPermissionsCreated = 0;
   let storePermissionsCreated = 0;
 
-  // Seed System Permissions
   console.log('Seeding system permissions...');
   for (const permissionSlug of ALL_SYSTEM_PERMISSIONS) {
     const existingPermission = await permissionRepository.findOne({
@@ -155,7 +151,6 @@ async function seedAdmin() {
     }
   }
 
-  // Seed Store Permissions
   console.log('Seeding store permissions...');
   for (const permissionSlug of ALL_STORE_PERMISSIONS) {
     const existingPermission = await permissionRepository.findOne({
@@ -181,13 +176,9 @@ async function seedAdmin() {
   console.log(`System Permissions Created: ${systemPermissionsCreated}`);
   console.log(`Store Permissions Created: ${storePermissionsCreated}`);
 
-  // Get all permissions for role assignment
   const allSystemPermissions = await permissionRepository.findBy({ scope: 'SYSTEM' as any });
   const allStorePermissions = await permissionRepository.findBy({ scope: 'STORE' as any });
 
-  // ==========================================
-  // 4. SEED SUPER ADMIN ROLE (SYSTEM ROLE)
-  // ==========================================
   console.log('\n=== Seeding Super Admin Role ===');
 
   const existingSuperAdminRole = await roleRepository.findOne({
@@ -215,7 +206,6 @@ async function seedAdmin() {
 
     superAdminRole = await roleRepository.save(superAdminRole);
 
-    // Assign all system permissions to super admin role
     console.log('Assigning system permissions to super admin role...');
     for (const permission of allSystemPermissions) {
       await rolePermissionRepository.save({
@@ -229,9 +219,6 @@ async function seedAdmin() {
     console.log(`Permissions Assigned: ${allSystemPermissions.length}`);
   }
 
-  // ==========================================
-  // 5. SEED STORE ADMIN ROLE
-  // ==========================================
   console.log('\n=== Seeding Store Admin Role ===');
 
   const existingStoreAdminRole = await roleRepository.findOne({
@@ -258,7 +245,6 @@ async function seedAdmin() {
 
     storeAdminRole = await roleRepository.save(storeAdminRole);
 
-    // Assign all store permissions to admin role
     console.log('Assigning store permissions to admin role...');
     for (const permission of allStorePermissions) {
       await rolePermissionRepository.save({
@@ -272,9 +258,6 @@ async function seedAdmin() {
     console.log(`Permissions Assigned: ${allStorePermissions.length}`);
   }
 
-  // ==========================================
-  // 6. SEED STORE ADMIN USER
-  // ==========================================
   console.log('\n=== Seeding Store Admin User ===');
 
   const existingStoreAdmin = await userRepository.findOne({
@@ -311,16 +294,12 @@ async function seedAdmin() {
     console.log('Store Id:', store.id);
   }
 
-  // Update super admin with role
   if (superAdmin.role_id !== superAdminRole.id) {
     superAdmin.role_id = superAdminRole.id;
     await userRepository.save(superAdmin);
     console.log('Super admin linked to super admin role');
   }
 
-  // ==========================================
-  // SEEDING SUMMARY
-  // ==========================================
   console.log('\n' + '='.repeat(50));
   console.log('SEEDING COMPLETED SUCCESSFULLY');
   console.log('='.repeat(50));

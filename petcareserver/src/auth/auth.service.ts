@@ -55,7 +55,6 @@ export class AuthService {
       throw new UnauthorizedException('Account is not active');
     }
 
-    // Extract permissions from user's role
     const permissions = user.role?.role_permissions?.map(
       (rp) => rp.permission.slug,
     ) || [];
@@ -84,7 +83,6 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    // Check if email already exists
     const existingUser = await this.userRepository.findOne({
       where: { email: registerDto.email },
     });
@@ -93,10 +91,8 @@ export class AuthService {
       throw new ConflictException('Email already exists');
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-    // Create user without store or role initially
     const user = this.userRepository.create({
       email: registerDto.email,
       password_hash: hashedPassword,
@@ -108,7 +104,6 @@ export class AuthService {
 
     const savedUser = await this.userRepository.save(user);
 
-    // Remove password from response
     const { password_hash, ...userWithoutPassword } = savedUser;
     
     return {

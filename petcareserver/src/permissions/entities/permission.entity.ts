@@ -27,7 +27,7 @@ export class Permission {
   description: string;
 
   @Column({ name: 'module', nullable: true })
-  module: string; // e.g. 'store', 'customer', 'order', etc.
+  module: string;
 
   @Column({
     name: 'is_system_defined',
@@ -42,7 +42,6 @@ export class Permission {
   @UpdateDateColumn()
   updated_at: Date;
 
-  // Relationships
   @OneToMany(() => RolePermission, (rolePermission) => rolePermission.permission)
   role_permissions: RolePermission[];
 }

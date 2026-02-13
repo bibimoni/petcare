@@ -31,14 +31,7 @@ export class StoresService {
     private permissionRepository: Repository<Permission>,
   ) {}
 
-  /**
-   * Create a new store and automatically assign admin role to the user
-   * @param createStoreDto Store creation data
-   * @param currentUserId Current authenticated user ID
-   * @returns Created store with assigned admin role
-   */
   async createStore(createStoreDto: CreateStoreDto, currentUserId: number) {
-    // Check if user already has a store
     const existingUser = await this.userRepository.findOne({
       where: { user_id: currentUserId, store_id: null as any },
     });
@@ -47,7 +40,6 @@ export class StoresService {
       throw new ForbiddenException('User already has a store');
     }
 
-    // Check if store name already exists
     const existingStore = await this.storeRepository.findOne({
       where: { name: createStoreDto.name },
     });
@@ -56,7 +48,6 @@ export class StoresService {
       throw new ConflictException('Store name already exists');
     }
 
-    // Create the store
     const store = this.storeRepository.create({
       name: createStoreDto.name,
       status: StoreStatus.ACTIVE,
@@ -71,13 +62,11 @@ export class StoresService {
 
     const savedStore = await this.storeRepository.save(store) as Store;
 
-    // Find or create the ADMIN role for this store with all permissions
     let adminRole = await this.roleRepository.findOne({
       where: { name: 'ADMIN', store_id: savedStore.id },
     });
 
     if (!adminRole) {
-      // Create ADMIN role
       const newAdminRole = this.roleRepository.create({
         name: 'ADMIN',
         description: 'Store Administrator with full store access',
@@ -88,7 +77,6 @@ export class StoresService {
 
       adminRole = await this.roleRepository.save(newAdminRole) as Role;
 
-      // Assign all store permissions to admin role
       const storePermissions = await this.permissionRepository.find({
         where: { scope: PermissionScope.STORE },
       });
@@ -103,7 +91,6 @@ export class StoresService {
       await this.rolePermissionRepository.save(rolePermissions);
     }
 
-    // Update user to link to the store and assign admin role
     await this.userRepository.update(currentUserId, {
       store_id: savedStore.id,
       role_id: adminRole.id,
@@ -122,15 +109,7 @@ export class StoresService {
   }
 
 
-  /**
-   * Invite a staff member to the store with a specific role
-   * @param storeId Store ID
-   * @param inviteStaffDto Staff invitation data
-   * @param currentUserId Current authenticated user ID
-   * @returns Created staff user or invitation details
-   */
   async inviteStaff(storeId: number, inviteStaffDto: InviteStaffDto, currentUserId: number) {
-    // Verify that the current user belongs to this store
     const currentUser = await this.userRepository.findOne({
       where: { user_id: currentUserId },
     });
@@ -139,7 +118,6 @@ export class StoresService {
       throw new ForbiddenException('You do not have permission to invite staff to this store');
     }
 
-    // Verify the store exists
     const store = await this.storeRepository.findOne({
       where: { id: storeId },
     });
@@ -148,7 +126,6 @@ export class StoresService {
       throw new NotFoundException('Store not found');
     }
 
-    // Verify the role exists and belongs to this store
     const role = await this.roleRepository.findOne({
       where: { id: inviteStaffDto.role_id, store_id: storeId },
     });
@@ -157,22 +134,18 @@ export class StoresService {
       throw new NotFoundException('Role not found or does not belong to this store');
     }
 
-    // Check if user with this email already exists
     const existingUser = await this.userRepository.findOne({
       where: { email: inviteStaffDto.email },
     });
 
     if (existingUser) {
-      // Check if user is already in this store
       if (existingUser.store_id === storeId) {
         throw new ConflictException('User is already a member of this store');
       }
 
-      // User exists but is in a different store
       throw new ConflictException('User with this email already exists in another store');
     }
 
-    // Create the staff user with LOCKED status and no password
     const staffUser = this.userRepository.create({
       email: inviteStaffDto.email,
       full_name: inviteStaffDto.full_name || '',
@@ -185,7 +158,6 @@ export class StoresService {
 
     const savedStaff = await this.userRepository.save(staffUser) as User;
 
-    // Remove sensitive data from response
     const { password_hash, ...staffResponse } = savedStaff;
 
     return {
@@ -204,11 +176,6 @@ export class StoresService {
     };
   }
 
-  /**
-   * Get store details
-   * @param storeId Store ID
-   * @returns Store details
-   */
   async getStore(storeId: number) {
     const store = await this.storeRepository.findOne({
       where: { id: storeId },
@@ -221,15 +188,7 @@ export class StoresService {
     return store;
   }
 
-  /**
-   * Update store details
-   * @param storeId Store ID
-   * @param updateData Store update data
-   * @param currentUserId Current authenticated user ID
-   * @returns Updated store
-   */
   async updateStore(storeId: number, updateData: UpdateStoreDto, currentUserId: number) {
-    // Verify the current user belongs to this store
     const currentUser = await this.userRepository.findOne({
       where: { user_id: currentUserId },
     });
@@ -246,7 +205,6 @@ export class StoresService {
       throw new NotFoundException('Store not found');
     }
 
-    // Update store with provided data
     Object.assign(store, updateData);
     const updatedStore = await this.storeRepository.save(store) as Store;
 
@@ -256,14 +214,7 @@ export class StoresService {
     };
   }
 
-  /**
-   * Get staff members of a store
-   * @param storeId Store ID
-   * @param currentUserId Current authenticated user ID
-   * @returns List of staff members
-   */
   async getStoreStaff(storeId: number, currentUserId: number) {
-    // Verify the current user belongs to this store
     const currentUser = await this.userRepository.findOne({
       where: { user_id: currentUserId },
     });
@@ -295,6 +246,26 @@ export class StoresService {
       store_id: storeId,
       staff,
       total: staff.length,
+    };
+  }
+
+  async getAllStores() {
+    const stores = await this.storeRepository.find({
+      order: { id: 'ASC' },
+    });
+
+    return {
+      total: stores.length,
+      stores: stores.map((store) => ({
+        id: store.id,
+        name: store.name,
+        status: store.status,
+        phone: store.phone,
+        city: store.city,
+        country: store.country,
+        created_at: store.created_at,
+        updated_at: store.updated_at,
+      })),
     };
   }
 }

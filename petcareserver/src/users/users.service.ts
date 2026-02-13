@@ -41,7 +41,6 @@ export class UsersService {
       throw new UnauthorizedException('User not found');
     }
 
-    // Extract permissions from user's role
     const permissions = user.role?.role_permissions?.map(
       (rp) => rp.permission.slug,
     ) || [];
@@ -92,7 +91,6 @@ export class UsersService {
       throw new UnauthorizedException('Failed to update user');
     }
 
-    // Extract permissions from user's role
     const permissions = updatedUser.role?.role_permissions?.map(
       (rp) => rp.permission.slug,
     ) || [];
