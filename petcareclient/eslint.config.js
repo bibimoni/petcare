@@ -15,11 +15,11 @@ export default defineConfig([
     extends: [
       js.configs.recommended,
       react.configs.flat.recommended,
-      tseslint.configs.recommended,
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
+      ...tseslint.configs.recommended,
     ],
     plugins: {
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
       prettier,
       perfectionist,
     },
@@ -35,6 +35,7 @@ export default defineConfig([
     },
     rules: {
       // set of custom rules
+      ...reactHooks.configs.recommended.rules,
       "no-console": "off",
       "react/button-has-type": "error",
       "react/react-in-jsx-scope": ["off"],
@@ -45,17 +46,26 @@ export default defineConfig([
 
       // Prettier rules
       "prettier/prettier": "error",
+
+      "perfectionist/sort-imports": [
+        "error",
+        {
+          type: "natural",
+          order: "asc",
+        },
+      ],
+
       "perfectionist/sort-exports": [
         "error",
         {
-          order: "asc",
+          type: "natural",
           type: "line-length",
         },
       ],
       "perfectionist/sort-named-imports": [
         "error",
         {
-          order: "asc",
+          type: "natural",
           type: "line-length",
         },
       ],
