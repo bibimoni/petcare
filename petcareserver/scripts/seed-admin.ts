@@ -206,17 +206,19 @@ async function seedAdmin() {
 
     superAdminRole = await roleRepository.save(superAdminRole);
 
-    console.log('Assigning system permissions to super admin role...');
-    for (const permission of allSystemPermissions) {
+    const allPermissions = [...allSystemPermissions, ...allStorePermissions];
+    
+    console.log('Assigning all permissions (system + store) to super admin role...');
+    for (const permission of allPermissions) {
       await rolePermissionRepository.save({
         role_id: superAdminRole.id,
         permission_id: permission.id,
       });
     }
 
-    console.log('Super admin role created with all system permissions');
+    console.log('Super admin role created with all permissions');
     console.log(`Role ID: ${superAdminRole.id}`);
-    console.log(`Permissions Assigned: ${allSystemPermissions.length}`);
+    console.log(`Permissions Assigned: ${allPermissions.length}`);
   }
 
   console.log('\n=== Seeding Store Admin Role ===');
