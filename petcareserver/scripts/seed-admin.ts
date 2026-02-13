@@ -11,7 +11,7 @@ import { Service } from '../src/products/entities/service.entity';
 import { Customer } from '../src/customers/entities/customer.entity';
 import { Pet } from '../src/customers/entities/pet.entity';
 import { PetWeightHistory } from '../src/customers/entities/pet-weight-history.entity';
-import { Store, SubscriptionPlan } from '../src/stores/entities/store.entity';
+import { Store } from '../src/stores/entities/store.entity';
 import { Permission } from '../src/permissions/entities/permission.entity';
 import { Role } from '../src/roles/entities/role.entity';
 import { RolePermission } from '../src/roles/entities/role-permission.entity';
@@ -110,7 +110,6 @@ async function seedAdmin() {
 
     store = storeRepository.create({
       name: 'Pet Haven Veterinary Clinic',
-      subscription_plan: SubscriptionPlan.PREMIUM,
       status: StoreStatus.ACTIVE,
       phone: '+1-555-0100',
       address: '123 Happy Pets Boulevard',
@@ -335,7 +334,6 @@ async function seedAdmin() {
   console.log('2. Store:');
   console.log(`Name: ${store.name}`);
   console.log(`ID: ${store.id}`);
-  console.log(`Plan: ${store.subscription_plan}`);
   console.log('');
   console.log('3. Store Admin User:');
   console.log(`Email: ${storeAdmin.email}`);

@@ -15,13 +15,6 @@ import { Service } from '../../products/entities/service.entity';
 import { Order } from '../../orders/entities/order.entity';
 import { StoreStatus } from '../../common/enum';
 
-export enum SubscriptionPlan {
-  FREE = 'FREE',
-  BASIC = 'BASIC',
-  PREMIUM = 'PREMIUM',
-  ENTERPRISE = 'ENTERPRISE',
-}
-
 @Entity('stores')
 export class Store {
   @PrimaryGeneratedColumn()
@@ -29,13 +22,6 @@ export class Store {
 
   @Column()
   name: string;
-
-  @Column({
-    type: 'enum',
-    enum: SubscriptionPlan,
-    default: SubscriptionPlan.FREE,
-  })
-  subscription_plan: SubscriptionPlan;
 
   @Column({
     type: 'enum',

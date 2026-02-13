@@ -25,7 +25,6 @@ export class UsersService {
         store: {
           id: true,
           name: true,
-          subscription_plan: true,
           status: true,
         },
         status: true,
@@ -77,7 +76,6 @@ export class UsersService {
         store: {
           id: true,
           name: true,
-          subscription_plan: true,
           status: true,
         },
         status: true,
