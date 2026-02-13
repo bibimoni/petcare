@@ -22,6 +22,7 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { CurrentUser, JwtAuthGuard, PermissionsGuard, RequirePermissions } from '../common';
+import { STORE_PERMISSIONS } from '../common/permissions';
 
 @ApiTags('Stores Management')
 @Controller({ path: 'stores', version: '1' })
@@ -73,7 +74,7 @@ export class StoresController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
-  @RequirePermissions('staff.invite')
+  @RequirePermissions(STORE_PERMISSIONS.STAFF_INVITE)
   @ApiOperation({
     summary: 'Invite staff member to store',
     description: 'Invites a new staff member to the store with a specific role. Staff will be created with LOCKED status.',
@@ -137,7 +138,7 @@ export class StoresController {
   @Patch(':storeId')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
-  @RequirePermissions('store.settings.manage')
+  @RequirePermissions(STORE_PERMISSIONS.STORE_SETTINGS_MANAGE)
   @ApiOperation({
     summary: 'Update store details',
     description: 'Updates store information (only accessible to store members with proper permissions)',
