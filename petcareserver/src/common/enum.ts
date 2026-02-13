@@ -1,4 +1,5 @@
 export enum UserRole {
+  SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
   STAFF = 'STAFF',
 }
@@ -14,6 +15,17 @@ export enum CategoryType {
 }
 
 export enum OrderStatus {
-  COMPLETED = 'COMPLETED',
+  PENDING = 'PENDING',
+  PAID = 'PAID',
   CANCELLED = 'CANCELLED',
+}
+
+export enum PermissionScope {
+  SYSTEM = 'SYSTEM',
+  STORE = 'STORE',
+}
+
+export enum StoreStatus {
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
 }

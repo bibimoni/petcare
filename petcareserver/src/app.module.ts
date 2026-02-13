@@ -9,6 +9,9 @@ import { UsersModule } from './users/users.module';
 import { OrdersModule } from './orders/orders.module';
 import { CustomersModule } from './customers/customers.module';
 import { ProductsModule } from './products/products.module';
+import { StoresModule } from './stores/stores.module';
+import { PermissionsModule } from './permissions/permissions.module';
+import { RolesModule } from './roles/roles.module';
 
 @Module({
   imports: [
@@ -25,10 +28,6 @@ import { ProductsModule } from './products/products.module';
         url: configService.get<string>('POSTGRES_URI'),
         autoLoadEntities: true,
         synchronize: true,
-        // for local db connection, comment ssl block
-        // ssl: {
-        //   rejectUnauthorized: false,
-        // },
       }),
     }),
     AuthModule,
@@ -36,6 +35,9 @@ import { ProductsModule } from './products/products.module';
     OrdersModule,
     CustomersModule,
     ProductsModule,
+    StoresModule,
+    PermissionsModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
