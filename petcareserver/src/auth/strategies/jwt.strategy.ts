@@ -24,14 +24,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     const user = await this.userRepository.findOne({
       where: { user_id: payload.sub },
+      relations: ['role', 'role.role_permissions', 'role.role_permissions.permission'],
       select: {
         user_id: true,
         email: true,
         full_name: true,
         role: true,
+        role_id: true,
+        store_id: true,
         status: true,
         phone: true,
-        is_claimed: true,
       },
     });
 
@@ -39,6 +41,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException();
     }
 
-    return user;
+    // Extract permissions from user's role
+    const permissions = user.role?.role_permissions?.map(
+      (rp) => rp.permission.slug,
+    ) || [];
+
+    return {
+      ...user,
+      permissions,
+    };
   }
 }

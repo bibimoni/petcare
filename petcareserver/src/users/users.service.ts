@@ -14,14 +14,27 @@ export class UsersService {
   async getProfile(userId: number) {
     const user = await this.userRepository.findOne({
       where: { user_id: userId },
+      relations: ['role', 'role.role_permissions', 'role.role_permissions.permission', 'store'],
       select: {
         user_id: true,
         email: true,
         full_name: true,
         role: true,
+        role_id: true,
+        store_id: true,
+        store: {
+          id: true,
+          name: true,
+          subscription_plan: true,
+          status: true,
+        },
+        status: true,
         phone: true,
-        is_claimed: true,
+        address: true,
+        avatar_url: true,
+        last_login_at: true,
         created_at: true,
+        updated_at: true,
       },
     });
 
@@ -29,7 +42,15 @@ export class UsersService {
       throw new UnauthorizedException('User not found');
     }
 
-    return user;
+    // Extract permissions from user's role
+    const permissions = user.role?.role_permissions?.map(
+      (rp) => rp.permission.slug,
+    ) || [];
+
+    return {
+      ...user,
+      permissions,
+    };
   }
 
   async updateProfile(userId: number, updateProfileDto: UpdateProfileDto) {
@@ -45,17 +66,42 @@ export class UsersService {
 
     const updatedUser = await this.userRepository.findOne({
       where: { user_id: userId },
+      relations: ['role', 'role.role_permissions', 'role.role_permissions.permission', 'store'],
       select: {
         user_id: true,
         email: true,
         full_name: true,
         role: true,
+        role_id: true,
+        store_id: true,
+        store: {
+          id: true,
+          name: true,
+          subscription_plan: true,
+          status: true,
+        },
+        status: true,
         phone: true,
-        is_claimed: true,
+        address: true,
+        avatar_url: true,
+        last_login_at: true,
         created_at: true,
+        updated_at: true,
       },
     });
 
-    return updatedUser;
+    if (!updatedUser) {
+      throw new UnauthorizedException('Failed to update user');
+    }
+
+    // Extract permissions from user's role
+    const permissions = updatedUser.role?.role_permissions?.map(
+      (rp) => rp.permission.slug,
+    ) || [];
+
+    return {
+      ...updatedUser,
+      permissions,
+    };
   }
 }

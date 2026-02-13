@@ -8,8 +8,8 @@ import {
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { CreateStaffDto } from './dto/create-staff.dto';
-import { ClaimAccountDto } from './dto/claim-account.dto';
+import { RegisterDto } from './dto/register.dto';
+
 import { JwtAuthGuard, RolesGuard, Roles, UserRole } from '../common';
 
 @ApiTags('Authentication')
@@ -26,29 +26,17 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  @Post('staff')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create new staff account (Admin only)' })
-  @ApiResponse({ status: 201, description: 'Staff account created' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin only' })
+  @Post('register')
+  @ApiOperation({ summary: 'Register a new user account' })
+  @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
-  @ApiBody({ type: CreateStaffDto })
-  async createStaff(@Body() createStaffDto: CreateStaffDto) {
-    return this.authService.createStaff(createStaffDto);
+  @ApiBody({ type: RegisterDto })
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
   }
 
-  @Post('claim')
-  @ApiOperation({ summary: 'Claim account and set password' })
-  @ApiResponse({ status: 201, description: 'Account claimed successfully' })
-  @ApiResponse({ status: 400, description: 'Account already claimed' })
-  @ApiResponse({
-    status: 401,
-    description: 'Invalid email or account already claimed',
-  })
-  @ApiBody({ type: ClaimAccountDto })
-  async claimAccount(@Body() claimAccountDto: ClaimAccountDto) {
-    return this.authService.claimAccount(claimAccountDto);
-  }
+
+
+
+
 }

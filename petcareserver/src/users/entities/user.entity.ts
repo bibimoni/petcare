@@ -3,9 +3,14 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 import { Order } from '../../orders/entities/order.entity';
+import { Role } from '../../roles/entities/role.entity';
+import { Store } from '../../stores/entities/store.entity';
 import { UserRole, UserStatus } from '../../common/enum';
 
 @Entity('users')
@@ -24,8 +29,26 @@ export class User {
   @Column({ nullable: true })
   phone: string;
 
-  @Column({ type: 'enum', enum: UserRole, default: UserRole.STAFF })
-  role: UserRole;
+  @Column({ type: 'text', nullable: true })
+  address: string;
+
+  @Column({ name: 'store_id', nullable: true })
+  store_id: number;
+
+  @ManyToOne(() => Store, (store) => store.users, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: Store;
+
+  @Column({ name: 'role_id', nullable: true })
+  role_id: number;
+
+  @ManyToOne(() => Role, (role) => role.users, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'role_id' })
+  role: Role;
+
+  // Legacy field for backward compatibility - now primarily using role_id
+  @Column({ name: 'legacy_role', type: 'enum', enum: UserRole, default: UserRole.STAFF, nullable: true })
+  legacy_role: UserRole;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.LOCKED })
   status: UserStatus;
@@ -33,9 +56,19 @@ export class User {
   @CreateDateColumn()
   created_at: Date;
 
-  @Column({ default: false })
-  is_claimed: boolean;
+  @UpdateDateColumn()
+  updated_at: Date;
 
+  @Column({ type: 'timestamp', nullable: true })
+  last_login_at: Date;
+
+  @Column({ type: 'text', nullable: true })
+  avatar_url: string;
+
+  // Relationships
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
+
+  @OneToMany(() => Order, (order) => order.cancelled_by_user)
+  cancelled_orders: Order[];
 }

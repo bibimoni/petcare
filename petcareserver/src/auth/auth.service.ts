@@ -2,7 +2,6 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,8 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
-import { CreateStaffDto } from './dto/create-staff.dto';
-import { ClaimAccountDto } from './dto/claim-account.dto';
+import { RegisterDto } from './dto/register.dto';
 import { UserStatus } from '../common/enum';
 
 @Injectable()
@@ -27,14 +25,17 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.userRepository.findOne({
       where: { email: loginDto.email },
+      relations: ['role', 'role.role_permissions', 'role.role_permissions.permission'],
       select: {
         user_id: true,
         email: true,
         password_hash: true,
         full_name: true,
         role: true,
+        status: true,
         phone: true,
-        is_claimed: true,
+        store_id: true,
+        role_id: true,
       },
     });
 
@@ -50,11 +51,24 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (!user.is_claimed) {
-      throw new UnauthorizedException('Please claim your account first');
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('Account is not active');
     }
 
-    const payload = { sub: user.user_id, email: user.email, role: user.role };
+    // Extract permissions from user's role
+    const permissions = user.role?.role_permissions?.map(
+      (rp) => rp.permission.slug,
+    ) || [];
+
+    const payload = {
+      sub: user.user_id,
+      email: user.email,
+      role_id: user.role_id,
+      role_name: user.role?.name,
+      store_id: user.store_id,
+      permissions: permissions,
+    };
+    
     const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
 
     const { password_hash, ...userWithoutPassword } = user;
@@ -62,84 +76,44 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
       expires_in: expiresIn,
-      user: userWithoutPassword,
+      user: {
+        ...userWithoutPassword,
+        permissions,
+      },
     };
   }
 
-  async createStaff(createStaffDto: CreateStaffDto) {
+  async register(registerDto: RegisterDto) {
+    // Check if email already exists
     const existingUser = await this.userRepository.findOne({
-      where: { email: createStaffDto.email },
+      where: { email: registerDto.email },
     });
 
     if (existingUser) {
       throw new ConflictException('Email already exists');
     }
 
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+
+    // Create user without store or role initially
     const user = this.userRepository.create({
-      email: createStaffDto.email,
-      role: createStaffDto.role,
-      status: UserStatus.LOCKED,
-      is_claimed: false,
-      full_name: '',
-    });
-
-    await this.userRepository.save(user);
-
-    const { password_hash, ...savedUser } = user;
-    return savedUser;
-  }
-
-  async claimAccount(claimAccountDto: ClaimAccountDto) {
-    const user = await this.userRepository.findOne({
-      where: { email: claimAccountDto.email },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found with this email');
-    }
-
-    if (user.is_claimed) {
-      throw new BadRequestException('Account already claimed');
-    }
-
-    const hashedPassword = await bcrypt.hash(claimAccountDto.password, 10);
-
-    await this.userRepository.update(user.user_id, {
+      email: registerDto.email,
       password_hash: hashedPassword,
-      full_name: claimAccountDto.full_name || user.full_name,
-      phone: claimAccountDto.phone || user.phone,
-      is_claimed: true,
+      full_name: registerDto.full_name,
+      phone: registerDto.phone,
+      address: registerDto.address,
       status: UserStatus.ACTIVE,
     });
 
-    const updatedUser = await this.userRepository.findOne({
-      where: { user_id: user.user_id },
-      select: {
-        user_id: true,
-        email: true,
-        full_name: true,
-        role: true,
-        phone: true,
-        is_claimed: true,
-      },
-    });
+    const savedUser = await this.userRepository.save(user);
 
-    if (!updatedUser) {
-      throw new UnauthorizedException('Failed to update user');
-    }
-
-    const payload = {
-      sub: updatedUser.user_id,
-      email: updatedUser.email,
-      role: updatedUser.role,
-    };
-    const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
-
+    // Remove password from response
+    const { password_hash, ...userWithoutPassword } = savedUser;
+    
     return {
-      message: 'Account claimed successfully',
-      access_token: this.jwtService.sign(payload),
-      expires_in: expiresIn,
-      user: updatedUser,
+      message: 'User registered successfully',
+      user: userWithoutPassword,
     };
   }
 }
