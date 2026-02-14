@@ -121,5 +121,6 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Fira-Sans', sans-serif;
   }
 }

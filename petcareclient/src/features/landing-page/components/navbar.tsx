@@ -5,7 +5,7 @@ import { NavigationSheet } from "@/features/landing-page/components/navigation-s
 
 const Navbar = () => {
   return (
-    <nav className="h-16 border-b bg-background">
+    <nav className="h-16 border-b bg-background backdrop-blur-lg">
       <div className="mx-auto flex h-full max-w-(--breakpoint-xl) items-center justify-between px-4 sm:px-6 lg:px-8">
         <Logo />
 
@@ -13,10 +13,15 @@ const Navbar = () => {
         <NavMenu className="hidden md:block" />
 
         <div className="flex items-center gap-3">
-          <Button className="hidden sm:inline-flex" variant="outline">
+          <Button
+            className="hidden sm:inline-flex cursor-pointer rounded-full font-bold"
+            variant="outline"
+          >
             Đăng nhập
           </Button>
-          <Button>Đăng ký</Button>
+          <Button className="cursor-pointer rounded-full font-bold">
+            Đăng ký
+          </Button>
 
           {/* Mobile Menu */}
           <div className="md:hidden">
