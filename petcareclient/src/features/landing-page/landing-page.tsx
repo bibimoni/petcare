@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 
+import { Footer } from "./components/footer";
 import Navbar from "./components/navbar";
 import { CtaSection } from "./sections/Cta";
 import Features from "./sections/Features";
@@ -12,6 +13,7 @@ export default function LandingPage() {
       <HeroSectionPage />
       <Features />
       <CtaSection />
+      <Footer />
     </Fragment>
   );
 }

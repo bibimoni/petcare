@@ -2,7 +2,10 @@ import { Button } from "@/components/ui/button";
 
 export function CtaSection() {
   return (
-    <section className="section-padding-y" aria-labelledby="cta-heading">
+    <section
+      className="section-padding-y border-b"
+      aria-labelledby="cta-heading"
+    >
       <div className="container-padding-x container mx-auto max-w-5xl px-4 py-20">
         <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[#3d2e28] via-[#2d1f1a] to-[#1a1410] px-8 py-16 md:px-12 md:py-20">
           <div className="mx-auto flex max-w-3xl flex-col items-center gap-8 md:gap-10">
