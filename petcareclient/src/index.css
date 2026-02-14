@@ -115,8 +115,9 @@
   --color-button-primary: var(--button-primary);
 }
 
-@layer base {
-  * {
+@layer base {  html {
+    scroll-behavior: smooth;
+  }  * {
     @apply border-border outline-ring/50;
   }
   body {

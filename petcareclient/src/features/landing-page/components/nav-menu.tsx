@@ -1,7 +1,5 @@
 import type { ComponentProps } from "react";
 
-import { Link } from "react-router-dom";
-
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -18,7 +16,7 @@ export const NavMenu = (props: ComponentProps<typeof NavigationMenu>) => (
           asChild
           className={`${navigationMenuTriggerStyle()} hover:text-orange-500`}
         >
-          <Link to="#">Giới thiệu</Link>
+          <a href="#introduction">Giới thiệu</a>
         </NavigationMenuLink>
       </NavigationMenuItem>
       <NavigationMenuItem>
@@ -26,7 +24,7 @@ export const NavMenu = (props: ComponentProps<typeof NavigationMenu>) => (
           asChild
           className={`${navigationMenuTriggerStyle()} hover:text-orange-500`}
         >
-          <Link to="#">Tính năng</Link>
+          <a href="#features">Tính năng</a>
         </NavigationMenuLink>
       </NavigationMenuItem>
       <NavigationMenuItem>
@@ -34,7 +32,7 @@ export const NavMenu = (props: ComponentProps<typeof NavigationMenu>) => (
           asChild
           className={`${navigationMenuTriggerStyle()} hover:text-orange-500`}
         >
-          <Link to="#">Bảng giá</Link>
+          <a href="#cta">Dùng thử</a>
         </NavigationMenuLink>
       </NavigationMenuItem>
     </NavigationMenuList>

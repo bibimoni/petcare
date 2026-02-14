@@ -1,9 +1,9 @@
 import { Fragment } from "react";
 
 import Navbar from "./components/navbar";
+import { CtaSection } from "./sections/Cta";
 import Features from "./sections/Features";
 import HeroSectionPage from "./sections/Hero";
-import TestimonialsPage from "./sections/Testimonals";
 
 export default function LandingPage() {
   return (
@@ -11,7 +11,7 @@ export default function LandingPage() {
       <Navbar />
       <HeroSectionPage />
       <Features />
-      <TestimonialsPage />
+      <CtaSection />
     </Fragment>
   );
 }

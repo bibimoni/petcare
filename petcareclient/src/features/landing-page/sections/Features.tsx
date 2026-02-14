@@ -1,6 +1,12 @@
 import { Users, Package } from "lucide-react";
 import { FaCashRegister } from "react-icons/fa6";
 
+const colorMap: Record<string, { bg: string; text: string }> = {
+  "blue-500": { bg: "bg-blue-500/20", text: "text-blue-500" },
+  "green-500": { bg: "bg-green-500/20", text: "text-green-500" },
+  "purple-500": { bg: "bg-purple-500/20", text: "text-purple-500" },
+};
+
 const features = [
   {
     icon: Users,
@@ -27,7 +33,10 @@ const features = [
 
 const Features = () => {
   return (
-    <div className="flex py-20 items-center justify-center flex-col">
+    <div
+      id="features"
+      className="flex py-20 items-center justify-center flex-col border-b"
+    >
       <h2 className="text-center font-semibold text-4xl tracking-tight sm:text-5xl">
         Đặc điểm nổi bật
       </h2>
@@ -43,9 +52,11 @@ const Features = () => {
           >
             <div className="items-center justify-center flex flex-col gap-2 text-center">
               <div
-                className={`mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-${feature.color}/20`}
+                className={`mb-4 flex h-10 w-10 items-center justify-center rounded-full ${colorMap[feature.color]?.bg || "bg-gray-500/20"}`}
               >
-                <feature.icon className={`size-6 text-${feature.color}`} />
+                <feature.icon
+                  className={`size-6 ${colorMap[feature.color]?.text || "text-gray-500"}`}
+                />
               </div>
               <span className="font-semibold text-lg">{feature.title}</span>
               <p className="mt-1 text-md text-foreground/80">

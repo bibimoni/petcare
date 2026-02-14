@@ -6,7 +6,7 @@ const menudata = [
     img: "/src/assets/hero-page/spa-service.jpg",
     imgAlt: "spa-service",
     userComment:
-      "Dịch vụ cắt tỉa lông chuyên nghiệp, cún nhà mình trông siêu cute!",
+      "Hệ thống PetCare giúp tôi quản lý lịch hẹn spa rất dễ dàng. Khách hàng cũng nhận được thông báo tự động qua SMS/Zalo, hài lòng lắm!",
     userAvatar: "https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-56.png",
   },
   {
@@ -14,7 +14,7 @@ const menudata = [
     img: "/src/assets/hero-page/pet-food.jpg",
     imgAlt: "pet-food",
     userComment:
-      "Cửa hàng có nhiều loại đồ ăn cho thú cưng chất lượng cao. Nhân viên tư vấn rất nhiệt tình!",
+      "Tính năng POS bán hàng thực sự tuyệt vời! Thanh toán nhanh, tích hợp máy quét mã vạch, doanh thu tăng 30% chỉ sau 2 tháng.",
     userAvatar: "https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-46.png",
   },
   {
@@ -22,7 +22,7 @@ const menudata = [
     img: "/src/assets/hero-page/spa-grooming.jpg",
     imgAlt: "grooming-service",
     userComment:
-      "Dịch vụ spa cho thú cưng tuyệt vời! Bé cún nhà mình rất thích và trông thật đáng yêu sau khi tắm.",
+      "Quản lý hồ sơ thú cưng rất chi tiết - theo dõi được loại spa, sở thích, lịch sử. Khách hàng cảm thấy được quan tâm chuyên biệt!",
     userAvatar: "https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-57.png",
   },
   {
@@ -30,7 +30,7 @@ const menudata = [
     img: "/src/assets/hero-page/pet-accessories.jpg",
     imgAlt: "pet-accessories",
     userComment:
-      "Không gian sạch sẽ, thoáng mát. Đồ ăn và phụ kiện cho thú cưng đa dạng, giá cả hợp lý!",
+      "Quản lý kho thông minh - tự động cảnh báo khi hàng sắp hết, không bao giờ bị hết hàng hay tồn kho lâu. Tuyệt vời!",
     userAvatar: "https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-58.png",
   },
   {
@@ -38,7 +38,7 @@ const menudata = [
     img: "/src/assets/hero-page/spa-experience.jpg",
     imgAlt: "spa-experience",
     userComment:
-      "Trải nghiệm spa thư giãn cho thú cưng, bé cưng về nhà mềm mượt và thơm tho. Rất hài lòng!",
+      "Giao diện dễ sử dụng, nhân viên không cần đào tạo lâu. Chi phí quản lý giảm 50%, lợi nhuận tăng lên đáng kể!",
     userAvatar: "https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-57.png",
   },
 ];
@@ -47,7 +47,7 @@ const HeroSectionPage = () => {
   return (
     <div>
       {/* Main Content */}
-      <main className="flex flex-col pt-17.5">
+      <main id="introduction" className="flex flex-col pt-17.5">
         <HeroSection menudata={menudata} />
       </main>
     </div>
