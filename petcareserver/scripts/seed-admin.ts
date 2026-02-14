@@ -82,7 +82,6 @@ async function seedAdmin() {
       full_name: 'PetCare Super Admin',
       phone: '+1-555-0001',
       address: 'Platform Headquarters, Tech City',
-      legacy_role: UserRole.SUPER_ADMIN,
       status: UserStatus.ACTIVE,
     });
 
@@ -182,7 +181,7 @@ async function seedAdmin() {
   console.log('\n=== Seeding Super Admin Role ===');
 
   const existingSuperAdminRole = await roleRepository.findOne({
-    where: { 
+    where: {
       name: SYSTEM_ROLES.SUPER_ADMIN,
       is_system_role: true,
       store_id: null as any,
@@ -207,7 +206,7 @@ async function seedAdmin() {
     superAdminRole = await roleRepository.save(superAdminRole);
 
     const allPermissions = [...allSystemPermissions, ...allStorePermissions];
-    
+
     console.log('Assigning all permissions (system + store) to super admin role...');
     for (const permission of allPermissions) {
       await rolePermissionRepository.save({
@@ -224,7 +223,7 @@ async function seedAdmin() {
   console.log('\n=== Seeding Store Admin Role ===');
 
   const existingStoreAdminRole = await roleRepository.findOne({
-    where: { 
+    where: {
       name: STORE_ROLES.ADMIN,
       store_id: store.id,
     },
@@ -283,7 +282,6 @@ async function seedAdmin() {
       address: '456 Staff Quarters, Los Angeles, CA',
       store_id: store.id,
       role_id: storeAdminRole.id,
-      legacy_role: UserRole.ADMIN,
       status: UserStatus.ACTIVE,
     });
 
