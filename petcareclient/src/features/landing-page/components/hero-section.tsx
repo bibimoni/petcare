@@ -89,7 +89,6 @@ const HeroSection = ({ menudata }: { menudata: MenuData[] }) => {
 
   return (
     <section className="flex-1 py-10 sm:py-16 lg:py-16 border-b">
-      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-200 h-200 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-150 h-150 bg-orange-200/20 dark:bg-orange-900/10 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="mx-auto flex h-full max-w-7xl flex-col gap-16 px-4 sm:px-6 lg:px-8">
@@ -232,6 +231,9 @@ const HeroSection = ({ menudata }: { menudata: MenuData[] }) => {
               ))}
             </CarouselContent>
           </Carousel>
+        </div>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 text-orange-500 text-xs font-bold tracking-wider w-fit">
+          Được tin dùng bởi 2,000+ cửa hàng
         </div>
       </div>
     </section>

@@ -5,7 +5,7 @@ import { NavigationSheet } from "@/features/landing-page/components/navigation-s
 
 const Navbar = () => {
   return (
-    <nav className="h-16 border-b bg-background backdrop-blur-lg">
+    <nav className="h-16 sticky top-0 z-50 border-b bg-background/15 backdrop-blur-md">
       <div className="mx-auto flex h-full max-w-(--breakpoint-xl) items-center justify-between px-4 sm:px-6 lg:px-8">
         <Logo />
 
