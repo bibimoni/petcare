@@ -25,7 +25,13 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.userRepository.findOne({
       where: { email: loginDto.email },
-      relations: ['role', 'role.role_permissions', 'role.role_permissions.permission'],
+      relations: {
+      	role: {
+     		role_permissions: {
+		       permission: true
+	       }
+        }
+      },
       select: {
         user_id: true,
         email: true,
@@ -67,7 +73,7 @@ export class AuthService {
       store_id: user.store_id,
       permissions: permissions,
     };
-    
+
     const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
 
     const { password_hash, ...userWithoutPassword } = user;
@@ -105,7 +111,7 @@ export class AuthService {
     const savedUser = await this.userRepository.save(user);
 
     const { password_hash, ...userWithoutPassword } = savedUser;
-    
+
     return {
       message: 'User registered successfully',
       user: userWithoutPassword,

@@ -87,7 +87,11 @@ export class RolesService {
 
     const roles = await this.roleRepository.find({
       where: { store_id: storeId },
-      relations: ['role_permissions', 'role_permissions.permission'],
+      relations: {
+	     	role_permissions: {
+		      permission: true
+	      }
+      },
       order: { id: 'ASC' },
     });
 
@@ -112,7 +116,11 @@ export class RolesService {
   async getRole(roleId: number, currentUserId: number) {
     const role = await this.roleRepository.findOne({
       where: { id: roleId },
-      relations: ['role_permissions', 'role_permissions.permission'],
+      relations: {
+	     	role_permissions: {
+		      permission: true
+	      }
+      },
     });
 
     if (!role) {

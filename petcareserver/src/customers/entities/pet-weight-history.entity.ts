@@ -6,6 +6,7 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { Pet } from './pet.entity';
+import { JoinColumn } from 'typeorm';
 
 @Entity('pet_weight_history')
 export class PetWeightHistory {
@@ -19,5 +20,6 @@ export class PetWeightHistory {
   recorded_date: Date;
 
   @ManyToOne(() => Pet, (pet) => pet.weight_history)
+  @JoinColumn({ name: 'pet_id' })
   pet: Pet;
 }

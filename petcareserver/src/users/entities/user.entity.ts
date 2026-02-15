@@ -46,9 +46,6 @@ export class User {
   @JoinColumn({ name: 'role_id' })
   role: Role;
 
-  @Column({ name: 'legacy_role', type: 'enum', enum: UserRole, default: UserRole.STAFF, nullable: true })
-  legacy_role: UserRole;
-
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.LOCKED })
   status: UserStatus;
 

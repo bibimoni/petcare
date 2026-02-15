@@ -22,6 +22,7 @@ import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { CurrentUser, JwtAuthGuard, RequirePermissions, PermissionsGuard } from '../common';
+import { STORE_PERMISSIONS } from '../common/permissions';
 
 @ApiTags('Roles Management')
 @Controller({ path: 'stores/:storeId/roles', version: '1' })
@@ -33,7 +34,7 @@ export class RolesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(PermissionsGuard)
-  @RequirePermissions('role.create')
+  @RequirePermissions(STORE_PERMISSIONS.ROLE_CREATE)
   @ApiOperation({
     summary: 'Create a new role with permissions',
     description: 'Creates a new custom role for the store with specified permissions',
@@ -151,7 +152,7 @@ export class RolesController {
 
   @Patch(':roleId')
   @UseGuards(PermissionsGuard)
-  @RequirePermissions('role.edit')
+  @RequirePermissions(STORE_PERMISSIONS.ROLE_EDIT)
   @ApiOperation({
     summary: 'Update a role',
     description: 'Updates role name, description, or permissions. Can remove all permissions (0 permissions allowed)',
@@ -191,7 +192,7 @@ export class RolesController {
   @Delete(':roleId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(PermissionsGuard)
-  @RequirePermissions('role.delete')
+  @RequirePermissions(STORE_PERMISSIONS.ROLE_DELETE)
   @ApiOperation({
     summary: 'Delete a role',
     description: 'Deletes a role from the store. Cannot delete admin role or system roles',

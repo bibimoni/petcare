@@ -225,7 +225,9 @@ export class StoresService {
 
     const staff = await this.userRepository.find({
       where: { store_id: storeId },
-      relations: ['role'],
+      relations: {
+	      role: true
+      },
       select: {
         user_id: true,
         email: true,
