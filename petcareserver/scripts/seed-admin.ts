@@ -8,6 +8,7 @@ import { Product } from '../src/products/entities/product.entity';
 import { Category } from '../src/products/entities/category.entity';
 import { Service } from '../src/products/entities/service.entity';
 import { Customer } from '../src/customers/entities/customer.entity';
+
 import { Pet } from '../src/customers/entities/pet.entity';
 import { PetWeightHistory } from '../src/customers/entities/pet-weight-history.entity';
 import { Store } from '../src/stores/entities/store.entity';
@@ -60,6 +61,8 @@ async function seedAdmin() {
   const permissionRepository = connection.getRepository(Permission);
   const roleRepository = connection.getRepository(Role);
   const rolePermissionRepository = connection.getRepository(RolePermission);
+  const petRepository = connection.getRepository(Pet);
+  const petWeightHistoryRepository = connection.getRepository(PetWeightHistory);
 
   console.log('\n=== Seeding Super Admin User ===');
 
@@ -300,6 +303,78 @@ async function seedAdmin() {
     console.log('Super admin linked to super admin role');
   }
 
+  console.log('\n=== Seeding Store Pet ===');
+
+  const existingPet = await petRepository.findOne({
+    where: { pet_code: 'PET-2024-001' },
+  });
+
+  let pet: Pet;
+  if (existingPet) {
+    console.log('Pet already exists');
+    pet = existingPet;
+  } else {
+    console.log('Creating store pet...');
+
+    pet = petRepository.create({
+      store_id: store.id,
+      name: 'Buddy',
+      pet_code: 'PET-2024-001',
+      gender: 'MALE' as any,
+      breed: 'Labrador',
+      dob: new Date('2021-06-10'),
+      notes: 'Store pet - clinic mascot',
+      status: 'ALIVE' as any,
+    });
+
+    pet = await petRepository.save(pet);
+
+    console.log(' Store pet created successfully');
+    console.log(` Pet ID: ${pet.pet_id}`);
+    console.log(` Name: ${pet.name}`);
+    console.log(` Pet Code: ${pet.pet_code}`);
+    console.log(` Breed: ${pet.breed}`);
+  }
+
+  console.log('\n=== Seeding Pet Weight History ===');
+
+  const existingWeightHistory = await petWeightHistoryRepository.findOne({
+    where: { pet: { pet_id: pet.pet_id } },
+  });
+
+  if (!existingWeightHistory) {
+    console.log('Creating weight history entries...');
+
+    const weightHistoryEntries = [
+      {
+        pet_id: pet.pet_id,
+        weight: 25.0,
+        notes: 'Initial weight check',
+        recorded_at: new Date('2022-06-10'),
+      },
+      {
+        pet_id: pet.pet_id,
+        weight: 27.5,
+        notes: '1-year checkup',
+        recorded_at: new Date('2023-06-10'),
+      },
+      {
+        pet_id: pet.pet_id,
+        weight: 30.2,
+        notes: '2-year checkup',
+        recorded_at: new Date('2024-06-10'),
+      },
+    ];
+
+    for (const entry of weightHistoryEntries) {
+      await petWeightHistoryRepository.save(entry);
+    }
+
+    console.log(` Weight history created with ${weightHistoryEntries.length} entries`);
+  } else {
+    console.log('Weight history already exists');
+  }
+
   console.log('\n' + '='.repeat(50));
   console.log('SEEDING COMPLETED SUCCESSFULLY');
   console.log('='.repeat(50));
@@ -320,12 +395,18 @@ async function seedAdmin() {
   console.log(`Role: Store Admin`);
   console.log(`Store: ${store.name}`);
   console.log('');
-  console.log('4. Permissions:');
+  console.log('4. Store Pet:');
+  console.log(`Name: ${pet.name}`);
+  console.log(`ID: ${pet.pet_id}`);
+  console.log(`Pet Code: ${pet.pet_code}`);
+  console.log(`Breed: ${pet.breed}`);
+  console.log('');
+  console.log('5. Permissions:');
   console.log(`System Permissions: ${allSystemPermissions.length}`);
   console.log(`Store Permissions: ${allStorePermissions.length}`);
   console.log(`Total: ${allSystemPermissions.length + allStorePermissions.length}`);
   console.log('');
-  console.log('5. Roles:');
+  console.log('6. Roles:');
   console.log(`Super Admin Role: ${superAdminRole.name} (${allSystemPermissions.length} permissions)`);
   console.log(`Store Admin Role: ${storeAdminRole.name} (${allStorePermissions.length} permissions)`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');

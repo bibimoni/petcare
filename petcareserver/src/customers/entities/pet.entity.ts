@@ -34,7 +34,7 @@ export class Pet {
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
-  @Column({ name: 'customer_id' })
+  @Column({ name: 'customer_id', nullable: true })
   customer_id: number;
 
   @ManyToOne(() => Customer, (customer) => customer.pets, { onDelete: 'CASCADE' })
@@ -62,6 +62,9 @@ export class Pet {
 
   @Column({ type: 'text', nullable: true })
   avatar_url: string;
+
+  @Column({ nullable: true })
+  avatar_public_id: string
 
   @Column({ type: 'text', nullable: true })
   notes: string;
