@@ -8,6 +8,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,12 +17,14 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { StoresService } from './stores.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { CurrentUser, JwtAuthGuard, PermissionsGuard, RequirePermissions } from '../common';
+import { AcceptInvitationResponseDto } from './dto/accept-invitation-response.dto';
 import { STORE_PERMISSIONS } from '../common/permissions';
 
 @ApiTags('Stores Management')
@@ -198,5 +201,32 @@ export class StoresController {
     @CurrentUser() user: any,
   ) {
     return this.storesService.getStoreStaff(parseInt(storeId), user.user_id);
+  }
+
+  @Get('invitations/accept')
+  @ApiOperation({
+    summary: 'Accept invitation',
+    description: 'Accepts a store invitation using the invitation token. This endpoint can be used without authentication.',
+  })
+  @ApiQuery({
+    name: 'token',
+    description: 'Invitation token',
+    example: 'abc123def456',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Invitation accepted successfully',
+    type: AcceptInvitationResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Invalid or expired invitation token',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Invitation already processed or user already belongs to a store',
+  })
+  async acceptInvitation(@Query('token') token: string) {
+    return this.storesService.acceptInvitation(token);
   }
 }
