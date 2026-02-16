@@ -1,9 +1,10 @@
 import { Controller, HttpCode, HttpStatus, Injectable, Param, Post, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { CustomersService } from "./customers.service";
-import { CurrentUser, JwtAuthGuard } from "src/common";
+import { CurrentUser, JwtAuthGuard, PermissionsGuard, RequirePermissions } from "src/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { User } from "src/users/entities/user.entity";
+import { STORE_PERMISSIONS } from "src/common/permissions";
 
 @ApiTags('Customers')
 @Controller({ path: 'customers', version: '1' })
@@ -12,7 +13,8 @@ export class CustomersController {
 
 	@Post('pets/:petId/avatar')
 	@HttpCode(HttpStatus.CREATED)
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, PermissionsGuard)
+	@RequirePermissions(STORE_PERMISSIONS.PET_EDIT)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
