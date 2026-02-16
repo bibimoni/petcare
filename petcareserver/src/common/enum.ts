@@ -29,3 +29,10 @@ export enum StoreStatus {
   ACTIVE = 'ACTIVE',
   SUSPENDED = 'SUSPENDED',
 }
+
+export enum InvitationStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  DECLINED = 'DECLINED',
+  EXPIRED = 'EXPIRED',
+}
