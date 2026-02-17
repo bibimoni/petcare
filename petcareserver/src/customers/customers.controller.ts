@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Controller,
   Get,
@@ -12,6 +13,9 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  UploadedFile,
+  UseInterceptors,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -20,6 +24,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -33,6 +38,8 @@ import {
 } from 'src/common';
 import { Customer } from './entities/customer.entity';
 import { STORE_PERMISSIONS } from 'src/common/permissions/store.permissions';
+import { User } from 'src/users/entities/user.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Customers Management')
 @Controller({ path: '/store/customers', version: '1' })
@@ -142,7 +149,7 @@ export class CustomersController {
   })
   @ApiBody({ type: UpdateCustomerDto })
   update(
-    @Param('customerId') customerId: string,
+    @Param('customerId', ParseIntPipe) customerId: number,
     @Body() dto: UpdateCustomerDto,
     @CurrentUser() user: any,
   ) {
@@ -161,9 +168,9 @@ export class CustomersController {
     description:
       'Deletes a specific customer from the store (only accessible to store members with proper permissions)',
   })
-  @ApiParam({ name: 'customerId', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'customerId', type: 'number' })
   @ApiResponse({
-    status: 204,
+    status: 200,
     description: 'Customer deleted successfully',
   })
   @ApiResponse({
@@ -171,7 +178,7 @@ export class CustomersController {
     description: 'Customer not found or deny permission to delete',
   })
   deleteCustomer(
-    @Param('customerId') customerId: string,
+    @Param('customerId', ParseIntPipe) customerId: number,
     @CurrentUser() user: any,
   ) {
     const id = Number(customerId);
@@ -179,5 +186,42 @@ export class CustomersController {
       throw new BadRequestException('Invalid customerId');
     }
     return this.customersService.deleteCustomer(id, user.store_id);
+  }
+
+  @Post('pets/:petId/avatar')
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(STORE_PERMISSIONS.PET_EDIT)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiOperation({
+    summary: 'Upload pet image',
+    description:
+      'Uploads an image for a pet and updates the pet record with the image URL',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Pet image uploaded and pet record updated successfully',
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadPetImage(
+    @Param('petId', ParseIntPipe) petId: number,
+    @CurrentUser() currentUser: User,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.customersService.uploadPetAvatar(
+      petId,
+      currentUser.user_id,
+      file,
+    );
   }
 }

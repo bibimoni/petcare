@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Injectable,
   BadRequestException,
@@ -9,12 +13,19 @@ import { Repository } from 'typeorm';
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
+import { Pet } from './entities/pet.entity';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class CustomersService {
   constructor(
     @InjectRepository(Customer)
     private customerRepository: Repository<Customer>,
+
+    @InjectRepository(Pet)
+    private petRepository: Repository<Pet>,
+
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   async createCustomer(
@@ -105,5 +116,36 @@ export class CustomersService {
     await this.customerRepository.softRemove(customer);
 
     return { message: 'Customer deleted successfully' };
+  }
+
+  async uploadPetAvatar(
+    pet_id: number,
+    currentUserId: number,
+    file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+    const pet = await this.petRepository.findOne({
+      relations: {
+        store: {
+          users: true,
+        },
+      },
+      where: { pet_id, store: { users: { user_id: currentUserId } } },
+    });
+    if (!pet) {
+      throw new BadRequestException(
+        'Pet not found or you do not have permission to update this pet',
+      );
+    }
+
+    const cloudinaryResp = await this.cloudinaryService.uploadFile(file);
+    await this.petRepository.update(pet_id, {
+      avatar_url: cloudinaryResp.secure_url,
+      avatar_public_id: cloudinaryResp.public_id,
+    });
+
+    return cloudinaryResp.secure_url;
   }
 }

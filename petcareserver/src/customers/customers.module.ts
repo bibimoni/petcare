@@ -3,18 +3,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Customer } from './entities/customer.entity';
 import { Pet } from './entities/pet.entity';
 import { PetWeightHistory } from './entities/pet-weight-history.entity';
-import { CustomersService } from './customers.service';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { CustomersController } from './customers.controller';
+import { CustomersService } from './customers.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Customer, Pet, PetWeightHistory])],
+  imports: [
+    TypeOrmModule.forFeature([Customer, Pet, PetWeightHistory]),
+    CloudinaryModule,
+  ],
   controllers: [CustomersController],
   providers: [CustomersService],
-  exports: [CustomersService, TypeOrmModule],
+  exports: [TypeOrmModule, CustomersService],
 })
 export class CustomersModule {}
-// @Module({
-//   imports: [TypeOrmModule.forFeature([Customer, Pet, PetWeightHistory])],
-//   exports: [TypeOrmModule],
-// })
-// export class CustomersModule {}

@@ -25,11 +25,13 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.userRepository.findOne({
       where: { email: loginDto.email },
-      relations: [
-        'role',
-        'role.role_permissions',
-        'role.role_permissions.permission',
-      ],
+      relations: {
+        role: {
+          role_permissions: {
+            permission: true,
+          },
+        },
+      },
       select: {
         user_id: true,
         email: true,
@@ -73,6 +75,7 @@ export class AuthService {
 
     const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...userWithoutPassword } = user;
 
     return {
@@ -107,6 +110,7 @@ export class AuthService {
 
     const savedUser = await this.userRepository.save(user);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...userWithoutPassword } = savedUser;
 
     return {

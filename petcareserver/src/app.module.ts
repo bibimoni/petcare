@@ -12,6 +12,7 @@ import { ProductsModule } from './products/products.module';
 import { StoresModule } from './stores/stores.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { RolesModule } from './roles/roles.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { RolesModule } from './roles/roles.module';
     StoresModule,
     PermissionsModule,
     RolesModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

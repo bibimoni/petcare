@@ -14,12 +14,13 @@ export class UsersService {
   async getProfile(userId: number) {
     const user = await this.userRepository.findOne({
       where: { user_id: userId },
-      relations: [
-        'role',
-        'role.role_permissions',
-        'role.role_permissions.permission',
-        'store',
-      ],
+      relations: {
+        role: {
+          role_permissions: {
+            permission: true,
+          },
+        },
+      },
       select: {
         user_id: true,
         email: true,
@@ -68,12 +69,13 @@ export class UsersService {
 
     const updatedUser = await this.userRepository.findOne({
       where: { user_id: userId },
-      relations: [
-        'role',
-        'role.role_permissions',
-        'role.role_permissions.permission',
-        'store',
-      ],
+      relations: {
+        role: {
+          role_permissions: {
+            permission: true,
+          },
+        },
+      },
       select: {
         user_id: true,
         email: true,
