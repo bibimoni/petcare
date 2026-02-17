@@ -37,9 +37,7 @@ export class Pet {
   @Column({ name: 'customer_id', nullable: true })
   customer_id: number;
 
-  @ManyToOne(() => Customer, (customer) => customer.pets, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => Customer, (customer) => customer.pets, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 
@@ -84,8 +82,6 @@ export class Pet {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @OneToMany(() => PetWeightHistory, (history) => history.pet, {
-    cascade: true,
-  })
+  @OneToMany(() => PetWeightHistory, (history) => history.pet, { cascade: true })
   weight_history: PetWeightHistory[];
 }
