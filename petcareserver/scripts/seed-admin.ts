@@ -16,11 +16,7 @@ import { Permission } from '../src/permissions/entities/permission.entity';
 import { Role } from '../src/roles/entities/role.entity';
 import { RolePermission } from '../src/roles/entities/role-permission.entity';
 
-import {
-  UserRole,
-  UserStatus,
-  StoreStatus,
-} from '../src/common/enum';
+import { UserStatus, StoreStatus } from '../src/common/enum';
 
 import {
   ALL_SYSTEM_PERMISSIONS,
@@ -34,7 +30,9 @@ async function seedAdmin() {
 
   const connection = await createConnection({
     type: 'postgres',
-    url: process.env.POSTGRES_URI || 'postgresql://postgres:password@localhost:5432/petcare_dev',
+    url:
+      process.env.POSTGRES_URI ||
+      'postgresql://postgres:password@localhost:5432/petcare_dev',
     entities: [
       User,
       Order,
@@ -51,7 +49,11 @@ async function seedAdmin() {
       RolePermission,
     ],
     synchronize: true,
-    ssl: process.env.POSTGRES_URI ? { rejectUnauthorized: false } : false,
+    // ssl: process.env.POSTGRES_URI ? { rejectUnauthorized: false } : false,
+    ssl:
+      process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : false,
   });
 
   console.log('Database connected successfully');
@@ -140,6 +142,7 @@ async function seedAdmin() {
     });
 
     if (!existingPermission) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const permission = permissionRepository.create({
         slug: permissionSlug,
         scope: 'SYSTEM',
@@ -161,6 +164,7 @@ async function seedAdmin() {
 
     if (!existingPermission) {
       const module = permissionSlug.split('.')[0];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const permission = permissionRepository.create({
         slug: permissionSlug,
         scope: 'STORE',
@@ -178,8 +182,14 @@ async function seedAdmin() {
   console.log(`System Permissions Created: ${systemPermissionsCreated}`);
   console.log(`Store Permissions Created: ${storePermissionsCreated}`);
 
-  const allSystemPermissions = await permissionRepository.findBy({ scope: 'SYSTEM' as any });
-  const allStorePermissions = await permissionRepository.findBy({ scope: 'STORE' as any });
+  const allSystemPermissions = await permissionRepository.findBy({
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    scope: 'SYSTEM' as any,
+  });
+  const allStorePermissions = await permissionRepository.findBy({
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    scope: 'STORE' as any,
+  });
 
   console.log('\n=== Seeding Super Admin Role ===');
 
@@ -187,6 +197,7 @@ async function seedAdmin() {
     where: {
       name: SYSTEM_ROLES.SUPER_ADMIN,
       is_system_role: true,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       store_id: null as any,
     },
   });
@@ -202,6 +213,7 @@ async function seedAdmin() {
       name: SYSTEM_ROLES.SUPER_ADMIN,
       description: 'System Super Administrator with full platform access',
       is_editable: false,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       store_id: null as any,
       is_system_role: true,
     });
@@ -210,7 +222,9 @@ async function seedAdmin() {
 
     const allPermissions = [...allSystemPermissions, ...allStorePermissions];
 
-    console.log('Assigning all permissions (system + store) to super admin role...');
+    console.log(
+      'Assigning all permissions (system + store) to super admin role...',
+    );
     for (const permission of allPermissions) {
       await rolePermissionRepository.save({
         role_id: superAdminRole.id,
@@ -243,7 +257,7 @@ async function seedAdmin() {
       name: STORE_ROLES.ADMIN,
       description: 'Store Administrator with full store access',
       is_editable: false,
-      store_id: store.id as number,
+      store_id: store.id,
       is_system_role: false,
     });
 
@@ -320,10 +334,12 @@ async function seedAdmin() {
       store_id: store.id,
       name: 'Buddy',
       pet_code: 'PET-2024-001',
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       gender: 'MALE' as any,
       breed: 'Labrador',
       dob: new Date('2021-06-10'),
       notes: 'Store pet - clinic mascot',
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       status: 'ALIVE' as any,
     });
 
@@ -370,7 +386,9 @@ async function seedAdmin() {
       await petWeightHistoryRepository.save(entry);
     }
 
-    console.log(` Weight history created with ${weightHistoryEntries.length} entries`);
+    console.log(
+      ` Weight history created with ${weightHistoryEntries.length} entries`,
+    );
   } else {
     console.log('Weight history already exists');
   }
@@ -404,11 +422,17 @@ async function seedAdmin() {
   console.log('5. Permissions:');
   console.log(`System Permissions: ${allSystemPermissions.length}`);
   console.log(`Store Permissions: ${allStorePermissions.length}`);
-  console.log(`Total: ${allSystemPermissions.length + allStorePermissions.length}`);
+  console.log(
+    `Total: ${allSystemPermissions.length + allStorePermissions.length}`,
+  );
   console.log('');
   console.log('6. Roles:');
-  console.log(`Super Admin Role: ${superAdminRole.name} (${allSystemPermissions.length} permissions)`);
-  console.log(`Store Admin Role: ${storeAdminRole.name} (${allStorePermissions.length} permissions)`);
+  console.log(
+    `Super Admin Role: ${superAdminRole.name} (${allSystemPermissions.length} permissions)`,
+  );
+  console.log(
+    `Store Admin Role: ${storeAdminRole.name} (${allStorePermissions.length} permissions)`,
+  );
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   await connection.close();
@@ -422,6 +446,7 @@ seedAdmin()
   })
   .catch((error) => {
     console.error('Seeding failed:', error);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     console.error(error.stack);
     process.exit(1);
   });

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import {
   Controller,
   Post,
@@ -51,7 +52,8 @@ export class StoresController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Create a new store',
-    description: 'Creates a new store and assigns the current user as Store Admin with full store permissions',
+    description:
+      'Creates a new store and assigns the current user as Store Admin with full store permissions',
   })
   @ApiResponse({
     status: 201,
@@ -70,6 +72,7 @@ export class StoresController {
     @Body() createStoreDto: CreateStoreDto,
     @CurrentUser() user: any,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return this.storesService.createStore(createStoreDto, user.user_id);
   }
 
@@ -80,7 +83,8 @@ export class StoresController {
   @RequirePermissions(STORE_PERMISSIONS.STAFF_INVITE)
   @ApiOperation({
     summary: 'Invite staff member to store',
-    description: 'Invites a new staff member to the store with a specific role. Staff will be created with LOCKED status.',
+    description:
+      'Invites a new staff member to the store with a specific role. Staff will be created with LOCKED status.',
   })
   @ApiParam({
     name: 'storeId',
@@ -112,6 +116,7 @@ export class StoresController {
     return this.storesService.inviteStaff(
       parseInt(storeId),
       inviteStaffDto,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       user.user_id,
     );
   }
@@ -144,7 +149,8 @@ export class StoresController {
   @RequirePermissions(STORE_PERMISSIONS.STORE_SETTINGS_MANAGE)
   @ApiOperation({
     summary: 'Update store details',
-    description: 'Updates store information (only accessible to store members with proper permissions)',
+    description:
+      'Updates store information (only accessible to store members with proper permissions)',
   })
   @ApiParam({
     name: 'storeId',
@@ -172,6 +178,7 @@ export class StoresController {
     return this.storesService.updateStore(
       parseInt(storeId),
       updateData,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       user.user_id,
     );
   }
@@ -200,13 +207,15 @@ export class StoresController {
     @Param('storeId') storeId: string,
     @CurrentUser() user: any,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return this.storesService.getStoreStaff(parseInt(storeId), user.user_id);
   }
 
   @Get('invitations/accept')
   @ApiOperation({
     summary: 'Accept invitation',
-    description: 'Accepts a store invitation using the invitation token. This endpoint can be used without authentication.',
+    description:
+      'Accepts a store invitation using the invitation token. This endpoint can be used without authentication.',
   })
   @ApiQuery({
     name: 'token',

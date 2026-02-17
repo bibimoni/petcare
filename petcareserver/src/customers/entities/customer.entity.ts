@@ -1,4 +1,3 @@
-
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -8,12 +7,14 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Pet } from './pet.entity';
 import { Order } from '../../orders/entities/order.entity';
 import { Store } from '../../stores/entities/store.entity';
 
 @Entity('customers')
+@Index(['store_id', 'phone'], { unique: true })
 export class Customer {
   @PrimaryGeneratedColumn()
   customer_id: number;
@@ -28,7 +29,7 @@ export class Customer {
   @Column()
   full_name: string;
 
-  @Column()
+  @Column({ nullable: false })
   phone: string;
 
   @Column({ nullable: true })
@@ -44,7 +45,7 @@ export class Customer {
   total_spend: number;
 
   @Column({ type: 'text', nullable: true })
-  notes: string;
+  notes?: string | null;
 
   @CreateDateColumn()
   created_at: Date;

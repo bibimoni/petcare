@@ -11,7 +11,7 @@ import {
 import { Order } from '../../orders/entities/order.entity';
 import { Role } from '../../roles/entities/role.entity';
 import { Store } from '../../stores/entities/store.entity';
-import { UserRole, UserStatus } from '../../common/enum';
+import { UserStatus } from '../../common/enum';
 
 @Entity('users')
 export class User {
@@ -35,14 +35,20 @@ export class User {
   @Column({ name: 'store_id', nullable: true })
   store_id: number;
 
-  @ManyToOne(() => Store, (store) => store.users, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Store, (store) => store.users, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
   @Column({ name: 'role_id', nullable: true })
   role_id: number;
 
-  @ManyToOne(() => Role, (role) => role.users, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Role, (role) => role.users, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'role_id' })
   role: Role;
 

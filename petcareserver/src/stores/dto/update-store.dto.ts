@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, IsUrl, MinLength, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsUrl,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 import { StoreStatus } from '../../common/enum';
 
 export class UpdateStoreDto {
