@@ -8,12 +8,12 @@ import { CustomersController } from './customers.controller';
 import { CustomersService } from './customers.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Customer, Pet, PetWeightHistory]),
-    CloudinaryModule,
-  ],
-  controllers: [CustomersController],
-  providers: [CustomersService],
-  exports: [TypeOrmModule, CustomersService],
+	imports: [
+		TypeOrmModule.forFeature([Customer, Pet, PetWeightHistory]),
+  	CloudinaryModule,
+	],
+	controllers: [CustomersController],
+	providers: [CustomersService],
+	exports: [TypeOrmModule, CustomersService],
 })
 export class CustomersModule {}
