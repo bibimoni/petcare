@@ -1,52 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  UseGuards,
-  BadRequestException,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
-  UploadedFile,
-  UseInterceptors,
-  ParseIntPipe,
-} from '@nestjs/common';
-import { CustomersService } from './customers.service';
-import { CreateCustomerDto } from './dto/create-customer.dto';
-import { UpdateCustomerDto } from './dto/update-customer.dto';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
-import {
-  CurrentUser,
-  PermissionsGuard,
-  RequirePermissions,
-  RolesGuard,
-} from 'src/common';
-import { Customer } from './entities/customer.entity';
-import { STORE_PERMISSIONS } from 'src/common/permissions/store.permissions';
-import { User } from 'src/users/entities/user.entity';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { Controller, HttpCode, HttpStatus, Injectable, Param, Post, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { CustomersService } from "./customers.service";
+import { CurrentUser, JwtAuthGuard, PermissionsGuard, RequirePermissions } from "src/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { User } from "src/users/entities/user.entity";
+import { STORE_PERMISSIONS } from "src/common/permissions";
 
-@ApiTags('Customers Management')
-@Controller({ path: '/store/customers', version: '1' })
-@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-@ApiBearerAuth()
+@ApiTags('Customers')
+@Controller({ path: 'customers', version: '1' })
 export class CustomersController {
-  constructor(private readonly customersService: CustomersService) {}
+	constructor(private readonly customersService: CustomersService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -199,25 +162,21 @@ export class CustomersController {
       },
     },
   })
-  @ApiOperation({
-    summary: 'Upload pet image',
-    description:
-      'Uploads an image for a pet and updates the pet record with the image URL',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Pet image uploaded and pet record updated successfully',
-  })
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadPetImage(
-    @Param('petId', ParseIntPipe) petId: number,
-    @CurrentUser() currentUser: User,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    return this.customersService.uploadPetAvatar(
-      petId,
-      currentUser.user_id,
-      file,
-    );
-  }
+	@ApiBearerAuth()
+	@ApiOperation({
+		summary: 'Upload pet image',
+		description: 'Uploads an image for a pet and updates the pet record with the image URL',
+	})
+	@ApiResponse({
+		status: 200,
+		description: 'Pet image uploaded and pet record updated successfully',
+	})
+	@UseInterceptors(FileInterceptor('file'))
+	async uploadPetImage(
+		@Param('petId') petId: number,
+		@CurrentUser() currentUser: User,
+		@UploadedFile() file: Express.Multer.File
+	) {
+		return this.customersService.UploadPetAvatar(petId, currentUser.user_id, file);
+	}
 }

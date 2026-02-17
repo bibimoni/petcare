@@ -15,11 +15,11 @@ export class UsersService {
     const user = await this.userRepository.findOne({
       where: { user_id: userId },
       relations: {
-        role: {
-          role_permissions: {
-            permission: true,
-          },
-        },
+	      role: {
+		      role_permissions: {
+			      permission: true
+		      }
+	      }
       },
       select: {
         user_id: true,
@@ -47,8 +47,9 @@ export class UsersService {
       throw new UnauthorizedException('User not found');
     }
 
-    const permissions =
-      user.role?.role_permissions?.map((rp) => rp.permission.slug) || [];
+    const permissions = user.role?.role_permissions?.map(
+      (rp) => rp.permission.slug,
+    ) || [];
 
     return {
       ...user,
@@ -70,11 +71,11 @@ export class UsersService {
     const updatedUser = await this.userRepository.findOne({
       where: { user_id: userId },
       relations: {
-        role: {
-          role_permissions: {
-            permission: true,
-          },
-        },
+	      role: {
+		      role_permissions: {
+			      permission: true
+		      }
+	      }
       },
       select: {
         user_id: true,
@@ -102,8 +103,9 @@ export class UsersService {
       throw new UnauthorizedException('Failed to update user');
     }
 
-    const permissions =
-      updatedUser.role?.role_permissions?.map((rp) => rp.permission.slug) || [];
+    const permissions = updatedUser.role?.role_permissions?.map(
+      (rp) => rp.permission.slug,
+    ) || [];
 
     return {
       ...updatedUser,
