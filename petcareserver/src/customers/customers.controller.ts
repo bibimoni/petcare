@@ -115,10 +115,6 @@ export class CustomersController {
     status: 200,
     description: 'Customer details retrieved successfully',
   })
-  @ApiResponse({
-    status: 404,
-    description: 'Customer not found or deny permission to view',
-  })
   findByPhone(@Param('phone') phone: string, @CurrentUser() user: any) {
     if (!phone) {
       throw new BadRequestException('Phone is required');
