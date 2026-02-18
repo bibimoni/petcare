@@ -190,7 +190,7 @@ async function seedAdmin() {
 
   const existingSuperAdminRole = await roleRepository.findOne({
     where: {
-      name: SYSTEM_ROLES[0],
+      name: SYSTEM_ROLES.SUPER_ADMIN,
       is_system_role: true,
       store_id: null as any,
     },
@@ -204,7 +204,7 @@ async function seedAdmin() {
     console.log('Creating super admin role...');
 
     superAdminRole = roleRepository.create({
-      name: SYSTEM_ROLES[0],
+      name: SYSTEM_ROLES.SUPER_ADMIN,
       description: 'System Super Administrator with full platform access',
       is_editable: false,
       store_id: null as any,

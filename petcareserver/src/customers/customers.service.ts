@@ -134,13 +134,14 @@ export class CustomersService {
     }
 
     const cloudinaryResp = await this.cloudinaryService.uploadFile(file);
-    if (pet.avatar_public_id) {
-      await this.cloudinaryService.deleteFile(pet.avatar_public_id);
-    }
     await this.petRepository.update(pet_id, {
       avatar_url: cloudinaryResp.secure_url,
       avatar_public_id: cloudinaryResp.public_id,
     });
+
+    if (pet.avatar_public_id) {
+      await this.cloudinaryService.deleteFile(pet.avatar_public_id);
+    }
 
     return cloudinaryResp.secure_url;
   }

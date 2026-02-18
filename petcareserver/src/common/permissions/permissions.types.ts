@@ -1,6 +1,5 @@
 import { SYSTEM_PERMISSIONS } from './system.permissions';
 import { STORE_PERMISSIONS } from './store.permissions';
-import { UserRole } from '../enum';
 
 export const ALL_SYSTEM_PERMISSIONS = Object.values(SYSTEM_PERMISSIONS);
 
@@ -11,10 +10,13 @@ export const ALL_PERMISSIONS = [
   ...ALL_STORE_PERMISSIONS,
 ] as const;
 
-export const SYSTEM_ROLES = [UserRole.SUPER_ADMIN] as const;
+export const SYSTEM_ROLES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
+} as const;
 
-export const STORE_ROLES = [UserRole.ADMIN, UserRole.STAFF] as const;
-
+export const STORE_ROLES = {
+  ADMIN: 'ADMIN',
+} as const;
 
 export type SystemPermission = (typeof ALL_SYSTEM_PERMISSIONS)[number];
 export type StorePermission = (typeof ALL_STORE_PERMISSIONS)[number];

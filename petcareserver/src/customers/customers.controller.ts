@@ -6,12 +6,10 @@ import {
   Patch,
   Param,
   Delete,
-  Query,
   UseGuards,
   BadRequestException,
   HttpCode,
   HttpStatus,
-  ParseUUIDPipe,
   UploadedFile,
   UseInterceptors,
   ParseIntPipe,
@@ -33,19 +31,16 @@ import {
   CurrentUser,
   PermissionsGuard,
   RequirePermissions,
-  Roles,
   RolesGuard,
 } from 'src/common';
 import { Customer } from './entities/customer.entity';
 import { STORE_PERMISSIONS } from 'src/common/permissions/store.permissions';
 import { User } from 'src/users/entities/user.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { STORE_ROLES } from 'src/common/permissions/permissions.types';
 
 @ApiTags('Customers Management')
 @Controller({ path: '/customers', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-@Roles(...STORE_ROLES)
 @ApiBearerAuth()
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
@@ -151,7 +146,7 @@ export class CustomersController {
     @Body() dto: UpdateCustomerDto,
     @CurrentUser() user: any,
   ) {
-    return this.customersService.update(id, dto, user.store_id);
+    return this.customersService.update(customerId, dto, user.store_id);
   }
 
   @Delete('/:customerId')
@@ -175,7 +170,7 @@ export class CustomersController {
     @Param('customerId', ParseIntPipe) customerId: number,
     @CurrentUser() user: any,
   ) {
-    return this.customersService.deleteCustomer(id, user.store_id);
+    return this.customersService.deleteCustomer(customerId, user.store_id);
   }
 
   @Post('pets/:petId/avatar')
