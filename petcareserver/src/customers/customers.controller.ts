@@ -40,7 +40,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Customers Management')
 @Controller({ path: '/customers', version: '1' })
-@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth()
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
