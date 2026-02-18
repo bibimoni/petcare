@@ -67,7 +67,7 @@ export class StoresService {
       logo_url: createStoreDto.logo_url,
     });
 
-    const savedStore = await this.storeRepository.save(store) as Store;
+    const savedStore = (await this.storeRepository.save(store)) as Store;
 
     let adminRole = await this.roleRepository.findOne({
       where: { name: 'ADMIN', store_id: savedStore.id },
@@ -82,7 +82,7 @@ export class StoresService {
         is_system_role: false,
       });
 
-      adminRole = await this.roleRepository.save(newAdminRole) as Role;
+      adminRole = (await this.roleRepository.save(newAdminRole)) as Role;
 
       const storePermissions = await this.permissionRepository.find({
         where: { scope: PermissionScope.STORE },
@@ -115,14 +115,19 @@ export class StoresService {
     };
   }
 
-
-  async inviteStaff(storeId: number, inviteStaffDto: InviteStaffDto, currentUserId: number) {
+  async inviteStaff(
+    storeId: number,
+    inviteStaffDto: InviteStaffDto,
+    currentUserId: number,
+  ) {
     const currentUser = await this.userRepository.findOne({
       where: { user_id: currentUserId },
     });
 
     if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('You do not have permission to invite staff to this store');
+      throw new ForbiddenException(
+        'You do not have permission to invite staff to this store',
+      );
     }
 
     const store = await this.storeRepository.findOne({
@@ -138,7 +143,9 @@ export class StoresService {
     });
 
     if (!role) {
-      throw new NotFoundException('Role not found or does not belong to this store');
+      throw new NotFoundException(
+        'Role not found or does not belong to this store',
+      );
     }
 
     const existingUser = await this.userRepository.findOne({
@@ -225,13 +232,19 @@ export class StoresService {
     return store;
   }
 
-  async updateStore(storeId: number, updateData: UpdateStoreDto, currentUserId: number) {
+  async updateStore(
+    storeId: number,
+    updateData: UpdateStoreDto,
+    currentUserId: number,
+  ) {
     const currentUser = await this.userRepository.findOne({
       where: { user_id: currentUserId },
     });
 
     if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('You do not have permission to update this store');
+      throw new ForbiddenException(
+        'You do not have permission to update this store',
+      );
     }
 
     const store = await this.storeRepository.findOne({
@@ -243,7 +256,7 @@ export class StoresService {
     }
 
     Object.assign(store, updateData);
-    const updatedStore = await this.storeRepository.save(store) as Store;
+    const updatedStore = (await this.storeRepository.save(store)) as Store;
 
     return {
       message: 'Store updated successfully',
@@ -257,7 +270,9 @@ export class StoresService {
     });
 
     if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('You do not have permission to view staff of this store');
+      throw new ForbiddenException(
+        'You do not have permission to view staff of this store',
+      );
     }
 
     const staff = await this.userRepository.find({

@@ -26,11 +26,11 @@ export class AuthService {
     const user = await this.userRepository.findOne({
       where: { email: loginDto.email },
       relations: {
-      	role: {
-     		role_permissions: {
-		       permission: true
-	       }
-        }
+        role: {
+          role_permissions: {
+            permission: true,
+          },
+        },
       },
       select: {
         user_id: true,
@@ -61,9 +61,8 @@ export class AuthService {
       throw new UnauthorizedException('Account is not active');
     }
 
-    const permissions = user.role?.role_permissions?.map(
-      (rp) => rp.permission.slug,
-    ) || [];
+    const permissions =
+      user.role?.role_permissions?.map((rp) => rp.permission.slug) || [];
 
     const payload = {
       sub: user.user_id,
@@ -76,6 +75,7 @@ export class AuthService {
 
     const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...userWithoutPassword } = user;
 
     return {
@@ -110,6 +110,7 @@ export class AuthService {
 
     const savedUser = await this.userRepository.save(user);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...userWithoutPassword } = savedUser;
 
     return {
