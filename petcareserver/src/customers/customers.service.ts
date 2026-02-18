@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Injectable,
   BadRequestException,
@@ -27,36 +23,33 @@ export class CustomersService {
 
     private cloudinaryService: CloudinaryService,
   ) {}
-
   async createCustomer(
     storeId: number,
-    createCustomerDto: CreateCustomerDto,
+    dto: CreateCustomerDto,
   ): Promise<Customer> {
-    const existed = await this.customerRepository.findOne({
-      where: { phone: createCustomerDto.phone, store_id: storeId },
-    });
-
-    if (existed) {
-      throw new ConflictException(
-        'Customer with phone number ' +
-          createCustomerDto.phone +
-          ' in this store already exists',
-      );
-    }
-
     const customer = this.customerRepository.create({
-      ...createCustomerDto,
+      ...dto,
       store_id: storeId,
     });
 
-    return await this.customerRepository.save(customer);
+    try {
+      return await this.customerRepository.save(customer);
+    } catch (error: any) {
+      if (error.code === '23505') {
+        throw new ConflictException(
+          `Customer with phone ${dto.phone} already exists in this store`,
+        );
+      }
+
+      throw error;
+    }
   }
 
   async findAllByStore(storeId: number): Promise<Customer[]> {
     return this.customerRepository.find({
       where: { store_id: storeId },
       relations: ['pets'],
-      order: { created_at: 'DESC' },
+      order: { full_name: 'ASC' },
     });
   }
 
@@ -141,6 +134,9 @@ export class CustomersService {
     }
 
     const cloudinaryResp = await this.cloudinaryService.uploadFile(file);
+    if (pet.avatar_public_id) {
+      await this.cloudinaryService.deleteFile(pet.avatar_public_id);
+    }
     await this.petRepository.update(pet_id, {
       avatar_url: cloudinaryResp.secure_url,
       avatar_public_id: cloudinaryResp.public_id,

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import {
   Controller,
   Post,
@@ -72,7 +71,6 @@ export class StoresController {
     @Body() createStoreDto: CreateStoreDto,
     @CurrentUser() user: any,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return this.storesService.createStore(createStoreDto, user.user_id);
   }
 
@@ -116,7 +114,6 @@ export class StoresController {
     return this.storesService.inviteStaff(
       parseInt(storeId),
       inviteStaffDto,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       user.user_id,
     );
   }
@@ -178,7 +175,6 @@ export class StoresController {
     return this.storesService.updateStore(
       parseInt(storeId),
       updateData,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       user.user_id,
     );
   }
@@ -207,7 +203,6 @@ export class StoresController {
     @Param('storeId') storeId: string,
     @CurrentUser() user: any,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return this.storesService.getStoreStaff(parseInt(storeId), user.user_id);
   }
 

@@ -45,7 +45,7 @@ export class Customer {
   total_spend: number;
 
   @Column({ type: 'text', nullable: true })
-  notes?: string | null;
+  notes: string | null;
 
   @CreateDateColumn()
   created_at: Date;

@@ -49,7 +49,6 @@ async function seedAdmin() {
       RolePermission,
     ],
     synchronize: true,
-    // ssl: process.env.POSTGRES_URI ? { rejectUnauthorized: false } : false,
     ssl:
       process.env.NODE_ENV === 'production'
         ? { rejectUnauthorized: false }
@@ -142,7 +141,6 @@ async function seedAdmin() {
     });
 
     if (!existingPermission) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const permission = permissionRepository.create({
         slug: permissionSlug,
         scope: 'SYSTEM',
@@ -164,7 +162,6 @@ async function seedAdmin() {
 
     if (!existingPermission) {
       const module = permissionSlug.split('.')[0];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const permission = permissionRepository.create({
         slug: permissionSlug,
         scope: 'STORE',
@@ -183,11 +180,9 @@ async function seedAdmin() {
   console.log(`Store Permissions Created: ${storePermissionsCreated}`);
 
   const allSystemPermissions = await permissionRepository.findBy({
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     scope: 'SYSTEM' as any,
   });
   const allStorePermissions = await permissionRepository.findBy({
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     scope: 'STORE' as any,
   });
 
@@ -195,9 +190,8 @@ async function seedAdmin() {
 
   const existingSuperAdminRole = await roleRepository.findOne({
     where: {
-      name: SYSTEM_ROLES.SUPER_ADMIN,
+      name: SYSTEM_ROLES[0],
       is_system_role: true,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       store_id: null as any,
     },
   });
@@ -210,10 +204,9 @@ async function seedAdmin() {
     console.log('Creating super admin role...');
 
     superAdminRole = roleRepository.create({
-      name: SYSTEM_ROLES.SUPER_ADMIN,
+      name: SYSTEM_ROLES[0],
       description: 'System Super Administrator with full platform access',
       is_editable: false,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       store_id: null as any,
       is_system_role: true,
     });
@@ -334,12 +327,10 @@ async function seedAdmin() {
       store_id: store.id,
       name: 'Buddy',
       pet_code: 'PET-2024-001',
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       gender: 'MALE' as any,
       breed: 'Labrador',
       dob: new Date('2021-06-10'),
       notes: 'Store pet - clinic mascot',
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       status: 'ALIVE' as any,
     });
 
@@ -446,7 +437,6 @@ seedAdmin()
   })
   .catch((error) => {
     console.error('Seeding failed:', error);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     console.error(error.stack);
     process.exit(1);
   });

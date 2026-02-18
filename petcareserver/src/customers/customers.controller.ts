@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Controller,
   Get,
@@ -34,16 +33,19 @@ import {
   CurrentUser,
   PermissionsGuard,
   RequirePermissions,
+  Roles,
   RolesGuard,
 } from 'src/common';
 import { Customer } from './entities/customer.entity';
 import { STORE_PERMISSIONS } from 'src/common/permissions/store.permissions';
 import { User } from 'src/users/entities/user.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { STORE_ROLES } from 'src/common/permissions/permissions.types';
 
 @ApiTags('Customers Management')
-@Controller({ path: '/store/customers', version: '1' })
+@Controller({ path: '/customers', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+@Roles(...STORE_ROLES)
 @ApiBearerAuth()
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
@@ -61,7 +63,7 @@ export class CustomersController {
     type: Customer,
   })
   @ApiResponse({
-    status: 402,
+    status: 400,
     description: 'Invalid input data',
   })
   @ApiResponse({
@@ -149,10 +151,6 @@ export class CustomersController {
     @Body() dto: UpdateCustomerDto,
     @CurrentUser() user: any,
   ) {
-    const id = Number(customerId);
-    if (isNaN(id)) {
-      throw new BadRequestException('Invalid customerId');
-    }
     return this.customersService.update(id, dto, user.store_id);
   }
 
@@ -177,10 +175,6 @@ export class CustomersController {
     @Param('customerId', ParseIntPipe) customerId: number,
     @CurrentUser() user: any,
   ) {
-    const id = Number(customerId);
-    if (isNaN(id)) {
-      throw new BadRequestException('Invalid customerId');
-    }
     return this.customersService.deleteCustomer(id, user.store_id);
   }
 
