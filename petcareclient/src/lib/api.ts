@@ -2,10 +2,10 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import _ from "lodash";
 import { toast } from "sonner";
 
-import { config } from "../helpers/global.config.ts";
+import { config } from "@/helpers/global.config.ts";
 
-// Hoặc nếu muốn alias nó thành globalConfig
 const globalConfig = config;
+
 const axiosClient = axios.create({
   baseURL: globalConfig.apiUrl,
   headers: {
