@@ -32,7 +32,7 @@ export class Permission {
   @Column({
     name: 'is_system_defined',
     default: false,
-    comment: 'System-defined permissions cannot be deleted'
+    comment: 'System-defined permissions cannot be deleted',
   })
   is_system_defined: boolean;
 
@@ -42,6 +42,9 @@ export class Permission {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @OneToMany(() => RolePermission, (rolePermission) => rolePermission.permission)
+  @OneToMany(
+    () => RolePermission,
+    (rolePermission) => rolePermission.permission,
+  )
   role_permissions: RolePermission[];
 }

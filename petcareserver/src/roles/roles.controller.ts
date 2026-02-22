@@ -21,7 +21,12 @@ import {
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { CurrentUser, JwtAuthGuard, RequirePermissions, PermissionsGuard } from '../common';
+import {
+  CurrentUser,
+  JwtAuthGuard,
+  RequirePermissions,
+  PermissionsGuard,
+} from '../common';
 import { STORE_PERMISSIONS } from '../common/permissions';
 
 @ApiTags('Roles Management')
@@ -37,7 +42,8 @@ export class RolesController {
   @RequirePermissions(STORE_PERMISSIONS.ROLE_CREATE)
   @ApiOperation({
     summary: 'Create a new role with permissions',
-    description: 'Creates a new custom role for the store with specified permissions',
+    description:
+      'Creates a new custom role for the store with specified permissions',
   })
   @ApiParam({
     name: 'storeId',
@@ -62,13 +68,18 @@ export class RolesController {
     @Body() createRoleDto: CreateRoleDto,
     @CurrentUser() user: any,
   ) {
-    return this.rolesService.createRole(parseInt(storeId), createRoleDto, user.user_id);
+    return this.rolesService.createRole(
+      parseInt(storeId),
+      createRoleDto,
+      user.user_id,
+    );
   }
 
   @Get()
   @ApiOperation({
     summary: 'Get all roles for a store',
-    description: 'Retrieves all roles belonging to a store with their assigned permissions',
+    description:
+      'Retrieves all roles belonging to a store with their assigned permissions',
   })
   @ApiParam({
     name: 'storeId',
@@ -83,17 +94,15 @@ export class RolesController {
     status: 403,
     description: 'Forbidden - Not a member of this store',
   })
-  async getRoles(
-    @Param('storeId') storeId: string,
-    @CurrentUser() user: any,
-  ) {
+  async getRoles(@Param('storeId') storeId: string, @CurrentUser() user: any) {
     return this.rolesService.getRoles(parseInt(storeId), user.user_id);
   }
 
   @Get('permissions')
   @ApiOperation({
     summary: 'Get available permissions',
-    description: 'Retrieves all available store-level permissions that can be assigned to roles',
+    description:
+      'Retrieves all available store-level permissions that can be assigned to roles',
   })
   @ApiParam({
     name: 'storeId',
@@ -112,13 +121,17 @@ export class RolesController {
     @Param('storeId') storeId: string,
     @CurrentUser() user: any,
   ) {
-    return this.rolesService.getAvailablePermissions(parseInt(storeId), user.user_id);
+    return this.rolesService.getAvailablePermissions(
+      parseInt(storeId),
+      user.user_id,
+    );
   }
 
   @Get(':roleId')
   @ApiOperation({
     summary: 'Get a specific role with its permissions',
-    description: 'Retrieves detailed information about a specific role and its assigned permissions',
+    description:
+      'Retrieves detailed information about a specific role and its assigned permissions',
   })
   @ApiParam({
     name: 'storeId',
@@ -155,7 +168,8 @@ export class RolesController {
   @RequirePermissions(STORE_PERMISSIONS.ROLE_EDIT)
   @ApiOperation({
     summary: 'Update a role',
-    description: 'Updates role name, description, or permissions. Can remove all permissions (0 permissions allowed)',
+    description:
+      'Updates role name, description, or permissions. Can remove all permissions (0 permissions allowed)',
   })
   @ApiParam({
     name: 'storeId',
@@ -173,7 +187,8 @@ export class RolesController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - Cannot edit system roles or insufficient permissions',
+    description:
+      'Forbidden - Cannot edit system roles or insufficient permissions',
   })
   @ApiResponse({
     status: 404,
@@ -186,7 +201,11 @@ export class RolesController {
     @Body() updateRoleDto: UpdateRoleDto,
     @CurrentUser() user: any,
   ) {
-    return this.rolesService.updateRole(parseInt(roleId), updateRoleDto, user.user_id);
+    return this.rolesService.updateRole(
+      parseInt(roleId),
+      updateRoleDto,
+      user.user_id,
+    );
   }
 
   @Delete(':roleId')
@@ -195,7 +214,8 @@ export class RolesController {
   @RequirePermissions(STORE_PERMISSIONS.ROLE_DELETE)
   @ApiOperation({
     summary: 'Delete a role',
-    description: 'Deletes a role from the store. Cannot delete admin role or system roles',
+    description:
+      'Deletes a role from the store. Cannot delete admin role or system roles',
   })
   @ApiParam({
     name: 'storeId',
@@ -213,7 +233,8 @@ export class RolesController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - Cannot delete admin/system roles or insufficient permissions',
+    description:
+      'Forbidden - Cannot delete admin/system roles or insufficient permissions',
   })
   @ApiResponse({
     status: 404,

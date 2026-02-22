@@ -26,21 +26,24 @@ export class Role {
   @Column({
     name: 'is_editable',
     default: true,
-    comment: 'False for system default roles like SUPER_ADMIN and ADMIN'
+    comment: 'False for system default roles like SUPER_ADMIN and ADMIN',
   })
   is_editable: boolean;
 
   @Column({ name: 'store_id', nullable: true })
   store_id: number;
 
-  @ManyToOne(() => Store, (store) => store.roles, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Store, (store) => store.roles, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
   @Column({
     name: 'is_system_role',
     default: false,
-    comment: 'True for system roles that exist globally'
+    comment: 'True for system roles that exist globally',
   })
   is_system_role: boolean;
 
