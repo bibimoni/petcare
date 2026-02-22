@@ -1,16 +1,15 @@
-import { Controller, Post, Get, Patch, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, UseGuards, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
-import { JwtAuthGuard, RolesGuard, Roles, UserRole } from '../common';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @ApiTags('Authentication')
@@ -42,6 +41,24 @@ export class AuthController {
 	@ApiResponse({ status: 404, description: 'User not found' })
 	@ApiBody({ type: ForgotPasswordDto })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-  	this.authService.forgotPassword(forgotPasswordDto);
+  	return this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Post('reset-password')
+	@ApiOperation({ summary: 'Reset password using token' })
+	@ApiResponse({ status: 200, description: 'Password reset successfully' })
+	@ApiQuery({
+    name: 'token',
+    description: 'Reset password token',
+    example: 'abc123def456',
+  })
+	@ApiBody({ schema: {
+		type: 'object',
+		properties: {
+			new_password: { type: 'string' },
+		},
+	}})
+  async resetPassword(@Query('token') token: string, @Body('new_password') newPassword: string) {
+  	return this.authService.resetPassword(token, newPassword);
   }
 }
