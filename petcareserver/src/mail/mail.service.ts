@@ -2,6 +2,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InviteStaffResponseDto } from '../stores/dto/invite-staff-response.dto';
+import { INVITE_PAGE_ROUTE, RESET_PASSWORD_PAGE_ROUTE, RESET_PASSWORD_TOKEN_EXPIRATION_MINUTES } from 'src/common';
 
 @Injectable()
 export class MailService {
@@ -9,11 +10,11 @@ export class MailService {
 		private readonly mailerService: MailerService,
 		private readonly configService: ConfigService,
 	) {}
-	
+
 	async sendInvitationEmail(invitationData: InviteStaffResponseDto, full_name?: string) {
 		try {
 			const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-			const invitationLink = `${frontendUrl}/accept-invitation?token=${invitationData.invitation.token}`;
+			const invitationLink = `${frontendUrl}/${INVITE_PAGE_ROUTE}?token=${invitationData.invitation.token}`;
 			const formattedExpiryDate = new Date(invitationData.invitation.expires_at).toLocaleDateString('en-US', {
 				year: 'numeric',
 				month: 'long',
@@ -51,6 +52,37 @@ This is an automated email. Please do not reply.`;
 			console.log(`Invitation email sent successfully to: ${invitationData.invitation.email}`);
 		} catch (error) {
 			console.error('Error sending invitation email:', error);
+			throw error;
+		}
+	}
+
+	async sendResetPasswordEmail(email: string, token: string) {
+		try {
+			const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+			const resetLink = `${frontendUrl}/${RESET_PASSWORD_PAGE_ROUTE}?token=${token}`;
+
+			const textContent = `
+You have requested to reset your password.
+
+To reset your password, please click the link below:
+${resetLink}
+
+This link will expire in ${RESET_PASSWORD_TOKEN_EXPIRATION_MINUTES} minutes.
+
+If you did not request a password reset, please ignore this email.
+
+---
+This is an automated email. Please do not reply.`;
+
+			await this.mailerService.sendMail({
+				to: email,
+				subject: 'Password Reset Request',
+				text: textContent,
+			});
+
+			console.log(`Password reset email sent successfully to: ${email}`);
+		} catch (error) {
+			console.error('Error sending password reset email:', error);
 			throw error;
 		}
 	}
