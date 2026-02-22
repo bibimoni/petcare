@@ -12,8 +12,10 @@ import { Order } from '../../orders/entities/order.entity';
 import { Role } from '../../roles/entities/role.entity';
 import { Store } from '../../stores/entities/store.entity';
 import { UserStatus } from '../../common/enum';
+import { Index } from 'typeorm';
 
 @Entity('users')
+@Index(['phone', 'email'], { unique: true })
 export class User {
   @PrimaryGeneratedColumn()
   user_id: number;
@@ -23,10 +25,11 @@ export class User {
 
   @Column({ unique: true })
   email: string;
+
   @Column({ select: false, nullable: true })
   password_hash: string;
 
-  @Column({ nullable: true })
+  @Column({ unique: true, nullable: true })
   phone: string;
 
   @Column({ type: 'text', nullable: true })
@@ -54,6 +57,12 @@ export class User {
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.LOCKED })
   status: UserStatus;
+
+  @Column({ type: 'text', nullable: true})
+  reset_password_token: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+	reset_password_expires_at: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

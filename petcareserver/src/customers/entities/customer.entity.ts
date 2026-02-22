@@ -14,7 +14,7 @@ import { Order } from '../../orders/entities/order.entity';
 import { Store } from '../../stores/entities/store.entity';
 
 @Entity('customers')
-@Index(['store_id', 'phone'], { unique: true })
+@Index(['store_id', 'phone', 'email'], { unique: true })
 export class Customer {
   @PrimaryGeneratedColumn()
   customer_id: number;
