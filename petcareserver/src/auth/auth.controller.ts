@@ -11,6 +11,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
 import { JwtAuthGuard, RolesGuard, Roles, UserRole } from '../common';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @ApiTags('Authentication')
 @Controller({ path: 'auth', version: '1' })
@@ -33,5 +34,14 @@ export class AuthController {
   @ApiBody({ type: RegisterDto })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Restart password for a user account' })
+	@ApiResponse({ status: 200, description: 'Password reset email sent' })
+	@ApiResponse({ status: 404, description: 'User not found' })
+	@ApiBody({ type: ForgotPasswordDto })
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+  	this.authService.forgotPassword(forgotPasswordDto);
   }
 }

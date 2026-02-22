@@ -12,6 +12,7 @@ import { Order } from '../../orders/entities/order.entity';
 import { Role } from '../../roles/entities/role.entity';
 import { Store } from '../../stores/entities/store.entity';
 import { UserRole, UserStatus } from '../../common/enum';
+import { Index } from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -22,6 +23,7 @@ export class User {
   full_name: string;
 
   @Column({ unique: true })
+  @Index()
   email: string;
   @Column({ select: false, nullable: true })
   password_hash: string;

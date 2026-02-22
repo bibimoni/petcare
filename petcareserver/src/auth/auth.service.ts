@@ -12,6 +12,7 @@ import { User } from '../users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UserStatus } from '../common/enum';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -116,5 +117,14 @@ export class AuthService {
       message: 'User registered successfully',
       user: userWithoutPassword,
     };
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+ 		const user = await this.userRepository.findOne({
+      where: { email: forgotPasswordDto.email },
+		});
+	  if (!user) {
+	  	throw new UnauthorizedException('User not found');
+	  }
   }
 }
