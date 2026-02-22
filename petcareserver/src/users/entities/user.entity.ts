@@ -11,9 +11,11 @@ import {
 import { Order } from '../../orders/entities/order.entity';
 import { Role } from '../../roles/entities/role.entity';
 import { Store } from '../../stores/entities/store.entity';
-import { UserRole, UserStatus } from '../../common/enum';
+import { UserStatus } from '../../common/enum';
+import { Index } from 'typeorm';
 
 @Entity('users')
+@Index(['phone', 'email'], { unique: true })
 export class User {
   @PrimaryGeneratedColumn()
   user_id: number;
@@ -23,10 +25,11 @@ export class User {
 
   @Column({ unique: true })
   email: string;
+
   @Column({ select: false, nullable: true })
   password_hash: string;
 
-  @Column({ nullable: true })
+  @Column({ unique: true, nullable: true })
   phone: string;
 
   @Column({ type: 'text', nullable: true })
@@ -35,22 +38,31 @@ export class User {
   @Column({ name: 'store_id', nullable: true })
   store_id: number;
 
-  @ManyToOne(() => Store, (store) => store.users, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Store, (store) => store.users, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
   @Column({ name: 'role_id', nullable: true })
   role_id: number;
 
-  @ManyToOne(() => Role, (role) => role.users, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Role, (role) => role.users, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'role_id' })
   role: Role;
 
-  @Column({ name: 'legacy_role', type: 'enum', enum: UserRole, default: UserRole.STAFF, nullable: true })
-  legacy_role: UserRole;
-
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.LOCKED })
   status: UserStatus;
+
+  @Column({ type: 'text', nullable: true})
+  reset_password_token: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+	reset_password_expires_at: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

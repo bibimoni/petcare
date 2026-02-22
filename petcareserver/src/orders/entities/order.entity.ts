@@ -1,4 +1,3 @@
-
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -36,7 +35,10 @@ export class Order {
   @Column({ name: 'customer_id', nullable: true })
   customer_id: number;
 
-  @ManyToOne(() => Customer, (customer) => customer.orders, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Customer, (customer) => customer.orders, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 

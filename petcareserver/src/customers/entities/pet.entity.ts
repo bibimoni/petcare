@@ -34,10 +34,12 @@ export class Pet {
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
-  @Column({ name: 'customer_id' })
+  @Column({ name: 'customer_id', nullable: true })
   customer_id: number;
 
-  @ManyToOne(() => Customer, (customer) => customer.pets, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Customer, (customer) => customer.pets, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 
@@ -63,6 +65,9 @@ export class Pet {
   @Column({ type: 'text', nullable: true })
   avatar_url: string;
 
+  @Column({ nullable: true })
+  avatar_public_id: string
+
   @Column({ type: 'text', nullable: true })
   notes: string;
 
@@ -79,6 +84,8 @@ export class Pet {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @OneToMany(() => PetWeightHistory, (history) => history.pet, { cascade: true })
+  @OneToMany(() => PetWeightHistory, (history) => history.pet, {
+    cascade: true,
+  })
   weight_history: PetWeightHistory[];
 }

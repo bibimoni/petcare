@@ -38,7 +38,9 @@ export class RolesService {
     });
 
     if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('You do not have permission to create roles for this store');
+      throw new ForbiddenException(
+        'You do not have permission to create roles for this store',
+      );
     }
 
     const existingRole = await this.roleRepository.findOne({
@@ -46,10 +48,14 @@ export class RolesService {
     });
 
     if (existingRole) {
-      throw new ConflictException(`Role with name '${createRoleDto.name}' already exists in this store`);
+      throw new ConflictException(
+        `Role with name '${createRoleDto.name}' already exists in this store`,
+      );
     }
 
-    const permissions = await this.permissionRepository.findByIds(createRoleDto.permission_ids);
+    const permissions = await this.permissionRepository.findByIds(
+      createRoleDto.permission_ids,
+    );
     if (permissions.length !== createRoleDto.permission_ids.length) {
       throw new NotFoundException('One or more permissions not found');
     }
@@ -82,12 +88,18 @@ export class RolesService {
     });
 
     if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('You do not have permission to view roles for this store');
+      throw new ForbiddenException(
+        'You do not have permission to view roles for this store',
+      );
     }
 
     const roles = await this.roleRepository.find({
       where: { store_id: storeId },
-      relations: ['role_permissions', 'role_permissions.permission'],
+      relations: {
+	     	role_permissions: {
+		      permission: true
+	      }
+      },
       order: { id: 'ASC' },
     });
 
@@ -112,7 +124,11 @@ export class RolesService {
   async getRole(roleId: number, currentUserId: number) {
     const role = await this.roleRepository.findOne({
       where: { id: roleId },
-      relations: ['role_permissions', 'role_permissions.permission'],
+      relations: {
+	     	role_permissions: {
+		      permission: true
+	      }
+      },
     });
 
     if (!role) {
@@ -124,7 +140,9 @@ export class RolesService {
     });
 
     if (!currentUser || currentUser.store_id !== role.store_id) {
-      throw new ForbiddenException('You do not have permission to view this role');
+      throw new ForbiddenException(
+        'You do not have permission to view this role',
+      );
     }
 
     return {
@@ -168,7 +186,9 @@ export class RolesService {
     });
 
     if (!currentUser || currentUser.store_id !== role.store_id) {
-      throw new ForbiddenException('You do not have permission to update this role');
+      throw new ForbiddenException(
+        'You do not have permission to update this role',
+      );
     }
 
     if (updateRoleDto.name) {
@@ -177,7 +197,9 @@ export class RolesService {
       });
 
       if (existingRole && existingRole.id !== roleId) {
-        throw new ConflictException(`Role with name '${updateRoleDto.name}' already exists in this store`);
+        throw new ConflictException(
+          `Role with name '${updateRoleDto.name}' already exists in this store`,
+        );
       }
 
       role.name = updateRoleDto.name;
@@ -191,16 +213,19 @@ export class RolesService {
       await this.rolePermissionRepository.delete({ role_id: roleId });
 
       if (updateRoleDto.permission_ids.length > 0) {
-        const permissions = await this.permissionRepository.findByIds(updateRoleDto.permission_ids);
+        const permissions = await this.permissionRepository.findByIds(
+          updateRoleDto.permission_ids,
+        );
         if (permissions.length !== updateRoleDto.permission_ids.length) {
           throw new NotFoundException('One or more permissions not found');
         }
 
-        const rolePermissions = updateRoleDto.permission_ids.map((permissionId) =>
-          this.rolePermissionRepository.create({
-            role_id: roleId,
-            permission_id: permissionId,
-          }),
+        const rolePermissions = updateRoleDto.permission_ids.map(
+          (permissionId) =>
+            this.rolePermissionRepository.create({
+              role_id: roleId,
+              permission_id: permissionId,
+            }),
         );
 
         await this.rolePermissionRepository.save(rolePermissions);
@@ -231,7 +256,9 @@ export class RolesService {
     });
 
     if (!currentUser || currentUser.store_id !== role.store_id) {
-      throw new ForbiddenException('You do not have permission to delete this role');
+      throw new ForbiddenException(
+        'You do not have permission to delete this role',
+      );
     }
 
     const usersWithRole = await this.userRepository.count({
@@ -259,7 +286,9 @@ export class RolesService {
     });
 
     if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('You do not have permission to view permissions for this store');
+      throw new ForbiddenException(
+        'You do not have permission to view permissions for this store',
+      );
     }
 
     const permissions = await this.permissionRepository.find({
