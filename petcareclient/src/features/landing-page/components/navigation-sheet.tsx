@@ -8,7 +8,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Logo } from "@/features/landing-page/components/logo";
+import { Logo } from "@/components/Logo";
 import { NavMenu } from "@/features/landing-page/components/nav-menu";
 
 export const NavigationSheet = () => {

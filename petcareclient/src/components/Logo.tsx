@@ -10,7 +10,7 @@ export const Logo = () => {
         />
       </div>
       <span className="text-xl font-bold tracking-tight text-text-main dark:text-white">
-        PetCare
+        PetCare System
       </span>
     </div>
   );

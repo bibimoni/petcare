@@ -1,6 +1,8 @@
 import { useLocation } from "react-router";
 import { Link } from "react-router-dom";
 
+import { Logo } from "@/components/Logo";
+
 import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
 
@@ -16,22 +18,7 @@ export default function AuthPage() {
         <div className="w-full md:w-1/2 flex flex-col justify-center px-8 md:px-16 py-12 relative">
           {/* Logo Section */}
           <div className="flex items-center gap-3 mb-12">
-            <div className="size-8 text-[#ed5012]">
-              <svg
-                className="w-full h-full"
-                fill="none"
-                viewBox="0 0 48 48"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M6 6H42L36 24L42 42H6L12 24L6 6Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </div>
-            <h2 className="text-[#1b110d] dark:text-white text-xl font-bold leading-tight tracking-[-0.015em]">
-              PetCare System
-            </h2>
+            <Logo />
           </div>
 
           {/* Welcome Text */}
