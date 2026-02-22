@@ -36,7 +36,9 @@ export default function LoginForm() {
         navigate("/profile");
       }
     } catch (_err) {
-      toast.error("Đăng nhập thất bại. Vui lòng kiểm tra thông tin và thử lại.");
+      toast.error(
+        "Đăng nhập thất bại. Vui lòng kiểm tra thông tin và thử lại.",
+      );
     } finally {
       setLoading(false);
     }
@@ -98,7 +100,10 @@ export default function LoginForm() {
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 text-[#9a624c] hover:text-[#ed5012] transition-colors flex items-center"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: "20px" }}
+            >
               visibility
             </span>
           </button>

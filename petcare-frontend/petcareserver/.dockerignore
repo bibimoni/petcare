@@ -1,8 +1,0 @@
-node_modules
-dist
-npm-debug.log*
-.nyc_output
-.env
-.env.*.local
-.DS_Store
-*.log

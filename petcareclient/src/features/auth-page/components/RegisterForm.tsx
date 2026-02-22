@@ -5,13 +5,13 @@ import { toast } from "sonner";
 import { register } from "@/lib/auth";
 
 type Errors = {
-  fullName?: string;
-  address?: string;
   email?: string;
   phone?: string;
+  terms?: string;
+  address?: string;
+  fullName?: string;
   password?: string;
   confirmPassword?: string;
-  terms?: string;
 };
 
 export default function RegisterForm() {
@@ -37,7 +37,7 @@ export default function RegisterForm() {
       e.fullName = "Họ và tên phải ít nhất 2 ký tự";
     else if (formData.fullName.length > 100)
       e.fullName = "Họ và tên không được vượt quá 100 ký tự";
-  
+
     if (!formData.address) e.address = "Địa chỉ bắt buộc";
     if (!formData.email) e.email = "Email bắt buộc";
     else if (!/^\S+@\S+\.\S+$/.test(formData.email))
@@ -239,7 +239,9 @@ export default function RegisterForm() {
             </button>
           </div>
           {errors.confirmPassword && (
-            <span className="text-sm text-red-600">{errors.confirmPassword}</span>
+            <span className="text-sm text-red-600">
+              {errors.confirmPassword}
+            </span>
           )}
         </label>
       </div>
@@ -256,22 +258,25 @@ export default function RegisterForm() {
           />
         </div>
         <div className="text-sm leading-6">
-          <label htmlFor="terms" className="font-medium text-gray-900 dark:text-gray-300">
+          <label
+            htmlFor="terms"
+            className="font-medium text-gray-900 dark:text-gray-300"
+          >
             Tôi đồng ý với{" "}
             <a
               href="#"
               className="font-semibold text-[#f17341] hover:text-[#d95d2e] hover:underline"
             >
               Điều khoản sử dụng
-            </a>
-            {" "}và{" "}
+            </a>{" "}
+            và{" "}
             <a
               href="#"
               className="font-semibold text-[#f17341] hover:text-[#d95d2e] hover:underline"
             >
               Chính sách bảo mật
-            </a>
-            {" "}của PetCare.
+            </a>{" "}
+            của PetCare.
           </label>
         </div>
       </div>

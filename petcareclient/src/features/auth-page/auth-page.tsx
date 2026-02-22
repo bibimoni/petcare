@@ -77,7 +77,7 @@ export default function AuthPage() {
           </div>
 
           <div className="mt-8 text-xs text-[#9a624c] dark:text-[#887064]">
-            © 2024 PetCare System. All rights reserved.
+            © 2026 PetCare System. All rights reserved.
           </div>
         </div>
 
