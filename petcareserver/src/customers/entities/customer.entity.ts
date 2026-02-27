@@ -9,7 +9,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Pet } from './pet.entity';
+import { Pet } from '../../pets/entities/pet.entity';
 import { Order } from '../../orders/entities/order.entity';
 import { Store } from '../../stores/entities/store.entity';
 

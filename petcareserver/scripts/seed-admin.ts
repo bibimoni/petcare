@@ -9,8 +9,8 @@ import { Category } from '../src/products/entities/category.entity';
 import { Service } from '../src/products/entities/service.entity';
 import { Customer } from '../src/customers/entities/customer.entity';
 
-import { Pet } from '../src/customers/entities/pet.entity';
-import { PetWeightHistory } from '../src/customers/entities/pet-weight-history.entity';
+import { Pet } from '../src/pets/entities/pet.entity';
+import { PetWeightHistory } from '../src/pets/entities/pet-weight-history.entity';
 import { Store } from '../src/stores/entities/store.entity';
 import { Permission } from '../src/permissions/entities/permission.entity';
 import { Role } from '../src/roles/entities/role.entity';
