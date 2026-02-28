@@ -7,7 +7,7 @@ export function useNavigation() {
     const token = localStorage.getItem("accessToken");
 
     if (!token) {
-      navigate(`/auth/${action || "login"}`);
+      navigate(`/${action || "login"}`);
       return;
     }
 

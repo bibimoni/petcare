@@ -43,7 +43,7 @@ export default function AuthPage() {
                 <>
                   Đã có tài khoản?{" "}
                   <Link
-                    to="/auth/login"
+                    to="/login"
                     className="text-[#ed5012] font-bold hover:underline"
                   >
                     Đăng nhập ngay
@@ -53,7 +53,7 @@ export default function AuthPage() {
                 <>
                   Chưa có tài khoản?{" "}
                   <Link
-                    to="/auth/register"
+                    to="/register"
                     className="text-[#ed5012] font-bold hover:underline"
                   >
                     Đăng ký ngay

@@ -30,8 +30,8 @@ export default function LoginForm() {
     try {
       const res = await login({ email, password });
 
-      const token = res?.access_token || res?.data?.access_token;
-      const user = res?.user || res?.data?.user || {};
+      const token = res?.access_token;
+      const user = res?.user || {};
 
       if (token) {
         localStorage.setItem("accessToken", token);
@@ -82,7 +82,7 @@ export default function LoginForm() {
             Mật khẩu
           </label>
           <a
-            href="#"
+            href="/auth/forgot-password"
             className="text-[#ed5012] hover:text-orange-700 text-sm font-medium transition-colors"
           >
             Quên mật khẩu?

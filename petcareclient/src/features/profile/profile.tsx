@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -8,7 +9,8 @@ export default function ProfilePage() {
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("user");
-    navigate("/auth/login");
+    toast.success("Đăng xuất thành công");
+    navigate("/login");
   };
 
   return (

@@ -83,7 +83,10 @@ axiosClient.interceptors.request.use(
 
 axiosClient.interceptors.response.use(
   (response) => {
-    return response.data;
+    return {
+      ...response.data,
+      status: response.status,
+    };
   },
   async (error) => {
     return Promise.reject(error);

@@ -8,6 +8,8 @@ import { Toaster } from "sonner";
 import App from "./App";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthPage from "./features/auth-page/auth-page";
+import ForgotPasswordPage from "./features/auth-page/forgot-password-page";
+import ResetPasswordPage from "./features/auth-page/reset-password-page";
 import ProfilePage from "./features/profile/profile";
 
 createRoot(document.getElementById("root")!).render(
@@ -27,8 +29,10 @@ createRoot(document.getElementById("root")!).render(
       />
       <Routes>
         <Route path="/" element={<App />} />
-        <Route path="/auth/login" element={<AuthPage />} />
-        <Route path="/auth/register" element={<AuthPage />} />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/register" element={<AuthPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route
           path="/profile"
           element={
