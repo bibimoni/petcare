@@ -29,9 +29,13 @@ export default function LoginForm() {
     setLoading(true);
     try {
       const res = await login({ email, password });
-      if (res?.data?.access_token) {
-        localStorage.setItem("accessToken", res.data.access_token);
-        localStorage.setItem("user", JSON.stringify(res.data.user || {}));
+
+      const token = res?.access_token || res?.data?.access_token;
+      const user = res?.user || res?.data?.user || {};
+
+      if (token) {
+        localStorage.setItem("accessToken", token);
+        localStorage.setItem("user", JSON.stringify(user));
         toast.success("Đăng nhập thành công");
         navigate("/profile");
       }

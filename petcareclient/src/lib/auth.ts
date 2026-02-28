@@ -18,7 +18,6 @@ export const login = async (payload: LoginPayload) => {
     return await axiosClient.post(`/auth/login`, payload);
   } catch (error) {
     handleApiError(error);
-    throw error;
   }
 };
 
@@ -27,6 +26,5 @@ export const register = async (payload: RegisterPayload) => {
     return await axiosClient.post(`/auth/register`, payload);
   } catch (error) {
     handleApiError(error);
-    throw error;
   }
 };

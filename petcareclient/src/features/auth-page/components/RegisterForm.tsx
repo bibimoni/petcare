@@ -73,14 +73,10 @@ export default function RegisterForm() {
         phone: formData.phone,
         password: formData.password,
       });
-      if (res?.data?.access_token) {
-        localStorage.setItem("accessToken", res.data.access_token);
-        localStorage.setItem("user", JSON.stringify(res.data.user || {}));
+      if (res?.status === 201) {
         toast.success("Đăng ký thành công");
         navigate("/profile");
       }
-    } catch (_err) {
-      toast.error("Đăng ký thất bại. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
