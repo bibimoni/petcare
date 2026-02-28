@@ -1,14 +1,12 @@
-FROM node:20-alpine3.22 AS development
+FROM node:20-alpine AS builder
+RUN corepack enable
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
-COPY package*.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-RUN npm run build
-
-EXPOSE 8080
-
-CMD ["npm", "run", "start:dev"]
+RUN pnpm run build
