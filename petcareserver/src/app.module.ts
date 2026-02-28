@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { OrdersModule } from './orders/orders.module';
 import { CustomersModule } from './customers/customers.module';
+import { PetsModule } from './pets/pets.module';      
 import { ProductsModule } from './products/products.module';
 import { StoresModule } from './stores/stores.module';
 import { PermissionsModule } from './permissions/permissions.module';
@@ -35,6 +36,7 @@ import { MailModule } from './mail/mail.module';
     UsersModule,
     OrdersModule,
     CustomersModule,
+    PetsModule, 
     ProductsModule,
     StoresModule,
     PermissionsModule,

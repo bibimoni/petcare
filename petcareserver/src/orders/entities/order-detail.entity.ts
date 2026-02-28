@@ -8,7 +8,7 @@ import {
 import { Order } from './order.entity';
 import { Product } from '../../products/entities/product.entity';
 import { Service } from '../../products/entities/service.entity';
-import { Pet } from '../../customers/entities/pet.entity';
+import { Pet } from '../../pets/entities/pet.entity';
 
 export enum ItemType {
   PRODUCT = 'PRODUCT',

@@ -8,7 +8,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { Customer } from './customer.entity';
+import { Customer } from '../../customers/entities/customer.entity';
 import { PetWeightHistory } from './pet-weight-history.entity';
 import { Store } from '../../stores/entities/store.entity';
 
@@ -52,7 +52,7 @@ export class Pet {
   @Column({
     type: 'enum',
     enum: PetGender,
-    nullable: true,
+    nullable: false,
   })
   gender: PetGender;
 
@@ -66,7 +66,7 @@ export class Pet {
   avatar_url: string;
 
   @Column({ nullable: true })
-  avatar_public_id: string
+  avatar_public_id: string;
 
   @Column({ type: 'text', nullable: true })
   notes: string;
