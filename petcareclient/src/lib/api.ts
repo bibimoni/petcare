@@ -2,7 +2,9 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import _ from "lodash";
 import { toast } from "sonner";
 
-import { globalConfig } from "@/helpers/global.config";
+import { config } from "@/helpers/global.config.ts";
+
+const globalConfig = config;
 
 const axiosClient = axios.create({
   baseURL: globalConfig.apiUrl,
@@ -81,7 +83,10 @@ axiosClient.interceptors.request.use(
 
 axiosClient.interceptors.response.use(
   (response) => {
-    return response.data;
+    return {
+      ...response.data,
+      status: response.status,
+    };
   },
   async (error) => {
     return Promise.reject(error);

@@ -32,7 +32,7 @@ async function seedAdmin() {
     type: 'postgres',
     url:
       process.env.POSTGRES_URI ||
-      'postgresql://postgres:password@localhost:5432/petcare_dev',
+      'postgresql://onhangocnhu:root@localhost:5432/petcare_dev',
     entities: [
       User,
       Order,
