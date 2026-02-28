@@ -82,7 +82,7 @@ export default function LoginForm() {
             Mật khẩu
           </label>
           <a
-            href="/auth/forgot-password"
+            href="/forgot-password"
             className="text-[#ed5012] hover:text-orange-700 text-sm font-medium transition-colors"
           >
             Quên mật khẩu?
