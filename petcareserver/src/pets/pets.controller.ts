@@ -92,7 +92,7 @@ export class PetsController {
     const customerIdNum = parseInt(customerId, 10);
 
     if (isNaN(customerIdNum)) {
-      throw new BadRequestException('ID not valid');
+      throw new BadRequestException('ID không hợp lệ');
     }
     console.log('user:', user);
     console.log('storeId:', user.store_id);
@@ -127,12 +127,12 @@ export class PetsController {
     const petIdNum = parseInt(petId, 10);
 
     if (isNaN(petIdNum)) {
-      throw new BadRequestException('Pet ID is not valid');
+      throw new BadRequestException('ID không hợp lệ');
     }
 
     const limitNum = limit ? parseInt(limit, 10) : 100;
     if (isNaN(limitNum) || limitNum <= 0) {
-      throw new BadRequestException('Invalid limit');
+      throw new BadRequestException('Giới hạn không hợp lệ');
     }
     return this.petsService.getWeightHistory(user.store_id, petIdNum, limitNum);
   }
@@ -165,7 +165,7 @@ export class PetsController {
     const petIdNum = parseInt(petId, 10);
 
     if (isNaN(petIdNum)) {
-      throw new BadRequestException('ID not valid');
+      throw new BadRequestException('ID không hợp lệ');
     }
 
     return this.petsService.addWeightRecord(
@@ -201,7 +201,7 @@ export class PetsController {
     const petIdNum = parseInt(petId, 10);
 
     if (isNaN(petIdNum)) {
-      throw new BadRequestException('ID not valid');
+      throw new BadRequestException('ID không hợp lệ');
     }
 
     return this.petsService.findOneWithHistory(user.store_id, petIdNum);
@@ -233,7 +233,7 @@ export class PetsController {
   ) {
     const petIdNum = parseInt(petId, 10);
     if (isNaN(petIdNum)) {
-      throw new BadRequestException('ID not valid');
+      throw new BadRequestException('ID không hợp lệ');
     }
 
     return this.petsService.update(user.store_id, petIdNum, updatePetDto);
@@ -258,10 +258,10 @@ export class PetsController {
     const petIdNum = parseInt(petId, 10);
 
     if (isNaN(petIdNum)) {
-      throw new BadRequestException('ID not valid');
+      throw new BadRequestException('ID không hợp lệ');
     }
 
     await this.petsService.remove(user.store_id, petIdNum);
-    return { message: 'Pet removed successfully' };
+    return { message: 'Xóa thú cưng thành công' };
   }
 }
