@@ -48,10 +48,12 @@ export const forgotPassword = async (payload: ForgotPasswordPayload) => {
 
 export const resetPassword = async (payload: ResetPasswordPayload) => {
   try {
-    return await axiosClient.post(`/auth/reset-password`, {
-      token: payload.token,
-      new_password: payload.newPassword,
-    });
+    return await axiosClient.post(
+      `/auth/reset-password?token=${payload.token}`,
+      {
+        new_password: payload.newPassword,
+      },
+    );
   } catch (error) {
     handleApiError(error);
   }
