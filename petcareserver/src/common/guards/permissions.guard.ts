@@ -26,7 +26,7 @@ export class PermissionsGuard implements CanActivate {
 
     if (!user || !user.permissions) {
       throw new ForbiddenException(
-        'Access denied: No permissions found for user',
+        'Truy cập bị từ chối',
       );
     }
 
@@ -37,7 +37,7 @@ export class PermissionsGuard implements CanActivate {
 
     if (!hasAllPermissions) {
       throw new ForbiddenException(
-        `Access denied: Missing required permissions: ${requiredPermissions.join(', ')}`,
+        'Bạn không có quyền thực hiện thao tác này',
       );
     }
 

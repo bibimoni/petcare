@@ -29,7 +29,7 @@ export class PetsService {
     });
 
     if (!customer) {
-      throw new NotFoundException('Customer not found');
+      throw new NotFoundException('Không tìm thấy khách hàng');
     }
     const query = this.petRepository
       .createQueryBuilder('pet')
@@ -61,7 +61,7 @@ export class PetsService {
     });
 
     if (!pet) {
-      throw new NotFoundException('Pet not found');
+      throw new NotFoundException('Không tìm thấy thú cưng');
     }
 
     return pet;
@@ -80,7 +80,7 @@ export class PetsService {
     });
 
     if (!customer) {
-      throw new NotFoundException('Customer not found');
+      throw new NotFoundException('Không tìm thấy khách hàng');
     }
 
     const petCount = await this.petRepository.count({
@@ -123,7 +123,7 @@ export class PetsService {
       },
     });
     if (!pet) {
-      throw new NotFoundException('Pet not found');
+      throw new NotFoundException('Không tìm thấy thú cưng');
     }
     return pet;
   }
@@ -144,7 +144,7 @@ export class PetsService {
     const pet = await this.findOne(storeId, petId);
 
     if (createWeightDto.weight <= 0) {
-      throw new BadRequestException('Weight must be a positive number');
+      throw new BadRequestException('Cân nặng phải là số dương');
     }
 
     const weightRecord = this.weightHistoryRepository.create({
