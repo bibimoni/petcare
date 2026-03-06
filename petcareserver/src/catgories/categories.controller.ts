@@ -10,6 +10,7 @@ import {
   HttpStatus,
   Delete,
   Patch,
+  BadRequestException,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -99,13 +100,17 @@ export class CategoriesController {
   })
   @ApiBody({ type: UpdateCategoryDto })
   async updateCategory(
-    @Param('categoryId') categoryId: number,
+    @Param('categoryId') categoryId: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
     @CurrentUser() user: any,
   ) {
+    const categoryIdNum = parseInt(categoryId, 10);
+    if (isNaN(categoryIdNum)) {
+      throw new BadRequestException('Invalid category ID');
+    }
     return this.categoriesService.updateCategory(
       user.store_id,
-      categoryId,
+      categoryIdNum,
       updateCategoryDto,
     );
   }
@@ -117,10 +122,22 @@ export class CategoriesController {
     summary: 'Delete a category',
     description: 'Deletes a specific category for a given store',
   })
+  @ApiResponse({
+    status: 200,
+    description: 'Category deleted successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid category ID',
+  })
   async deleteCategory(
-    @Param('categoryId') categoryId: number,
+    @Param('categoryId') categoryId: string,
     @CurrentUser() user: any,
   ) {
-    return this.categoriesService.deleteCategory(user.store_id, categoryId);
+    const categoryIdNum = parseInt(categoryId, 10);
+    if (isNaN(categoryIdNum)) {
+      throw new BadRequestException('Invalid category ID');
+    }
+    return this.categoriesService.deleteCategory(user.store_id, categoryIdNum);
   }
 }

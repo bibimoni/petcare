@@ -15,7 +15,6 @@ import {
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from '../dto/create-service.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -23,15 +22,53 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { CurrentUser, RequirePermissions } from 'src/common';
+import { CurrentUser, PermissionsGuard, RequirePermissions } from 'src/common';
 import { STORE_PERMISSIONS } from 'src/common/permissions';
 
 @ApiTags('Services Management')
 @Controller({ path: '/services', version: '1' })
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth()
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(STORE_PERMISSIONS.SERVICE_CREATE)
+  @ApiOperation({
+    summary: 'Create a new service',
+    description: 'Creates a new service with the provided details',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Service created successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data',
+  })
+  @ApiBody({ type: CreateServiceDto })
+  async create(
+    @Body() createServiceDto: CreateServiceDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.servicesService.create(user.store_id, createServiceDto);
+  }
+
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.SERVICE_VIEW)
+  @ApiOperation({
+    summary: 'Get all services',
+    description: 'Retrieves a list of all services available in the store',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Services retrieved successfully',
+  })
+  async getAll() {
+    return this.servicesService.getAll();
+  }
 
   @Get('/:serviceId')
   @HttpCode(HttpStatus.OK)
@@ -61,35 +98,6 @@ export class ServicesController {
       throw new BadRequestException('Invalid service ID');
     }
     return this.servicesService.findByService(user.store_id, serviceIdNum);
-  }
-
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @RequirePermissions(STORE_PERMISSIONS.SERVICE_CREATE)
-  @ApiOperation({
-    summary: 'Create a new service',
-    description: 'Creates a new service with the provided details',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Service created successfully',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input data',
-  })
-  @ApiBody({ type: CreateServiceDto })
-  async create(
-    @Body() createServiceDto: CreateServiceDto,
-    @CurrentUser() user: any,
-  ) {
-    return this.servicesService.create(user.store_id, createServiceDto);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get()
-  async getAll() {
-    return this.servicesService.getAll();
   }
 
   @Patch('/:serviceId')

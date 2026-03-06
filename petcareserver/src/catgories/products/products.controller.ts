@@ -33,9 +33,90 @@ import { UpdateProductDto } from '../dto/update-product.dto';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @Get('/alerts')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.INVENTORY_VIEW)
+  @ApiOperation({
+    summary: 'Get low stock and expiring products',
+    description:
+      'Retrieves a list of products that are low in stock or nearing their expiry date',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Low stock and expiring products retrieved successfully',
+  })
+  async getLowStockOrExpiringProducts() {
+    return this.productsService.getLowStockOrExpiringProducts();
+  }
+
+  @Get('/total/sum')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.INVENTORY_VIEW)
+  @ApiOperation({
+    summary: 'Get total inventory value',
+    description:
+      'Calculates the total value of all products in the inventory based on stock quantity and cost price',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Total inventory value retrieved successfully',
+  })
+  async getInventoryValue() {
+    return { value: await this.productsService.getInventoryValue() };
+  }
+
+  @Get('/sum/:categoryId')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.INVENTORY_VIEW)
+  @ApiOperation({
+    summary: 'Get total inventory value by category',
+    description:
+      'Calculates the total inventory value for each product category in the store',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Total inventory value by category retrieved successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid category ID',
+  })
+  async geteachProductSum(
+    @Param('categoryId') categoryId: string,
+    @CurrentUser() user: any,
+  ) {
+    const categoryIdNum = parseInt(categoryId, 10);
+    if (isNaN(categoryIdNum)) {
+      throw new BadRequestException('Invalid category ID');
+    }
+    return this.productsService.geteachProductSum(user.store_id, categoryIdNum);
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(STORE_PERMISSIONS.PRODUCT_CREATE)
+  @ApiOperation({
+    summary: 'Create a new product',
+    description: 'Creates a new product for the specified store',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Product created successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data',
+  })
+  @ApiBody({ type: CreateProductDto })
+  async createProduct(
+    @Body() createProductDto: CreateProductDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.productsService.createProduct(user.store_id, createProductDto);
+  }
+
   @Get('/:productId')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions(STORE_PERMISSIONS.PRODUCT_VIEW)
   @ApiOperation({
     summary: 'Get product details',
     description: 'Retrieves detailed information about a specific product',
@@ -60,30 +141,10 @@ export class ProductsController {
     if (isNaN(productIdNum)) {
       throw new BadRequestException('Invalid product ID');
     }
-    return this.productsService.findByProduct(user.store_id, productIdNum);
-  }
-
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @RequirePermissions(STORE_PERMISSIONS.PRODUCT_CREATE)
-  @ApiOperation({
-    summary: 'Create a new product',
-    description: 'Creates a new product for the specified store',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Product created successfully',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input data',
-  })
-  @ApiBody({ type: CreateProductDto })
-  async createProduct(
-    @Body() createProductDto: CreateProductDto,
-    @CurrentUser() user: any,
-  ) {
-    return this.productsService.createProduct(user.store_id, createProductDto);
+    if (user.permissions.includes(STORE_PERMISSIONS.PRODUCT_MANAGE)) {
+      return this.productsService.findByProduct(user.store_id, productIdNum);
+    }
+    return this.productsService.findProductByStaff(user.store_id, productIdNum);
   }
 
   @Patch('/:productId')
@@ -146,21 +207,5 @@ export class ProductsController {
       throw new BadRequestException('Invalid product ID');
     }
     return this.productsService.deleteProduct(user.store_id, productIdNum);
-  }
-
-  @Get('inventory-value')
-  async getInventoryValue() {
-    return { value: await this.productsService.getInventoryValue() };
-  }
-
-  @Get('alerts')
-  async getLowStockOrExpiringProducts() {
-    return this.productsService.getLowStockOrExpiringProducts();
-  }
-
-  @Get()
-  async getProductsByRole(@Req() req) {
-    // req.user.role phải được set từ JwtAuthGuard
-    return this.productsService.getProductsByRole(req.user.role);
   }
 }
