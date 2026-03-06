@@ -226,6 +226,7 @@ export class PetsController {
     status: 404,
     description: 'Pet not found',
   })
+  @ApiBody({ type: UpdatePetDto })
   async update(
     @Param('petId') petId: string,
     @CurrentUser() user: any,

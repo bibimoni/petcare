@@ -9,9 +9,9 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { Role } from '../../roles/entities/role.entity';
 import { Customer } from '../../customers/entities/customer.entity';
-import { Product } from '../../products/entities/product.entity';
-import { Category } from '../../products/entities/category.entity';
-import { Service } from '../../products/entities/service.entity';
+import { Product } from '../../catgories/entities/product.entity';
+import { Category } from '../../catgories/entities/category.entity';
+import { Service } from '../../catgories/entities/service.entity';
 import { Order } from '../../orders/entities/order.entity';
 import { StoreStatus } from '../../common/enum';
 

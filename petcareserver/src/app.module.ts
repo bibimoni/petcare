@@ -8,8 +8,10 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { OrdersModule } from './orders/orders.module';
 import { CustomersModule } from './customers/customers.module';
-import { PetsModule } from './pets/pets.module';      
-import { ProductsModule } from './products/products.module';
+import { PetsModule } from './pets/pets.module';
+import { ProductsModule } from './catgories/products/products.module';
+import { ServicesModule } from './catgories/services/services.module';
+import { CategoriesModule } from './catgories/categories.module';
 import { StoresModule } from './stores/stores.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { RolesModule } from './roles/roles.module';
@@ -25,7 +27,7 @@ import { MailModule } from './mail/mail.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('POSTGRES_URI'),
         autoLoadEntities: true,
@@ -36,8 +38,10 @@ import { MailModule } from './mail/mail.module';
     UsersModule,
     OrdersModule,
     CustomersModule,
-    PetsModule, 
+    PetsModule,
     ProductsModule,
+    ServicesModule,
+    CategoriesModule,
     StoresModule,
     PermissionsModule,
     RolesModule,
