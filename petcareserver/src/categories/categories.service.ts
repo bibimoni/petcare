@@ -29,7 +29,7 @@ export class CategoriesService {
     storeId: number,
     categoryId: number,
     updateCategoryDto: UpdateCategoryDto,
-  ) {
+  ): Promise<Category> {
     const category = await this.categoryRepository.findOne({
       where: { category_id: categoryId, store_id: storeId },
     });

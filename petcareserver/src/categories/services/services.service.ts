@@ -44,7 +44,7 @@ export class ServicesService {
     storeId: number,
     serviceId: number,
     updateServiceDto: UpdateServiceDto,
-  ) {
+  ): Promise<Service> {
     const service = await this.findByService(storeId, serviceId);
     if (updateServiceDto.min_weight && updateServiceDto.max_weight) {
       if (updateServiceDto.min_weight > updateServiceDto.max_weight) {
@@ -57,8 +57,13 @@ export class ServicesService {
     return await this.serviceRepository.save(service);
   }
 
-  async getAll() {
-    return this.serviceRepository.find();
+  async getAll(storeId: number, categoryId: number): Promise<Service[]> {
+    return this.serviceRepository.find({
+      where: {
+        store_id: storeId,
+        category_id: categoryId,
+      },
+    });
   }
 
   async deleteService(storeId: number, serviceId: number): Promise<void> {

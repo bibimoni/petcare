@@ -24,6 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser, PermissionsGuard, RequirePermissions } from 'src/common';
 import { STORE_PERMISSIONS } from 'src/common/permissions';
+import { UpdateServiceDto } from '../dto/update-service.dto';
 
 @ApiTags('Services Management')
 @Controller({ path: '/services', version: '1' })
@@ -55,7 +56,7 @@ export class ServicesController {
     return this.servicesService.create(user.store_id, createServiceDto);
   }
 
-  @Get()
+  @Get('/:categoryId')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.SERVICE_VIEW)
   @ApiOperation({
@@ -66,8 +67,15 @@ export class ServicesController {
     status: 200,
     description: 'Services retrieved successfully',
   })
-  async getAll() {
-    return this.servicesService.getAll();
+  async getAll(
+    @Param('categoryId') categoryId: string,
+    @CurrentUser() user: any,
+  ) {
+    const categoryIdNum = parseInt(categoryId, 10);
+    if (isNaN(categoryIdNum)) {
+      throw new BadRequestException('Invalid category ID');
+    }
+    return this.servicesService.getAll(user.store_id, categoryIdNum);
   }
 
   @Get('/:serviceId')
@@ -119,9 +127,10 @@ export class ServicesController {
     status: 404,
     description: 'Service not found',
   })
+  @ApiBody({ type: UpdateServiceDto })
   async updateService(
     @Param('serviceId') serviceId: string,
-    @Body() updateServiceDto: CreateServiceDto,
+    @Body() updateServiceDto: UpdateServiceDto,
     @CurrentUser() user: any,
   ) {
     const serviceIdNum = parseInt(serviceId, 10);

@@ -115,6 +115,36 @@ export class ProductsController {
     return this.productsService.createProduct(user.store_id, createProductDto);
   }
 
+  @Get('/:categoryId')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.PRODUCT_VIEW)
+  @ApiOperation({
+    summary: 'Get products by category',
+    description:
+      'Retrieves a list of products belonging to a specific category',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Products retrieved successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid category ID',
+  })
+  async getProductsByCategory(
+    @Param('categoryId') categoryId: string,
+    @CurrentUser() user: any,
+  ) {
+    const categoryIdNum = parseInt(categoryId, 10);
+    if (isNaN(categoryIdNum)) {
+      throw new BadRequestException('Invalid category ID');
+    }
+    return this.productsService.getProductsByCategory(
+      user.store_id,
+      categoryIdNum,
+    );
+  }
+
   @Get('/:productId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

@@ -47,6 +47,18 @@ export class ProductsService {
     return safeProduct;
   }
 
+  async getProductsByCategory(
+    storeId: number,
+    categoryId: number,
+  ): Promise<Product[]> {
+    return this.productRepository.find({
+      where: {
+        store_id: storeId,
+        category_id: categoryId,
+      },
+    });
+  }
+
   async createProduct(storeId: number, createProductDto: CreateProductDto) {
     if (
       createProductDto.expiry_date &&
@@ -72,7 +84,7 @@ export class ProductsService {
     storeId: number,
     productId: number,
     updateProductDto: UpdateProductDto,
-  ) {
+  ): Promise<Product> {
     const product = await this.findByProduct(storeId, productId);
     if (
       updateProductDto.expiry_date &&
