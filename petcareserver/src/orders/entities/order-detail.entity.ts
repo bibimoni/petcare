@@ -6,8 +6,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Order } from './order.entity';
-import { Product } from '../../products/entities/product.entity';
-import { Service } from '../../products/entities/service.entity';
+import { Product } from '../../categories/entities/product.entity';
+import { Service } from '../../categories/entities/service.entity';
 import { Pet } from '../../pets/entities/pet.entity';
 
 export enum ItemType {

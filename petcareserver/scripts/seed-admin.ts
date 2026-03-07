@@ -4,9 +4,9 @@ import { createConnection } from 'typeorm';
 import { User } from '../src/users/entities/user.entity';
 import { Order } from '../src/orders/entities/order.entity';
 import { OrderDetail } from '../src/orders/entities/order-detail.entity';
-import { Product } from '../src/products/entities/product.entity';
-import { Category } from '../src/products/entities/category.entity';
-import { Service } from '../src/products/entities/service.entity';
+import { Product } from '../src/categories/entities/product.entity';
+import { Category } from '../src/categories/entities/category.entity';
+import { Service } from '../src/categories/entities/service.entity';
 import { Customer } from '../src/customers/entities/customer.entity';
 
 import { Pet } from '../src/pets/entities/pet.entity';
