@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Route, Routes, BrowserRouter } from "react-router";
+import { Route, Routes, BrowserRouter } from "react-router-dom";
 
 import "./index.css";
 import { Toaster } from "sonner";
@@ -11,6 +11,8 @@ import AuthPage from "./features/auth-page/auth-page";
 import ForgotPasswordPage from "./features/auth-page/forgot-password-page";
 import ResetPasswordPage from "./features/auth-page/reset-password-page";
 import ProfilePage from "./features/profile/profile";
+import PetListPage from "./features/pets/pages/pet-list-page";
+import CustomersPage from "./features/customer/customer-page";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -33,6 +35,8 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/register" element={<AuthPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/pets" element={<PetListPage />} />
+        <Route path="/customers" element={<CustomersPage />} />
         <Route
           path="/profile"
           element={
