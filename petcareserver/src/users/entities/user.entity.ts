@@ -58,11 +58,11 @@ export class User {
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.LOCKED })
   status: UserStatus;
 
-  @Column({ type: 'text', nullable: true})
+  @Column({ type: 'text', nullable: true })
   reset_password_token: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
-	reset_password_expires_at: Date | null;
+  reset_password_expires_at: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

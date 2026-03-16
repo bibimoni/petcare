@@ -8,12 +8,14 @@ import { Repository, LessThan } from 'typeorm';
 import { Product } from '../entities/product.entity';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findByProduct(storeId: number, productId: number): Promise<Product> {
@@ -77,6 +79,9 @@ export class ProductsService {
       ...createProductDto,
       store_id: storeId,
     });
+
+    await this.checkAndCreateNotifications(storeId, product);
+
     return this.productRepository.save(product);
   }
 
@@ -104,7 +109,11 @@ export class ProductsService {
     }
 
     Object.assign(product, updateProductDto);
-    return await this.productRepository.save(product);
+    const updatedProduct = await this.productRepository.save(product);
+
+    await this.checkAndCreateNotifications(storeId, updatedProduct);
+
+    return updatedProduct;
   }
 
   async deleteProduct(storeId: number, productId: number): Promise<void> {
@@ -146,5 +155,43 @@ export class ProductsService {
       name: p.name,
       total_value: Number(p.stock_quantity) * Number(p.cost_price),
     }));
+  }
+
+  private async checkAndCreateNotifications(
+    storeId: number,
+    product: Product,
+  ): Promise<void> {
+    try {
+      if (product.stock_quantity === 0) {
+        await this.notificationsService.createOutOfStockNotification(
+          storeId,
+          product,
+        );
+      }
+
+      if (product.stock_quantity <= product.min_stock_level) {
+        await this.notificationsService.createLowStockNotification(
+          storeId,
+          product,
+        );
+      }
+
+      if (product.expiry_date) {
+        const now = new Date();
+        const daysUntilExpiry = Math.floor(
+          (product.expiry_date.getTime() - now.getTime()) /
+            (1000 * 60 * 60 * 24),
+        );
+
+        if (daysUntilExpiry >= 0 && daysUntilExpiry <= 7) {
+          await this.notificationsService.createExpiryWarningNotification(
+            storeId,
+            product,
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error creating notification:', error);
+    }
   }
 }
