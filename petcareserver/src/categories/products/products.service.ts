@@ -101,10 +101,10 @@ export class ProductsService {
     if (
       updateProductDto.cost_price &&
       updateProductDto.sell_price &&
-      updateProductDto.cost_price < updateProductDto.sell_price
+      updateProductDto.cost_price >= updateProductDto.sell_price
     ) {
       throw new BadRequestException(
-        'Cost price cannot be less than sell price',
+        'Cost price cannot be greater than or equal to sell price',
       );
     }
 
@@ -127,19 +127,24 @@ export class ProductsService {
     });
   }
 
-  async getInventoryValue(): Promise<number> {
-    const products = await this.productRepository.find();
+  async getInventoryValue(storeId: number): Promise<number> {
+    const products = await this.productRepository.find({
+      where: { store_id: storeId },
+    });
     return products.reduce((total, p) => {
       return total + Number(p.stock_quantity) * Number(p.cost_price);
     }, 0);
   }
 
-  async getLowStockOrExpiringProducts(): Promise<Product[]> {
+  async getLowStockOrExpiringProducts(storeId: number): Promise<Product[]> {
     const now = new Date();
     const soon = new Date();
     soon.setDate(now.getDate() + 30);
     return this.productRepository.find({
-      where: [{ stock_quantity: LessThan(3) }, { expiry_date: LessThan(soon) }],
+      where: [
+        { store_id: storeId, stock_quantity: LessThan(3) },
+        { store_id: storeId, expiry_date: LessThan(soon) },
+      ],
     });
   }
 
@@ -167,9 +172,7 @@ export class ProductsService {
           storeId,
           product,
         );
-      }
-
-      if (product.stock_quantity <= product.min_stock_level) {
+      } else if (product.stock_quantity <= product.min_stock_level) {
         await this.notificationsService.createLowStockNotification(
           storeId,
           product,

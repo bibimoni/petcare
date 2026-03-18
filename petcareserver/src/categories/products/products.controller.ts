@@ -45,8 +45,8 @@ export class ProductsController {
     status: 200,
     description: 'Low stock and expiring products retrieved successfully',
   })
-  async getLowStockOrExpiringProducts() {
-    return this.productsService.getLowStockOrExpiringProducts();
+  async getLowStockOrExpiringProducts(@CurrentUser() user: any) {
+    return this.productsService.getLowStockOrExpiringProducts(user.store_id);
   }
 
   @Get('/total/sum')
@@ -61,8 +61,10 @@ export class ProductsController {
     status: 200,
     description: 'Total inventory value retrieved successfully',
   })
-  async getInventoryValue() {
-    return { value: await this.productsService.getInventoryValue() };
+  async getInventoryValue(@CurrentUser() user: any) {
+    return {
+      value: await this.productsService.getInventoryValue(user.store_id),
+    };
   }
 
   @Get('/sum/:categoryId')

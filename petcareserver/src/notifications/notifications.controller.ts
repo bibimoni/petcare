@@ -9,10 +9,9 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
-// import { ProductsService } from '../categories/products/products.service';
-
 import {
   Notification,
   NotificationStatus,
@@ -32,10 +31,7 @@ import { CurrentUser, JwtAuthGuard } from 'src/common';
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth()
 export class NotificationsController {
-  constructor(
-    private readonly notificationsService: NotificationsService,
-    // private readonly productsService: ProductsService,
-  ) {}
+  constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -51,40 +47,6 @@ export class NotificationsController {
     return this.notificationsService.findByStore(user.store_id, status);
   }
 
-  // @Get(':id/product-details')
-  // @HttpCode(HttpStatus.OK)
-  // @ApiOperation({ summary: 'Get product details from a specific notification' })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Product details retrieved successfully',
-  // })
-  // async getProductDetailsFromNotification(
-  //   @CurrentUser() user: any,
-  //   @Param('id') notificationId: number,
-  // ): Promise<Partial<any>> {
-  //   const notification = await this.notificationsService.findById(
-  //     user.store_id,
-  //     notificationId,
-  //   );
-  //   const productDetails = await this.productsService.findByProduct(
-  //     notification.store_id,
-  //     notification.product_id,
-  //   );
-  //   return {
-  //     notification_id: notification.notification_id,
-  //     type: notification.type,
-  //     title: notification.title,
-  //     message: notification.message,
-  //     product: {
-  //       product_id: productDetails.product_id,
-  //       name: productDetails.name,
-  //       stock_quantity: productDetails.stock_quantity,
-  //       min_stock_level: productDetails.min_stock_level,
-  //       expiry_date: productDetails.expiry_date,
-  //       sell_price: productDetails.sell_price,
-  //     },
-  //   };
-  // }
   @Get(':id/product-details')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get product details from a specific notification' })
@@ -94,11 +56,15 @@ export class NotificationsController {
   })
   async getProductDetailsFromNotification(
     @CurrentUser() user: any,
-    @Param('id') notificationId: number,
+    @Param('id') notificationId: string,
   ) {
+    const notificationIdNum = parseInt(notificationId, 10);
+    if (isNaN(notificationIdNum)) {
+      throw new BadRequestException('Invalid notification ID');
+    }
     const notification = await this.notificationsService.findById(
       user.store_id,
-      notificationId,
+      notificationIdNum,
     );
 
     return {
@@ -119,23 +85,13 @@ export class NotificationsController {
   })
   async getNotification(
     @CurrentUser() user: any,
-    @Param('id') notificationId: number,
+    @Param('id') notificationId: string,
   ): Promise<Notification> {
-    return this.notificationsService.findById(user.store_id, notificationId);
-  }
-
-  @Patch(':id/mark-read')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Mark a notification as read' })
-  @ApiResponse({
-    status: 200,
-    description: 'Notification marked as read successfully',
-  })
-  async markAsRead(
-    @CurrentUser() user: any,
-    @Param('id') notificationId: number,
-  ): Promise<Notification> {
-    return this.notificationsService.markAsRead(user.store_id, notificationId);
+    const notificationIdNum = parseInt(notificationId, 10);
+    if (isNaN(notificationIdNum)) {
+      throw new BadRequestException('Invalid notification ID');
+    }
+    return this.notificationsService.findById(user.store_id, notificationIdNum);
   }
 
   @Patch('mark-read-batch')
@@ -147,33 +103,70 @@ export class NotificationsController {
   })
   async markMultipleAsRead(
     @CurrentUser() user: any,
-    @Body('notificationIds') notificationIds: number[],
+    @Body('notificationIds') notificationIds: string[],
   ): Promise<{ message: string }> {
+    const notificationIdNumbers = notificationIds.map((id) => {
+      const num = parseInt(id, 10);
+      if (isNaN(num)) {
+        throw new BadRequestException('Invalid notification ID');
+      }
+      return num;
+    });
+
     await this.notificationsService.markMultipleAsRead(
       user.store_id,
-      notificationIds,
+      notificationIdNumbers,
     );
     return { message: 'Notifications marked as read' };
+  }
+
+  @Patch(':id/mark-read')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Mark a notification as read' })
+  @ApiResponse({
+    status: 200,
+    description: 'Notification marked as read successfully',
+  })
+  async markAsRead(
+    @CurrentUser() user: any,
+    @Param('id') notificationId: string,
+  ): Promise<Notification> {
+    const notificationIdNum = parseInt(notificationId, 10);
+    if (isNaN(notificationIdNum)) {
+      throw new BadRequestException('Invalid notification ID');
+    }
+    return this.notificationsService.markAsRead(
+      user.store_id,
+      notificationIdNum,
+    );
   }
 
   @Patch(':id/archive')
   async archiveNotification(
     @CurrentUser() user: any,
 
-    @Param('id') notificationId: number,
+    @Param('id') notificationId: string,
   ): Promise<Notification> {
-    return this.notificationsService.archive(user.store_id, notificationId);
+    const notificationIdNum = parseInt(notificationId, 10);
+    if (isNaN(notificationIdNum)) {
+      throw new BadRequestException('Invalid notification ID');
+    }
+    return this.notificationsService.archive(user.store_id, notificationIdNum);
   }
 
   @Patch(':id')
   async updateNotification(
     @CurrentUser() user: any,
-    @Param('id') notificationId: number,
+    @Param('id') notificationId: string,
     @Body() updateNotificationDto: UpdateNotificationDto,
   ): Promise<Notification> {
+    const notificationIdNum = parseInt(notificationId, 10);
+    if (isNaN(notificationIdNum)) {
+      throw new BadRequestException('Invalid notification ID');
+    }
     return this.notificationsService.update(
       user.store_id,
-      notificationId,
+      notificationIdNum,
       updateNotificationDto,
     );
   }
@@ -181,9 +174,13 @@ export class NotificationsController {
   @Delete(':id')
   async deleteNotification(
     @CurrentUser() user: any,
-    @Param('id') notificationId: number,
+    @Param('id') notificationId: string,
   ): Promise<{ message: string }> {
-    await this.notificationsService.delete(user.store_id, notificationId);
+    const notificationIdNum = parseInt(notificationId, 10);
+    if (isNaN(notificationIdNum)) {
+      throw new BadRequestException('Invalid notification ID');
+    }
+    await this.notificationsService.delete(user.store_id, notificationIdNum);
     return { message: 'Notification deleted successfully' };
   }
 }
