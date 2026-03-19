@@ -18,7 +18,8 @@ export class NotificationScheduler {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  @Cron('0 0 8 * * *')
+  // @Cron('0 0 8 * * *')
+  @Cron('30 * * * * *')
   async handleDailyNotificationCheck() {
     this.logger.log('Running daily notification check...');
 
@@ -76,15 +77,20 @@ export class NotificationScheduler {
 
     const products = await this.productRepository
       .createQueryBuilder('product')
-      .where('product.expiry_date >= :now', { now })
-      .andWhere('product.expiry_date <= :in7Days', { in7Days })
+      .where('product.expiry_date <= :in7Days', { in7Days })
+      // .where('product.expiry_date >= :now', { now })
+      // .andWhere('product.expiry_date <= :in7Days', { in7Days })
       .getMany();
 
     for (const product of products) {
       if (!product.expiry_date) continue;
 
+      // const expiryDate = new Date(product.expiry_date);
+      const expiryDate = new Date(product.expiry_date);
+      product.expiry_date = expiryDate;
+
       const daysLeft = Math.floor(
-        (product.expiry_date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+        (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
       );
 
       const alreadyNotified = await this.notificationRepository
