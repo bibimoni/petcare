@@ -117,7 +117,7 @@ export class ProductsController {
     return this.productsService.createProduct(user.store_id, createProductDto);
   }
 
-  @Get('/:categoryId')
+  @Get('/category/:categoryId')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.PRODUCT_VIEW)
   @ApiOperation({
@@ -147,7 +147,7 @@ export class ProductsController {
     );
   }
 
-  @Get('/:productId')
+  @Get('/detail/:productId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get product details',

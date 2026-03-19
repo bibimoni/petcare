@@ -80,9 +80,9 @@ export class ProductsService {
       store_id: storeId,
     });
 
-    await this.checkAndCreateNotifications(storeId, product);
-
-    return this.productRepository.save(product);
+    const savedProduct = await this.productRepository.save(product);
+    await this.checkAndCreateNotifications(storeId, savedProduct);
+    return savedProduct;
   }
 
   async updateProduct(

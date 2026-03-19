@@ -151,4 +151,21 @@ export class NotificationsService {
     notification.action_url = `/notifications/${notification.notification_id}/product-details`;
     return this.notificationRepository.save(notification);
   }
+
+  async createExpiredNotification(
+    storeId: number,
+    product: Product,
+  ): Promise<Notification> {
+    const notification = await this.create({
+      store_id: storeId,
+      product_id: product.product_id,
+      type: NotificationType.EXPIRED,
+      title: `Cảnh báo: ${product.name} đã hết hạn.`,
+      message: `Sản phẩm đã hết hạn. Hạn sử dụng: ${product.expiry_date.toLocaleDateString()}. Nhấn để xem chi tiết.`,
+      product_name: product.name,
+    });
+
+    notification.action_url = `/notifications/${notification.notification_id}/product-details`;
+    return this.notificationRepository.save(notification);
+  }
 }

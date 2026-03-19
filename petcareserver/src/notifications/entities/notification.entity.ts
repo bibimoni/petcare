@@ -13,6 +13,7 @@ import { Product } from '../../categories/entities/product.entity';
 export enum NotificationType {
   LOW_STOCK = 'LOW_STOCK',
   EXPIRY_WARNING = 'EXPIRY_WARNING',
+  EXPIRED = 'EXPIRED',
   OUT_OF_STOCK = 'OUT_OF_STOCK',
 }
 
