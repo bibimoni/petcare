@@ -33,6 +33,10 @@ import { NotificationsModule } from './notifications/notifications.module';
         url: configService.get<string>('POSTGRES_URI'),
         autoLoadEntities: true,
         synchronize: true,
+        ssl:
+          process.env.NODE_ENV === 'production'
+            ? { rejectUnauthorized: false }
+            : false,
       }),
     }),
     AuthModule,
