@@ -1,0 +1,182 @@
+import { useState, useEffect } from "react";
+import {
+  Package,
+  AlertTriangle,
+  CalendarX,
+  Coins,
+  TrendingUp,
+  ArrowRight,
+  Loader2,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import api from "@/lib/api";
+
+export function InventoryStats() {
+  const navigate = useNavigate();
+
+  // State lưu trữ dữ liệu thống kê
+  const [stats, setStats] = useState({
+    totalProducts: 1240, // BE chưa có API đếm tổng số lượng tất cả sản phẩm
+    lowStockCount: 0,
+    expiringCount: 0,
+    totalValue: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setIsLoading(true);
+        const [alertsRes, valueRes] = await Promise.all([
+          api.get("/products/alerts"),
+          api.get("/products/total/sum"),
+        ]);
+
+        const alertsData = alertsRes.data;
+        const now = new Date();
+
+        // Tính toán số sản phẩm sắp hết hàng
+        const lowStock = alertsData.filter(
+          (p: any) =>
+            p.stock_quantity < 3 ||
+            p.stock_quantity <= (p.min_stock_level || 0),
+        ).length;
+
+        // Tính toán số sản phẩm sắp hết HSD
+        const expiringSoon = alertsData.filter((p: any) => {
+          if (!p.expiry_date) return false;
+          const expDate = new Date(p.expiry_date);
+          const daysLeft =
+            (expDate.getTime() - now.getTime()) / (1000 * 3600 * 24);
+          return daysLeft <= 30; // Chỉ đếm những sản phẩm còn dưới 30 ngày
+        }).length;
+
+        // Cập nhật State
+        setStats((prev) => ({
+          ...prev,
+          lowStockCount: lowStock,
+          expiringCount: expiringSoon,
+          totalValue: valueRes.data.value || 0,
+        }));
+      } catch (error) {
+        console.error("Lỗi khi tải thống kê kho hàng:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+      {/* 1. Tổng sản phẩm */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#f3ebe7] flex flex-col justify-between h-40 group hover:shadow-md transition-all relative overflow-hidden">
+        <div className="relative z-10 flex justify-between items-start">
+          <div>
+            <p className="text-text-secondary font-medium mb-1">
+              Tổng sản phẩm
+            </p>
+            <h3 className="text-4xl font-bold text-text-primary">
+              {stats.totalProducts.toLocaleString("vi-VN")}
+            </h3>
+          </div>
+          <div className="text-blue-500 bg-blue-100 p-2 rounded-lg">
+            <Package size={24} />
+          </div>
+        </div>
+        <div className="relative z-10 flex items-center gap-2 mt-auto">
+          <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+            <TrendingUp size={10} /> +24
+          </span>
+          <span className="text-xs text-text-secondary">
+            so với tháng trước
+          </span>
+        </div>
+      </div>
+
+      {/* 2. Sắp hết hàng */}
+      <div
+        onClick={() => navigate("/inventory/low-stock")}
+        className="bg-[#fff9c4]/40 p-6 rounded-2xl shadow-sm border border-yellow-200 flex flex-col justify-between h-40 relative overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform"
+      >
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-yellow-800 font-medium mb-1">Sắp hết hàng</p>
+            <h3 className="text-4xl font-bold text-yellow-900">
+              {isLoading ? (
+                <Loader2 className="animate-spin h-8 w-8 mt-1" />
+              ) : (
+                stats.lowStockCount
+              )}
+            </h3>
+          </div>
+          <div className="text-yellow-700 bg-yellow-200/60 p-2 rounded-lg animate-pulse">
+            <AlertTriangle size={24} />
+          </div>
+        </div>
+        <button className="text-xs font-bold text-yellow-900 hover:underline flex items-center gap-1">
+          Xem danh sách <ArrowRight size={12} />
+        </button>
+      </div>
+
+      {/* 3. Sắp hết HSD */}
+      <div
+        onClick={() => navigate("/inventory/expiring-soon")}
+        className="bg-orange-50 p-6 rounded-2xl shadow-sm border border-orange-200 flex flex-col justify-between h-40 relative overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform"
+      >
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-orange-800 font-medium mb-1">Sắp hết HSD</p>
+            <h3 className="text-4xl font-bold text-orange-900">
+              {isLoading ? (
+                <Loader2 className="animate-spin h-8 w-8 mt-1" />
+              ) : (
+                stats.expiringCount
+              )}
+            </h3>
+          </div>
+          <div className="text-orange-600 bg-orange-200/60 p-2 rounded-lg">
+            <CalendarX size={24} />
+          </div>
+        </div>
+        <button className="text-xs font-bold text-orange-900 hover:underline flex items-center gap-1">
+          Xem danh sách <ArrowRight size={12} />
+        </button>
+      </div>
+
+      {/* 4. Giá trị kho */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#f3ebe7] flex flex-col justify-between h-40">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-text-secondary font-medium mb-1">Giá trị kho</p>
+            <h3 className="text-3xl font-bold text-text-primary">
+              {isLoading ? (
+                <Loader2 className="animate-spin h-8 w-8 mt-1" />
+              ) : (
+                <>
+                  {stats.totalValue.toLocaleString("vi-VN")}
+                  <span className="text-lg text-text-secondary font-normal ml-1">
+                    đ
+                  </span>
+                </>
+              )}
+            </h3>
+          </div>
+          <div className="text-green-500 bg-green-100 p-2 rounded-lg">
+            <Coins size={24} />
+          </div>
+        </div>
+        <div className="w-full bg-gray-100 rounded-full h-2 mt-auto overflow-hidden">
+          <div
+            className="bg-primary h-2 rounded-full"
+            style={{ width: "70%" }}
+          ></div>
+        </div>
+        <p className="text-xs text-text-secondary mt-2">
+          70% ngân sách nhập hàng
+        </p>
+      </div>
+    </div>
+  );
+}
