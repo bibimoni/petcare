@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Edit3, AlertTriangle, Loader2, PackageSearch } from "lucide-react";
 import api from "@/lib/api"; // Đảm bảo import axios/api client của bạn
 
-// 1. Nhận dữ liệu Filter từ Toolbar truyền xuống
+
 interface InventoryTableProps {
   categoryId?: string;
   searchTerm?: string;
@@ -25,7 +25,7 @@ export function InventoryTable({
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 2. Tự động gọi API mỗi khi Category hoặc SearchTerm thay đổi
+
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
@@ -33,7 +33,6 @@ export function InventoryTable({
         let fetchedData: any[] = [];
 
         if (categoryId === "all") {
-          // MẸO (Workaround): Lấy tất cả danh mục trước, sau đó lấy sản phẩm của từng danh mục
           const catRes = await api.get("/v1/categories");
           const categories = catRes.data;
 
