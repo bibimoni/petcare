@@ -49,7 +49,7 @@ export function InventoryTable({
           fetchedData = res.data;
         }
 
-        // 3. Xử lý Lọc Tìm Kiếm (Bằng tên hoặc SKU) ở phía Client
+
         if (searchTerm) {
           const lowerTerm = searchTerm.toLowerCase();
           fetchedData = fetchedData.filter(
