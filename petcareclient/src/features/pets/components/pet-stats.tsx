@@ -1,4 +1,4 @@
-import { PawPrint, Dog, Cat, Bird } from "lucide-react";
+import { Dog, Cat, Bird, PawPrint } from "lucide-react";
 
 type Pet = {
   type: string;

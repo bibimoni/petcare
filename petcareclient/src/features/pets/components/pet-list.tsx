@@ -4,8 +4,8 @@ type Pet = {
   id: number;
   name: string;
   type: string;
-  ownerName: string;
   imageUrl: string;
+  ownerName: string;
 };
 
 export default function PetList({ pets }: { pets: Pet[] }) {

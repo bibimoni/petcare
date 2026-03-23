@@ -1,23 +1,24 @@
-import { useState, useEffect } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogClose,
-} from "@/components/ui/dialog";
+  X,
+  Plus,
+  Check,
+  Trash2,
+  Package,
+  Loader2,
+  PlusCircle,
+  ChevronDown,
+  CloudUpload,
+} from "lucide-react";
+import { useState, useEffect } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
-  Package,
-  X,
-  ChevronDown,
-  PlusCircle,
-  Trash2,
-  CloudUpload,
-  Check,
-  Plus,
-  Loader2,
-} from "lucide-react";
-import api from "@/lib/api"; 
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import api from "@/lib/api";
 
 interface Batch {
   id: string;
@@ -90,7 +91,6 @@ export function AddProductModal() {
       return;
     }
 
-
     const totalQuantity = batches.reduce(
       (acc, batch) => acc + Number(batch.quantity || 0),
       0,
@@ -112,7 +112,7 @@ export function AddProductModal() {
       stock_quantity: totalQuantity,
       min_stock_level: 5, //  mức an toàn kho là 5
       expiry_date: earliestDate ? new Date(earliestDate).toISOString() : null,
-      sku: `SP-${Date.now()}`, 
+      sku: `SP-${Date.now()}`,
     };
 
     try {

@@ -1,29 +1,30 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   Search,
-  AlertTriangle,
-  Download,
-  ShoppingCart,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
   Package,
+  Download,
+  ArrowLeft,
+  ChevronLeft,
+  ShoppingCart,
+  ChevronRight,
+  AlertTriangle,
 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
 import api from "@/lib/api";
 
 interface ProductAlert {
-  product_id: number;
-  name: string;
   sku: string;
-  stock_quantity: number;
-  min_stock_level: number;
+  name: string;
+  product_id: number;
   sell_price: number;
   image_url?: string;
+  stock_quantity: number;
+  min_stock_level: number;
 
-  level?: "severe" | "warning";
   categoryColor?: string;
+  level?: "severe" | "warning";
 }
 
 export default function LowStockPage() {

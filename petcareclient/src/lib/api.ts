@@ -1,4 +1,8 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+import axios, {
+  AxiosError,
+  type AxiosInstance,
+  type InternalAxiosRequestConfig,
+} from "axios";
 import _ from "lodash";
 import { toast } from "sonner";
 
@@ -11,7 +15,7 @@ const axiosClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-});
+}) as AxiosInstance;
 
 interface ApiErrorResponse {
   message: string;

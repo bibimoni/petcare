@@ -1,12 +1,9 @@
-import CustomerRow from "./customer-row"
+import CustomerRow from "./customer-row";
 
 export default function CustomerTable({ customers }: any) {
-
   return (
     <div className="bg-white rounded-2xl shadow border overflow-hidden">
-
       <table className="w-full text-sm">
-
         <thead>
           <tr>
             <th className="p-4 text-left">Khách hàng</th>
@@ -19,16 +16,11 @@ export default function CustomerTable({ customers }: any) {
         </thead>
 
         <tbody>
-
           {customers.map((c: any) => (
             <CustomerRow key={c.id} c={c} />
           ))}
-
         </tbody>
-
       </table>
-      
-
     </div>
-  )
+  );
 }
