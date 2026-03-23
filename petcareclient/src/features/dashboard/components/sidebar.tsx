@@ -22,7 +22,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "customers", label: "Khách hàng", icon: "group", href: "/customers" },
   { id: "pets", label: "Thú cưng", icon: "pets", href: "/pets" },
   { id: "pos", label: "POS", icon: "point_of_sale", href: "/pos" },
-  { id: "warehouse", label: "Kho", icon: "inventory_2", href: "/warehouse" },
+  { id: "inventory", label: "Kho", icon: "inventory_2", href: "/inventory" },
   { id: "reports", label: "Báo cáo", icon: "bar_chart", href: "/reports" },
 ];
 
