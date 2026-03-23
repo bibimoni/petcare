@@ -31,4 +31,4 @@ COPY --from=development /app/tsconfig.json ./tsconfig.json
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "npm run seed && npm run seed:customers && node dist/src/main.js"]
+CMD ["sh", "-c", "npm run seed && node dist/src/main.js"]
