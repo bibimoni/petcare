@@ -30,7 +30,11 @@ export default function AddPetModal({ open, onClose }: Props) {
   };
 
   const [errors, setErrors] = useState<any>({});
+<<<<<<< Updated upstream
   const [loading, setLoading] = useState(false);
+=======
+  // const [loading,setLoading] = useState(false);
+>>>>>>> Stashed changes
   if (!open) return null;
 
   // validate form
@@ -48,10 +52,10 @@ export default function AddPetModal({ open, onClose }: Props) {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!validate()) return;
-    setLoading(true);
+    // setLoading(true);
     setTimeout(() => {
       console.log("Pet saved:", pet);
-      setLoading(false);
+      // setLoading(false);
       onClose();
       alert("Thêm thú cưng thành công");
     }, 800);
