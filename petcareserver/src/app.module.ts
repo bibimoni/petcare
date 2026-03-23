@@ -16,6 +16,7 @@ import { StoresModule } from './stores/stores.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { RolesModule } from './roles/roles.module';
 import { MailModule } from './mail/mail.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { MailModule } from './mail/mail.module';
     PermissionsModule,
     RolesModule,
     MailModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
