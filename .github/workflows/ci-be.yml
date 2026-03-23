@@ -3,7 +3,8 @@ name: CI
 on:
   pull_request:
     branches: ['develop', 'main', 'bao', 'thinh']
-
+  push:
+    branches: ['develop', 'main']
 defaults:
   run:
     working-directory: ./petcareserver
