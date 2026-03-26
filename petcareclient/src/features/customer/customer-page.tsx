@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react"
-import Navbar from "./components/navbar"
+import { CustomerService } from "@/lib/customers"; // Chú ý đường dẫn import
+import { handleApiError } from "@/lib/api"; // Để hiện toast thông báo lỗi
+import { useState, useEffect } from "react" 
 import { Footer } from "./components/footer";
+import Navbar from "./components/navbar"
 import CustomerTabs from "./components/customer-tabs"
 import CustomerToolbar from "./components/customer-toolbar"
 import CustomerTable from "./components/customer-table"
-import { customers } from "./data/mock-customer"
 import Breadcrumb from "./components/break-crump";
 import CustomerHeader from "./components/customer-header";
 import CustomerPagination from "./components/customer-pagination";
@@ -15,7 +16,32 @@ export default function CustomersPage() {
   const [tab, setTab] = useState("all")
   const [sort, setSort] = useState("desc")
   const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(true); 
+  const [customers, setCustomers] = useState([])
 
+
+
+const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      const res = await CustomerService.getAll();
+      
+      // Kiểm tra xem res trả về mảng hay object chứa mảng
+      // Vì Interceptor của bạn trả về thẳng response.data, nên thường res là mảng
+      setCustomers(Array.isArray(res) ? res : res.data || []);
+      
+    } catch (err) {
+      console.error("Lỗi:", err);
+      handleApiError(err); // Hiện thông báo lỗi lên màn hình (như Token hết hạn)
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+  // paging
   const limit = 5
 
   useEffect(() => {
@@ -26,29 +52,30 @@ export default function CustomersPage() {
 
   /* SEARCH */
   filtered = filtered.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone.includes(search)
+    c.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.phone?.includes(search)
   )
 
   /* FILTER TAB */
-  if (tab === "vip") {
-    filtered = filtered.filter((c) => c.vip)
-  }
+  // if (tab === "vip") {
+  //   filtered = filtered.filter((c) => c.vip)
+  // }
 
-  if (tab === "high") {
-    filtered = filtered.filter((c) => c.total > 5000000)
-  }
+  // if (tab === "high") {
+  //   filtered = filtered.filter((c) => c.total_spend > 5000000)
+  // }
 
   if (tab === "new") {
     filtered = filtered.slice(-5)
   }
 
   /* SORT */
-  filtered.sort((a, b) =>
-    sort === "desc"
-      ? b.total - a.total
-      : a.total - b.total
-  )
+  // filtered.sort((a, b) =>
+  //   sort === "desc"
+  //     ? b.total - a.total
+  //     : a.total - b.total
+  // )
+  filtered.sort((a, b) => a.full_name.localeCompare(b.full_name))
 
   const totalPage = Math.ceil(filtered.length / limit)
 
@@ -95,7 +122,7 @@ export default function CustomersPage() {
             )}
 
             <CustomerPagination
-              page={page}
+              page={page}	
               setPage={setPage}
               totalPages={totalPage}
             />
@@ -111,3 +138,4 @@ export default function CustomersPage() {
     </>
   )
 }
+

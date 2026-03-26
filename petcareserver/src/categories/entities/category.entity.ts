@@ -2,8 +2,6 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
   OneToMany,
@@ -25,20 +23,11 @@ export class Category {
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
-  @Column()
+  @Column({ unique: true })
   name: string;
 
   @Column({ type: 'enum', enum: CategoryType })
   type: CategoryType;
-
-  @Column({ type: 'text', nullable: true })
-  description: string;
-
-  @CreateDateColumn()
-  created_at: Date;
-
-  @UpdateDateColumn()
-  updated_at: Date;
 
   @OneToMany(() => Product, (product) => product.category)
   products: Product[];

@@ -12,7 +12,7 @@ export default function CustomerTable({ customers }: any) {
             <th className="p-4 text-left">Khách hàng</th>
             <th className="p-4 text-left">SĐT</th>
             <th className="p-4 text-center">Thú cưng</th>
-            <th className="p-4 text-left">Chi tiêu</th>
+            {/* <th className="p-4 text-left">Chi tiêu</th> */}
             <th className="p-4 text-left">Lần mua gần nhất</th>
             <th className="p-4 text-right">Thao tác</th>
           </tr>

@@ -4,13 +4,13 @@ import { createConnection } from 'typeorm';
 import { User } from '../src/users/entities/user.entity';
 import { Order } from '../src/orders/entities/order.entity';
 import { OrderDetail } from '../src/orders/entities/order-detail.entity';
-import { Product } from '../src/products/entities/product.entity';
-import { Category } from '../src/products/entities/category.entity';
-import { Service } from '../src/products/entities/service.entity';
+import { Product } from '../src/categories/entities/product.entity';
+import { Category } from '../src/categories/entities/category.entity';
+import { Service } from '../src/categories/entities/service.entity';
 import { Customer } from '../src/customers/entities/customer.entity';
 
-import { Pet } from '../src/customers/entities/pet.entity';
-import { PetWeightHistory } from '../src/customers/entities/pet-weight-history.entity';
+import { Pet } from '../src/pets/entities/pet.entity';
+import { PetWeightHistory } from '../src/pets/entities/pet-weight-history.entity';
 import { Store } from '../src/stores/entities/store.entity';
 import { Permission } from '../src/permissions/entities/permission.entity';
 import { Role } from '../src/roles/entities/role.entity';
@@ -32,7 +32,7 @@ async function seedAdmin() {
     type: 'postgres',
     url:
       process.env.POSTGRES_URI ||
-      'postgresql://onhangocnhu:root@localhost:5432/petcare_dev',
+      'postgresql://postgres:password@localhost:5432/petcare_dev',
     entities: [
       User,
       Order,

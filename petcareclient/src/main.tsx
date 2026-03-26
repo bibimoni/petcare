@@ -13,6 +13,7 @@ import ResetPasswordPage from "./features/auth-page/reset-password-page";
 import ProfilePage from "./features/profile/profile";
 import PetListPage from "./features/pets/pages/pet-list-page";
 import CustomersPage from "./features/customer/customer-page";
+import Order from "./features/order/order-detail-page";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -37,6 +38,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/pets" element={<PetListPage />} />
         <Route path="/customers" element={<CustomersPage />} />
+        <Route path="/orders" element={<Order />} />
         <Route
           path="/profile"
           element={
