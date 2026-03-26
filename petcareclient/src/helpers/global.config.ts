@@ -5,5 +5,6 @@ const configSchema = z.object({
 });
 
 export const config = configSchema.parse({
-  apiUrl: import.meta.env.VITE_API_URL,
+  apiUrl:
+    import.meta.env.VITE_API_URL || "https://petcare-gwhv.onrender.com/v1",
 });
