@@ -14,6 +14,7 @@ export class CreateNotificationDto {
     example: 1,
     description: 'ID of the product associated with the notification',
   })
+  @IsOptional()
   @IsNumber()
   product_id: number;
 

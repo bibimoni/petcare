@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailModule } from '../mail/mail.module';
 import { Store } from './entities/store.entity';
@@ -9,11 +9,20 @@ import { RolePermission } from '../roles/entities/role-permission.entity';
 import { Permission } from '../permissions/entities/permission.entity';
 import { StoresService } from './stores.service';
 import { StoresController } from './stores.controller';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Store, Invitation, User, Role, RolePermission, Permission]),
+    TypeOrmModule.forFeature([
+      Store,
+      Invitation,
+      User,
+      Role,
+      RolePermission,
+      Permission,
+    ]),
     MailModule,
+    forwardRef(() => NotificationsModule),
   ],
   controllers: [StoresController],
   providers: [StoresService],

@@ -23,9 +23,15 @@ import { StoresService } from './stores.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { InviteStaffDto } from './dto/invite-staff.dto';
-import { CurrentUser, JwtAuthGuard, PermissionsGuard, RequirePermissions } from '../common';
+import {
+  CurrentUser,
+  JwtAuthGuard,
+  PermissionsGuard,
+  RequirePermissions,
+} from '../common';
 import { AcceptInvitationResponseDto } from './dto/accept-invitation-response.dto';
 import { STORE_PERMISSIONS } from '../common/permissions';
+import { UpdateNotificationScheduleDto } from './dto/update-notification-schedule.dto';
 
 @ApiTags('Stores Management')
 @Controller({ path: 'stores', version: '1' })
@@ -179,6 +185,58 @@ export class StoresController {
     );
   }
 
+  @Patch(':storeId/notification-schedule')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions(STORE_PERMISSIONS.STORE_SETTINGS_MANAGE)
+  @ApiOperation({
+    summary: 'Update notification schedule',
+    description:
+      'Updates the cron schedule for automatic notifications of a store. Pass null to reset to default (0 0 8 * * *)',
+  })
+  @ApiParam({
+    name: 'storeId',
+    description: 'Store ID',
+    example: 1,
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        cron_expression: {
+          type: 'string',
+          nullable: true,
+          example: '0 0 9 * * *',
+          description:
+            'Cron expression for notification schedule. Pass null to reset to default.',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Notification schedule updated successfully',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Store not found',
+  })
+  async updateNotificationSchedule(
+    @Param('storeId') storeId: string,
+    @Body() body: UpdateNotificationScheduleDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.storesService.updateNotificationSchedule(
+      parseInt(storeId),
+      body.cron_expression,
+      user.user_id,
+    );
+  }
+
   @Get(':storeId/staff')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -228,7 +286,8 @@ export class StoresController {
   })
   @ApiResponse({
     status: 409,
-    description: 'Invitation already processed or user already belongs to a store',
+    description:
+      'Invitation already processed or user already belongs to a store',
   })
   async acceptInvitation(@Query('token') token: string) {
     return this.storesService.acceptInvitation(token);

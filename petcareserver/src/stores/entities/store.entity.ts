@@ -81,4 +81,8 @@ export class Store {
 
   @OneToMany(() => Notification, (notification) => notification.store)
   notifications: Notification[];
+
+  // VD: '0 0 8 * * *' = 8am everday, null = default system
+  @Column({ type: 'text', nullable: true, default: null })
+  notification_cron: string | null;
 }

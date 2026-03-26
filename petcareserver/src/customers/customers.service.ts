@@ -36,9 +36,7 @@ export class CustomersService {
       return await this.customerRepository.save(customer);
     } catch (error: any) {
       if (error.code === '23505') {
-        throw new ConflictException(
-          'Số điện thoại này đã được đăng ký',
-        );
+        throw new ConflictException('Số điện thoại này đã được đăng ký');
       }
 
       throw error;
@@ -58,6 +56,19 @@ export class CustomersService {
       where: {
         store_id: storeId,
         phone: phone,
+      },
+    });
+    if (!customer) {
+      throw new NotFoundException('Không tìm thấy khách hàng');
+    }
+    return customer;
+  }
+
+  async findById(storeId: number, customerId: number): Promise<Customer> {
+    const customer = await this.customerRepository.findOne({
+      where: {
+        store_id: storeId,
+        customer_id: customerId,
       },
     });
     if (!customer) {

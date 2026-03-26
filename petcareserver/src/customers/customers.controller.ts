@@ -100,6 +100,26 @@ export class CustomersController {
     return this.customersService.findAllByStore(user.store_id);
   }
 
+  @Get('/:customerId')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.CUSTOMER_VIEW)
+  @ApiOperation({
+    summary: 'Get customer details',
+    description: 'Retrieves detailed information about a specific customer',
+  })
+  @ApiParam({ name: 'customerId', type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Customer details retrieved successfully',
+  })
+  findById(@Param('customerId') customerId: string, @CurrentUser() user: any) {
+    const customerIdNum = parseInt(customerId, 10);
+    if (isNaN(customerIdNum)) {
+      throw new BadRequestException('ID not valid');
+    }
+    return this.customersService.findById(user.store_id, customerIdNum);
+  }
+
   @Get('/phone/:phone')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.CUSTOMER_VIEW)
