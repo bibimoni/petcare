@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import Navbar from "../components/navbar";
 import { Footer } from "../../landing-page/components/footer";
+import { Sidebar } from "../../dashboard/components/sidebar";
 import Breadcrumb from "../components/break-crump";
 import PetStats from "../components/pet-stats";
 import PetFilters from "../components/pet-filter";
@@ -131,49 +131,119 @@ const fetchAllPetsByCustomers = async (): Promise<UiPet[]> => {
 };
 
 export default function PetListPage() {
+  const rawUser = localStorage.getItem("user");
+  const user = rawUser ? JSON.parse(rawUser) : null;
+
+  const sidebarUser = {
+    email: String(user?.email ?? ""),
+    full_name: String(user?.full_name ?? ""),
+    phone: String(user?.phone ?? ""),
+  };
+
+  const [breedFilter, setBreedFilter] = useState("all");
+  const [genderFilter, setGenderFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("nameAsc");
   const [pets, setPets] = useState<UiPet[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPets = async () => {
-      try {
-        setLoading(true);
+  const loadPets = async () => {
+    try {
+      setLoading(true);
 
-        if (!petsRequestPromise) {
-          petsRequestPromise = fetchAllPetsByCustomers();
-        }
-
-        const data = await petsRequestPromise;
-        setPets(data);
-      } catch (err) {
-        handleApiError(err);
-        petsRequestPromise = null;
-      } finally {
-        setLoading(false);
+      if (!petsRequestPromise) {
+        petsRequestPromise = fetchAllPetsByCustomers();
       }
-    };
 
-    void fetchPets();
+      const data = await petsRequestPromise;
+      setPets(data);
+    } catch (err) {
+      handleApiError(err);
+      petsRequestPromise = null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePetCreated = async () => {
+    petsRequestPromise = null;
+    await loadPets();
+  };
+
+  useEffect(() => {
+    void loadPets();
   }, []);
 
-  if (loading)
-    return (
-      <div className="p-10 text-center">Đang tải danh sách thú cưng...</div>
-    );
+  let filteredPets = [...pets];
+
+  if (breedFilter !== "all") {
+    filteredPets = filteredPets.filter((pet) => pet.breed === breedFilter);
+  }
+
+  if (statusFilter !== "all") {
+    filteredPets = filteredPets.filter((pet) => pet.status === statusFilter);
+  }
+
+  if (genderFilter !== "all") {
+    filteredPets = filteredPets.filter((pet) => pet.gender === genderFilter);
+  }
+
+  filteredPets.sort((a, b) => {
+    if (sortBy === "nameDesc") {
+      return b.name.localeCompare(a.name);
+    }
+
+    return a.name.localeCompare(b.name);
+  });
 
   return (
-    <>
-      <Navbar />
-      <div className="bg-[#faf7f5] min-h-screen p-8">
-        <Breadcrumb />
-        <PetHeader />
+    <div className="flex h-screen w-full overflow-hidden">
+      <Sidebar userInfo={sidebarUser} />
 
-        {/* Truyền data thật từ state 'pets' vào các component */}
-        <PetStats pets={pets} />
-        <PetFilters />
-        <PetList pets={pets} />
-      </div>
-      <Footer />
-    </>
+      <main className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto bg-[#faf7f5] p-8">
+          <Breadcrumb />
+          <PetHeader onCreated={handlePetCreated} />
+
+          {loading ? (
+            <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+              <div className="mb-6 flex items-center gap-3">
+                <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-orange-300 border-t-orange-500" />
+                <p className="text-lg font-semibold text-gray-700">
+                  Đang tải danh sách thú cưng...
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {[...Array(6)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-44 animate-pulse rounded-xl bg-gray-100"
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
+              <PetStats pets={pets} />
+              <PetFilters
+                breedFilter={breedFilter}
+                filteredCount={filteredPets.length}
+                genderFilter={genderFilter}
+                pets={pets}
+                setBreedFilter={setBreedFilter}
+                setGenderFilter={setGenderFilter}
+                setSortBy={setSortBy}
+                setStatusFilter={setStatusFilter}
+                sortBy={sortBy}
+                statusFilter={statusFilter}
+              />
+              <PetList pets={filteredPets} />
+            </>
+          )}
+          <Footer />
+        </div>
+      </main>
+    </div>
   );
 }

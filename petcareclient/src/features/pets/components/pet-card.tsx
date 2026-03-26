@@ -3,10 +3,9 @@ import OwnerInfo from "./owner-info";
 export type Pet = {
   id: number;
   name: string;
-  breed: string; // Trong ERD là giống loài
+  breed: string;
   gender: string;
   imageUrl: string;
-  // Nếu BE có Join bảng Customer, nó sẽ trả về object như này:
   customer?: {
     fullName: string;
   };
