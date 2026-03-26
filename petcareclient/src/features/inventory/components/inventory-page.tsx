@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import { InventoryStats } from "../components/inventory-stats";
 import { InventoryTable } from "../components/inventory-table";
 import { InventoryToolbar } from "../components/inventory-toolbar";

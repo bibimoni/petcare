@@ -2,18 +2,16 @@ import {
   Search,
   Loader2,
   Package,
-  Download,
   ArrowLeft,
   ChevronLeft,
-  ShoppingCart,
   ChevronRight,
   AlertTriangle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
+import api from "@/lib/api";
 
 interface ProductAlert {
   sku: string;

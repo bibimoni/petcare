@@ -19,8 +19,8 @@ import {
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
+import api from "@/lib/api";
 
 interface ExpiringAlert {
   sku: string;
