@@ -27,6 +27,34 @@ interface ProductAlert {
   level?: "severe" | "warning";
 }
 
+const normalizeCategories = (payload: unknown): any[] => {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+
+  const responseObject = payload as Record<string, unknown>;
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as any[];
+  }
+
+  return Object.values(responseObject).filter(
+    (item) => !!item && typeof item === "object" && "category_id" in item,
+  ) as any[];
+};
+
+const normalizeProducts = (payload: unknown): any[] => {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+
+  const responseObject = payload as Record<string, unknown>;
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as any[];
+  }
+
+  return Object.values(responseObject).filter(
+    (item) => !!item && typeof item === "object" && "product_id" in item,
+  ) as any[];
+};
+
 export default function LowStockPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<ProductAlert[]>([]);
@@ -49,10 +77,10 @@ export default function LowStockPage() {
           api.get("/categories?type=PRODUCT"),
         ]);
 
-        const data = alertsRes.data || alertsRes;
-        const catData = catRes.data || catRes;
+        const data = normalizeProducts(alertsRes);
+        const catData = normalizeCategories(catRes);
 
-        setCategories(Array.isArray(catData) ? catData : []);
+        setCategories(catData);
 
         // Đảm bảo data là mảng
         if (Array.isArray(data)) {

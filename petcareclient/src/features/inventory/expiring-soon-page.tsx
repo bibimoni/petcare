@@ -32,6 +32,34 @@ interface ExpiringAlert {
   level: "severe" | "warning" | "notice" | "normal";
 }
 
+const normalizeCategories = (payload: unknown): any[] => {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+
+  const responseObject = payload as Record<string, unknown>;
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as any[];
+  }
+
+  return Object.values(responseObject).filter(
+    (item) => !!item && typeof item === "object" && "category_id" in item,
+  ) as any[];
+};
+
+const normalizeProducts = (payload: unknown): any[] => {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+
+  const responseObject = payload as Record<string, unknown>;
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as any[];
+  }
+
+  return Object.values(responseObject).filter(
+    (item) => !!item && typeof item === "object" && "product_id" in item,
+  ) as any[];
+};
+
 export default function ExpiringSoonPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<ExpiringAlert[]>([]);
@@ -64,12 +92,11 @@ export default function ExpiringSoonPage() {
         ]);
 
         // Cập nhật Categories
-        const catData = catRes.data || catRes;
-        setCategories(Array.isArray(catData) ? catData : []);
+        const catData = normalizeCategories(catRes);
+        setCategories(catData);
 
         // Cập nhật Alerts
-        const alertsData = alertsRes.data || alertsRes;
-        const safeData = Array.isArray(alertsData) ? alertsData : [];
+        const safeData = normalizeProducts(alertsRes);
         const now = new Date();
 
         const formattedData: ExpiringAlert[] = safeData

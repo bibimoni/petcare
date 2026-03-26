@@ -1,7 +1,6 @@
-import { Search, Loader2, ClipboardList } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -20,6 +19,20 @@ interface InventoryToolbarProps {
   onCategoryChange?: (categoryId: string) => void;
 }
 
+const normalizeCategories = (payload: unknown): any[] => {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+
+  const responseObject = payload as Record<string, unknown>;
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as any[];
+  }
+
+  return Object.values(responseObject).filter(
+    (item) => !!item && typeof item === "object" && "category_id" in item,
+  ) as any[];
+};
+
 export function InventoryToolbar({
   onSearch,
   onCategoryChange,
@@ -33,9 +46,7 @@ export function InventoryToolbar({
       try {
         setIsLoading(true);
         const res = await api.get("/categories?type=PRODUCT");
-
-        const data = res.data || res;
-        setCategories(Array.isArray(data) ? data : []);
+        setCategories(normalizeCategories(res));
       } catch (error) {
         console.error("Lỗi khi tải danh sách danh mục:", error);
       } finally {

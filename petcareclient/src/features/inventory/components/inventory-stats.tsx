@@ -3,7 +3,6 @@ import {
   Package,
   Loader2,
   CalendarX,
-  TrendingUp,
   ArrowRight,
   AlertTriangle,
 } from "lucide-react";
@@ -11,6 +10,59 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import api from "@/lib/api";
+
+const normalizeCategories = (payload: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(payload)) {
+    return payload as Record<string, unknown>[];
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const responseObject = payload as Record<string, unknown>;
+
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as Record<string, unknown>[];
+  }
+
+  return Object.values(responseObject).filter(
+    (item): item is Record<string, unknown> =>
+      !!item && typeof item === "object" && "category_id" in item,
+  );
+};
+
+const normalizeProducts = (payload: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(payload)) {
+    return payload as Record<string, unknown>[];
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const responseObject = payload as Record<string, unknown>;
+
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as Record<string, unknown>[];
+  }
+
+  return Object.values(responseObject).filter(
+    (item): item is Record<string, unknown> =>
+      !!item && typeof item === "object" && "product_id" in item,
+  );
+};
+
+const normalizeAlerts = (payload: unknown): Record<string, unknown>[] => {
+  return normalizeProducts(payload);
+};
+
+type ProductLike = {
+  category_id?: number;
+  expiry_date?: string;
+  stock_quantity?: number;
+  min_stock_level?: number;
+};
 
 export function InventoryStats() {
   const navigate = useNavigate();
@@ -36,20 +88,22 @@ export function InventoryStats() {
           api.get("/categories?type=PRODUCT"),
         ]);
 
-        const alertsData = alertsRes.data || alertsRes;
-        const valueData = valueRes.data || valueRes;
-        const categories = catRes.data || catRes;
-        const safeAlertsData = Array.isArray(alertsData) ? alertsData : [];
+        const alertsData = normalizeAlerts(alertsRes);
+        const valueData = valueRes;
+        const categories = normalizeCategories(catRes);
 
         // 2. Tính Sắp hết hàng
-        const lowStock = safeAlertsData.filter(
-          (p: any) =>
-            p.stock_quantity < 3 ||
-            p.stock_quantity <= (p.min_stock_level || 0),
-        ).length;
+        const lowStock = alertsData.filter((product) => {
+          const p = product as ProductLike;
+          return (
+            Number(p.stock_quantity || 0) < 3 ||
+            Number(p.stock_quantity || 0) <= Number(p.min_stock_level || 0)
+          );
+        }).length;
 
         // 3. Tính Sắp hết HSD
-        const expiringSoon = safeAlertsData.filter((p: any) => {
+        const expiringSoon = alertsData.filter((product) => {
+          const p = product as ProductLike;
           if (!p.expiry_date) return false;
           const expDate = new Date(p.expiry_date);
           const daysLeft =
@@ -60,12 +114,13 @@ export function InventoryStats() {
         // 4. Logic tính "Tổng sản phẩm" tự động
         let totalProductCount = 0;
         if (Array.isArray(categories)) {
-          const productRequests = categories.map((cat: any) =>
-            api.get(`/products/category/${cat.category_id}`),
-          );
+          const productRequests = categories.map((category) => {
+            const cat = category as ProductLike;
+            return api.get(`/products/category/${cat.category_id}`);
+          });
           const productResponses = await Promise.all(productRequests);
-          const allProducts = productResponses.flatMap(
-            (res) => res.data || res,
+          const allProducts = productResponses.flatMap((res) =>
+            normalizeProducts(res),
           );
 
           // Đếm tổng số lượng CÁC MẶT HÀNG (Ví dụ: 10 mặt hàng)
@@ -74,7 +129,7 @@ export function InventoryStats() {
           // MẸO: Nếu bạn muốn đếm TỔNG SỐ LƯỢNG TỒN KHO (Ví dụ: 5000 gói hạt)
           // thì hãy comment dòng trên lại và bỏ comment dòng dưới này:
           totalProductCount = allProducts.reduce(
-            (sum, p) => sum + Number(p.stock_quantity),
+            (sum, p) => sum + Number(p.stock_quantity || 0),
             0,
           );
         }
@@ -85,7 +140,7 @@ export function InventoryStats() {
           totalProducts: totalProductCount, // <-- Đã được tính toán động
           lowStockCount: lowStock,
           expiringCount: expiringSoon,
-          totalValue: valueData.value || 0,
+          totalValue: Number(valueData.value || 0),
         }));
       } catch (error) {
         console.error("Lỗi khi tải thống kê kho hàng:", error);
@@ -140,7 +195,10 @@ export function InventoryStats() {
             <AlertTriangle size={24} />
           </div>
         </div>
-        <button className="text-xs font-bold text-yellow-900 hover:underline flex items-center gap-1">
+        <button
+          type="button"
+          className="text-xs font-bold text-yellow-900 hover:underline flex items-center gap-1"
+        >
           Xem danh sách <ArrowRight size={12} />
         </button>
       </div>
@@ -165,7 +223,10 @@ export function InventoryStats() {
             <CalendarX size={24} />
           </div>
         </div>
-        <button className="text-xs font-bold text-orange-900 hover:underline flex items-center gap-1">
+        <button
+          type="button"
+          className="text-xs font-bold text-orange-900 hover:underline flex items-center gap-1"
+        >
           Xem danh sách <ArrowRight size={12} />
         </button>
       </div>

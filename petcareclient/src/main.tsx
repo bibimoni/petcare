@@ -12,9 +12,9 @@ import ForgotPasswordPage from "./features/auth-page/forgot-password-page";
 import ResetPasswordPage from "./features/auth-page/reset-password-page";
 import CustomersPage from "./features/customer/customer-page";
 import { DashboardPage } from "./features/dashboard";
-import ExpiringSoonPage from "./features/inventory/components/expiring-soon-page";
-import InventoryPage from "./features/inventory/components/inventory-page";
-import LowStockPage from "./features/inventory/components/low-stock-page";
+import ExpiringSoonPage from "./features/inventory/expiring-soon-page";
+import InventoryPage from "./features/inventory/inventory-page";
+import LowStockPage from "./features/inventory/low-stock-page";
 import PetListPage from "./features/pets/pages/pet-list-page";
 import ProfilePage from "./features/profile/profile";
 

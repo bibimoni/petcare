@@ -1,17 +1,29 @@
 import { useState } from "react";
 
-import { InventoryStats } from "../components/inventory-stats";
-import { InventoryTable } from "../components/inventory-table";
-import { InventoryToolbar } from "../components/inventory-toolbar";
+import { Sidebar } from "../dashboard/components/sidebar";
+import { InventoryStats } from "./components/inventory-stats";
+import { InventoryTable } from "./components/inventory-table";
+import { InventoryToolbar } from "./components/inventory-toolbar";
 
 export default function InventoryPage() {
+  const rawUser = localStorage.getItem("user");
+  const user = rawUser ? JSON.parse(rawUser) : null;
+
+  const sidebarUser = {
+    email: String(user?.email ?? ""),
+    full_name: String(user?.full_name ?? ""),
+    phone: String(user?.phone ?? ""),
+  };
+
   // Tạo 2 state làm cầu nối liên lạc giữa Toolbar và Table
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryId, setCategoryId] = useState("all");
 
   return (
-    <div className="flex min-h-screen flex-col bg-background-light">
-      <main className="flex-1 p-8 overflow-y-auto">
+    <div className="flex h-screen w-full overflow-hidden bg-background-light">
+      <Sidebar userInfo={sidebarUser} />
+
+      <main className="flex-1 overflow-y-auto p-8">
         <div className="mx-auto max-w-7xl">
           {/* Header của trang quản lý kho */}
           <div className="mb-8">

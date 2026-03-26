@@ -5,9 +5,7 @@ import {
   Trash2,
   Package,
   Loader2,
-  PlusCircle,
   ChevronDown,
-  CloudUpload,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -25,6 +23,52 @@ interface Batch {
   quantity: string;
   expiryDate: string;
 }
+
+const normalizeCategories = (
+  payload: unknown,
+): Array<Record<string, unknown>> => {
+  if (Array.isArray(payload)) {
+    return payload as Array<Record<string, unknown>>;
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const responseObject = payload as Record<string, unknown>;
+
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as Array<Record<string, unknown>>;
+  }
+
+  return Object.values(responseObject).filter(
+    (item): item is Record<string, unknown> =>
+      !!item && typeof item === "object" && "category_id" in item,
+  );
+};
+
+const extractCategoryId = (payload: unknown): number | null => {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const responseObject = payload as Record<string, unknown>;
+  const categoryId = Number(responseObject.category_id ?? responseObject.id);
+
+  if (Number.isFinite(categoryId)) {
+    return categoryId;
+  }
+
+  if (responseObject.data && typeof responseObject.data === "object") {
+    const nestedData = responseObject.data as Record<string, unknown>;
+    const nestedCategoryId = Number(nestedData.category_id ?? nestedData.id);
+    if (Number.isFinite(nestedCategoryId)) {
+      return nestedCategoryId;
+    }
+  }
+
+  return null;
+};
 
 export function AddProductModal() {
   // --- STATES ---
@@ -55,10 +99,7 @@ export function AddProductModal() {
         try {
           setIsLoadingCategories(true);
           const res = await api.get("/categories?type=PRODUCT");
-
-          // --- CHỐNG LỖI Ở ĐÂY ---
-          const data = res.data || res;
-          setCategories(Array.isArray(data) ? data : []);
+          setCategories(normalizeCategories(res));
         } catch (error) {
           console.error("Lỗi tải danh mục:", error);
         } finally {
@@ -69,12 +110,12 @@ export function AddProductModal() {
     }
   }, [isOpen]);
 
-  const addBatch = () => {
-    setBatches([
-      ...batches,
-      { id: crypto.randomUUID(), quantity: "", expiryDate: "" },
-    ]);
-  };
+  // const addBatch = () => {
+  //   setBatches([
+  //     ...batches,
+  //     { id: crypto.randomUUID(), quantity: "", expiryDate: "" },
+  //   ]);
+  // };
 
   const removeBatch = (id: string) => {
     setBatches(batches.filter((batch) => batch.id !== id));
@@ -153,8 +194,12 @@ export function AddProductModal() {
           type: "PRODUCT",
         });
 
-        const data = catRes.data || catRes;
-        finalCategoryId = data.category_id || data.id;
+        const newCategoryId = extractCategoryId(catRes);
+        if (!newCategoryId) {
+          throw new Error("Không lấy được category_id sau khi tạo danh mục");
+        }
+
+        finalCategoryId = newCategoryId;
       }
 
       // 4. Lắp ráp Payload thông minh
@@ -173,7 +218,7 @@ export function AddProductModal() {
 
       // 5. Gửi lên Backend
       await api.post("/products", payload);
-      alert("🎉 Nhập kho thành công!");
+      alert("Nhập kho thành công!");
 
       setName("");
       setCategoryId("");

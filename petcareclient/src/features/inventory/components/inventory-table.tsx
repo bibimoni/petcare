@@ -29,6 +29,34 @@ interface InventoryTableProps {
   searchTerm?: string;
 }
 
+const normalizeCategories = (payload: unknown): any[] => {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+
+  const responseObject = payload as Record<string, unknown>;
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as any[];
+  }
+
+  return Object.values(responseObject).filter(
+    (item) => !!item && typeof item === "object" && "category_id" in item,
+  ) as any[];
+};
+
+const normalizeProducts = (payload: unknown): any[] => {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+
+  const responseObject = payload as Record<string, unknown>;
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as any[];
+  }
+
+  return Object.values(responseObject).filter(
+    (item) => !!item && typeof item === "object" && "product_id" in item,
+  ) as any[];
+};
+
 export function InventoryTable({
   categoryId = "all",
   searchTerm = "",
@@ -50,8 +78,7 @@ export function InventoryTable({
     const fetchCategories = async () => {
       try {
         const res = await api.get("/categories?type=PRODUCT");
-        const data = res.data || res;
-        setCategories(Array.isArray(data) ? data : []);
+        setCategories(normalizeCategories(res));
       } catch (error) {
         console.error("Lỗi tải danh mục:", error);
       }
@@ -68,18 +95,18 @@ export function InventoryTable({
 
         if (categoryId === "all") {
           const catRes = await api.get("/categories?type=PRODUCT");
-          const cats = catRes.data || catRes;
+          const cats = normalizeCategories(catRes);
 
           if (Array.isArray(cats)) {
             const requests = cats.map((cat: any) =>
               api.get(`/products/category/${cat.category_id}`),
             );
             const responses = await Promise.all(requests);
-            fetchedData = responses.flatMap((res) => res.data || res);
+            fetchedData = responses.flatMap((res) => normalizeProducts(res));
           }
         } else {
           const res = await api.get(`/products/category/${categoryId}`);
-          fetchedData = res.data || res;
+          fetchedData = normalizeProducts(res);
         }
 
         if (!Array.isArray(fetchedData)) fetchedData = [];
@@ -87,7 +114,9 @@ export function InventoryTable({
         if (searchTerm) {
           const lowerTerm = searchTerm.toLowerCase();
           fetchedData = fetchedData.filter((p: any) =>
-            p.name.toLowerCase().includes(lowerTerm),
+            String(p.name || "")
+              .toLowerCase()
+              .includes(lowerTerm),
           );
         }
 
