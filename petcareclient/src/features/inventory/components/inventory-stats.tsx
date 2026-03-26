@@ -64,6 +64,11 @@ type ProductLike = {
   min_stock_level?: number;
 };
 
+type DataValue = {
+  status: number;
+  value?: number;
+};
+
 export function InventoryStats() {
   const navigate = useNavigate();
 
@@ -89,7 +94,7 @@ export function InventoryStats() {
         ]);
 
         const alertsData = normalizeAlerts(alertsRes);
-        const valueData = valueRes;
+        const valueData = valueRes as DataValue;
         const categories = normalizeCategories(catRes);
 
         // 2. Tính Sắp hết hàng
