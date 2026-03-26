@@ -1,29 +1,31 @@
 import { useState, useEffect } from "react";
-import { Footer } from "../../landing-page/components/footer";
+
+import { handleApiError } from "@/lib/api";
+import { CustomerService } from "@/lib/customers";
+import { PetService } from "@/lib/pets";
+
 import { Sidebar } from "../../dashboard/components/sidebar";
+import { Footer } from "../../landing-page/components/footer";
 import Breadcrumb from "../components/break-crump";
-import PetStats from "../components/pet-stats";
 import PetFilters from "../components/pet-filter";
 import PetHeader from "../components/pet-header";
 import PetList from "../components/pet-list";
-import { PetService } from "@/lib/pets";
-import { CustomerService } from "@/lib/customers";
-import { handleApiError } from "@/lib/api";
+import PetStats from "../components/pet-stats";
 
 type ApiCustomer = {
-  [key: string]: unknown;
-  customer_id?: number;
   full_name?: string;
+  customer_id?: number;
+  [key: string]: unknown;
 };
 
 type UiPet = {
-  id: number | string;
   name: string;
   type: string;
   breed: string;
   gender: string;
-  imageUrl: string;
   status?: string;
+  imageUrl: string;
+  id: number | string;
   customer?: {
     fullName: string;
   };

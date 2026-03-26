@@ -10,5 +10,5 @@ export const CustomerService = {
   // Khôi có thể thêm hàm tạo mới ở đây nếu cần test
   create: async (data: any) => {
     return await api.post("/customers", data);
-  }
+  },
 };

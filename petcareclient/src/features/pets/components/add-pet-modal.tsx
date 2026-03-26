@@ -1,5 +1,6 @@
-import { X, Upload, PawPrint, Save, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { X, Save, Upload, Trash2, PawPrint } from "lucide-react";
+import { useState, useEffect } from "react";
+
 import { handleApiError } from "@/lib/api";
 import { CustomerService } from "@/lib/customers";
 import { PetService } from "@/lib/pets";
@@ -11,8 +12,8 @@ type Props = {
 };
 
 type ApiCustomer = {
-  customer_id: number;
   full_name: string;
+  customer_id: number;
 };
 
 const normalizeCustomers = (payload: unknown): ApiCustomer[] => {
@@ -143,14 +144,17 @@ export default function AddPetModal({ open, onClose, onCreated }: Props) {
     try {
       setLoading(true);
 
-      const createdPet = await PetService.createByCustomer(Number(pet.customerId), {
-        breed: pet.breed,
-        dob: pet.birth,
-        gender: pet.gender as "MALE" | "FEMALE",
-        name: pet.name,
-        notes: pet.notes,
-        status: pet.status,
-      });
+      const createdPet = await PetService.createByCustomer(
+        Number(pet.customerId),
+        {
+          breed: pet.breed,
+          dob: pet.birth,
+          gender: pet.gender as "MALE" | "FEMALE",
+          name: pet.name,
+          notes: pet.notes,
+          status: pet.status,
+        },
+      );
 
       const petId = extractPetId(createdPet);
       if (!petId) {

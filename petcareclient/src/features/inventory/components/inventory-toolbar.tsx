@@ -1,16 +1,18 @@
+import { Search, Loader2, ClipboardList } from "lucide-react";
 import { useState, useEffect } from "react";
+
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ClipboardList, Loader2 } from "lucide-react";
 import {
   Select,
-  SelectContent,
   SelectItem,
-  SelectTrigger,
   SelectValue,
+  SelectContent,
+  SelectTrigger,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { AddProductModal } from "./add-product-modal";
 import api from "@/lib/api";
+
+import { AddProductModal } from "./add-product-modal";
 
 // 1. Định nghĩa Props để truyền thao tác lọc lên trang cha (InventoryPage)
 interface InventoryToolbarProps {

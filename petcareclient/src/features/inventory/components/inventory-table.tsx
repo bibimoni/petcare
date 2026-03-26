@@ -1,22 +1,23 @@
+import {
+  Edit3,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle,
+  PackageSearch,
+} from "lucide-react";
 import { useState, useEffect } from "react";
+
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
+  TableRow,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Edit3,
-  AlertTriangle,
-  Loader2,
-  PackageSearch,
-  ChevronLeft, 
-  ChevronRight, 
-} from "lucide-react";
 import api from "@/lib/api";
 
 interface InventoryTableProps {
@@ -31,9 +32,8 @@ export function InventoryTable({
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10; 
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -83,12 +83,12 @@ export function InventoryTable({
     return "Còn hàng";
   };
 
-  //  PHÂN TRANG 
+  //  PHÂN TRANG
   const totalItems = products.length;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentItems = products.slice(startIndex, endIndex); 
+  const currentItems = products.slice(startIndex, endIndex);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-[#f3ebe7] overflow-hidden min-h-[400px]">

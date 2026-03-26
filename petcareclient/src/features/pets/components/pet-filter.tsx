@@ -4,16 +4,16 @@ type Pet = {
 };
 
 type PetFiltersProps = {
-  breedFilter: string;
-  filteredCount: number;
-  genderFilter: string;
   pets: Pet[];
+  sortBy: string;
+  breedFilter: string;
+  genderFilter: string;
+  statusFilter: string;
+  filteredCount: number;
+  setSortBy: (value: string) => void;
   setBreedFilter: (value: string) => void;
   setGenderFilter: (value: string) => void;
-  setSortBy: (value: string) => void;
   setStatusFilter: (value: string) => void;
-  sortBy: string;
-  statusFilter: string;
 };
 
 export default function PetFilters({

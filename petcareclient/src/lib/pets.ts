@@ -1,12 +1,12 @@
 import axiosClient from "./api";
 
 type CreatePetPayload = {
-  breed: string;
   dob: string;
-  gender: "MALE" | "FEMALE";
   name: string;
+  breed: string;
   notes: string;
   status: string;
+  gender: "MALE" | "FEMALE";
 };
 
 export const PetService = {

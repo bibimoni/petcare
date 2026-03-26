@@ -2,14 +2,14 @@ import { Edit, Trash2, PawPrint } from "lucide-react";
 
 type CustomerRowProps = {
   c: {
+    name?: string;
+    phone?: string;
     avatar?: string;
-    customer_id?: number | string;
     full_name?: string;
     id?: number | string;
-    last_visit?: string | null;
-    name?: string;
     pets?: unknown[] | number;
-    phone?: string;
+    last_visit?: string | null;
+    customer_id?: number | string;
   };
 };
 

@@ -1,4 +1,4 @@
-import { PawPrint, Dog, Cat, Mars, Venus } from "lucide-react";
+import { Dog, Cat, Mars, Venus, PawPrint } from "lucide-react";
 
 type Pet = {
   gender?: string;

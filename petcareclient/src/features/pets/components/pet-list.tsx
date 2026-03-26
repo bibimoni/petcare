@@ -1,16 +1,12 @@
 import PetCard from "./pet-card";
 
-type Pet = {
-  id: number;
-  name: string;
-  type: string;
-  ownerName: string;
-  imageUrl: string;
-};
-
 export default function PetList({ pets }: { pets: any[] }) {
   if (!pets || pets.length === 0) {
-    return <div className="text-center p-10 text-gray-500">Không tìm thấy thú cưng nào.</div>;
+    return (
+      <div className="text-center p-10 text-gray-500">
+        Không tìm thấy thú cưng nào.
+      </div>
+    );
   }
 
   return (

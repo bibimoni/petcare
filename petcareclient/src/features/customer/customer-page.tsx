@@ -13,12 +13,12 @@ import CustomerToolbar from "./components/customer-toolbar";
 import { Footer } from "./components/footer";
 
 type ApiCustomer = {
-  [key: string]: unknown;
-  customer_id?: number | string;
-  full_name?: string;
-  last_visit?: string | null;
-  pets?: unknown[];
   phone?: string;
+  pets?: unknown[];
+  full_name?: string;
+  [key: string]: unknown;
+  last_visit?: string | null;
+  customer_id?: number | string;
   total_spend?: string | number;
 };
 
