@@ -64,6 +64,13 @@ export class ProductsService {
     });
   }
 
+  async countProducts(storeId: number): Promise<{ total: number }> {
+    const total = await this.productRepository.count({
+      where: { store_id: storeId },
+    });
+    return { total };
+  }
+
   async createProduct(
     storeId: number,
     createProductDto: CreateProductDto,

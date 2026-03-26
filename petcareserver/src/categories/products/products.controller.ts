@@ -58,6 +58,21 @@ export class ProductsController {
     );
   }
 
+  @Get('/count-all-products')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.INVENTORY_VIEW)
+  @ApiOperation({
+    summary: 'Numbers of products',
+    description: 'Get counts of all products',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully',
+  })
+  async getNumofProducts(@CurrentUser() user: any) {
+    return this.productsService.countProducts(user.store_id);
+  }
+
   @Get('/total/sum')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.INVENTORY_VIEW)
