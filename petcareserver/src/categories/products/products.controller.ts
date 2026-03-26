@@ -11,6 +11,7 @@ import {
   BadRequestException,
   Patch,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from '../dto/create-product.dto';
@@ -45,8 +46,31 @@ export class ProductsController {
     status: 200,
     description: 'Low stock and expiring products retrieved successfully',
   })
-  async getLowStockOrExpiringProducts() {
-    return this.productsService.getLowStockOrExpiringProducts();
+  async getLowStockOrExpiringProducts(
+    @CurrentUser() user: any,
+    @Query('minStock') minStock: number = 3,
+    @Query('daysToExpiry') daysToExpiry: number = 30,
+  ) {
+    return this.productsService.getLowStockOrExpiringProducts(
+      user.store_id,
+      minStock,
+      daysToExpiry,
+    );
+  }
+
+  @Get('/count-all-products')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.INVENTORY_VIEW)
+  @ApiOperation({
+    summary: 'Numbers of products',
+    description: 'Get counts of all products',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully',
+  })
+  async getNumofProducts(@CurrentUser() user: any) {
+    return this.productsService.countProducts(user.store_id);
   }
 
   @Get('/total/sum')
@@ -61,8 +85,10 @@ export class ProductsController {
     status: 200,
     description: 'Total inventory value retrieved successfully',
   })
-  async getInventoryValue() {
-    return { value: await this.productsService.getInventoryValue() };
+  async getInventoryValue(@CurrentUser() user: any) {
+    return {
+      value: await this.productsService.getInventoryValue(user.store_id),
+    };
   }
 
   @Get('/sum/:categoryId')
@@ -111,11 +137,16 @@ export class ProductsController {
   async createProduct(
     @Body() createProductDto: CreateProductDto,
     @CurrentUser() user: any,
+    @Query('expiryWarningDays') expiryWarningDays: number = 7,
   ) {
-    return this.productsService.createProduct(user.store_id, createProductDto);
+    return this.productsService.createProduct(
+      user.store_id,
+      createProductDto,
+      expiryWarningDays,
+    );
   }
 
-  @Get('/:categoryId')
+  @Get('/category/:categoryId')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.PRODUCT_VIEW)
   @ApiOperation({
@@ -145,7 +176,7 @@ export class ProductsController {
     );
   }
 
-  @Get('/:productId')
+  @Get('/detail/:productId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get product details',
@@ -201,6 +232,7 @@ export class ProductsController {
     @Param('productId') productId: string,
     @Body() updateProductDto: UpdateProductDto,
     @CurrentUser() user: any,
+    @Query('expiryWarningDays') expiryWarningDays: number = 7,
   ) {
     const productIdNum = parseInt(productId, 10);
     if (isNaN(productIdNum)) {
@@ -210,6 +242,7 @@ export class ProductsController {
       user.store_id,
       productIdNum,
       updateProductDto,
+      expiryWarningDays,
     );
   }
 

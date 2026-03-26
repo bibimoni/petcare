@@ -13,6 +13,7 @@ import { Product } from '../../categories/entities/product.entity';
 import { Category } from '../../categories/entities/category.entity';
 import { Service } from '../../categories/entities/service.entity';
 import { Order } from '../../orders/entities/order.entity';
+import { Notification } from '../../notifications/entities/notification.entity';
 import { StoreStatus } from '../../common/enum';
 
 @Entity('stores')
@@ -77,4 +78,11 @@ export class Store {
 
   @OneToMany(() => Order, (order) => order.store)
   orders: Order[];
+
+  @OneToMany(() => Notification, (notification) => notification.store)
+  notifications: Notification[];
+
+  // VD: '0 0 8 * * *' = 8am everday, null = default system
+  @Column({ type: 'text', nullable: true, default: null })
+  notification_cron: string | null;
 }

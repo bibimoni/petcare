@@ -15,6 +15,7 @@ import { Store } from '../src/stores/entities/store.entity';
 import { Permission } from '../src/permissions/entities/permission.entity';
 import { Role } from '../src/roles/entities/role.entity';
 import { RolePermission } from '../src/roles/entities/role-permission.entity';
+import { Notification } from '../src/notifications/entities/notification.entity';
 
 import { UserStatus, StoreStatus } from '../src/common/enum';
 
@@ -47,6 +48,7 @@ async function seedAdmin() {
       Permission,
       Role,
       RolePermission,
+      Notification,
     ],
     synchronize: true,
     ssl:
@@ -440,3 +442,5 @@ seedAdmin()
     console.error(error.stack);
     process.exit(1);
   });
+
+//npx ts-node scripts/seed-admin.ts
