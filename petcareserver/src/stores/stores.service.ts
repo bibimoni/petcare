@@ -3,6 +3,8 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { MailService } from '../mail/mail.service';
 import { InviteStaffResponseDto } from './dto/invite-staff-response.dto';
@@ -18,8 +20,14 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { Invitation } from './entities/invitation.entity';
-import { UserStatus, StoreStatus, PermissionScope, InvitationStatus } from '../common/enum';
+import {
+  UserStatus,
+  StoreStatus,
+  PermissionScope,
+  InvitationStatus,
+} from '../common/enum';
 import { generateRandomToken, INVITE_TOKEN_EXPIRATION_DAYS } from 'src/common';
+import { NotificationScheduler } from 'src/notifications/notification.scheduler';
 
 @Injectable()
 export class StoresService {
@@ -37,6 +45,8 @@ export class StoresService {
     @InjectRepository(Invitation)
     private invitationRepository: Repository<Invitation>,
     private readonly mailService: MailService,
+    @Inject(forwardRef(() => NotificationScheduler))
+    private readonly notificationScheduler: NotificationScheduler,
   ) {}
 
   async createStore(createStoreDto: CreateStoreDto, currentUserId: number) {
@@ -68,7 +78,9 @@ export class StoresService {
       logo_url: createStoreDto.logo_url,
     });
 
-    const savedStore = await this.storeRepository.save(store) as Store;
+    const savedStore = (await this.storeRepository.save(store)) as Store;
+
+    this.notificationScheduler.registerStoreJob(savedStore.id, null);
 
     let adminRole = await this.roleRepository.findOne({
       where: { name: 'ADMIN', store_id: savedStore.id },
@@ -83,7 +95,7 @@ export class StoresService {
         is_system_role: false,
       });
 
-      adminRole = await this.roleRepository.save(newAdminRole) as Role;
+      adminRole = (await this.roleRepository.save(newAdminRole)) as Role;
 
       const storePermissions = await this.permissionRepository.find({
         where: { scope: PermissionScope.STORE },
@@ -116,14 +128,19 @@ export class StoresService {
     };
   }
 
-
-  async inviteStaff(storeId: number, inviteStaffDto: InviteStaffDto, currentUserId: number) {
+  async inviteStaff(
+    storeId: number,
+    inviteStaffDto: InviteStaffDto,
+    currentUserId: number,
+  ) {
     const currentUser = await this.userRepository.findOne({
       where: { user_id: currentUserId },
     });
 
     if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('Bạn không có quyền mời nhân viên vào cửa hàng này');
+      throw new ForbiddenException(
+        'Bạn không có quyền mời nhân viên vào cửa hàng này',
+      );
     }
 
     const store = await this.storeRepository.findOne({
@@ -139,7 +156,9 @@ export class StoresService {
     });
 
     if (!role) {
-      throw new NotFoundException('Không tìm thấy vai trò hoặc vai trò không thuộc cửa hàng này');
+      throw new NotFoundException(
+        'Không tìm thấy vai trò hoặc vai trò không thuộc cửa hàng này',
+      );
     }
 
     const existingUser = await this.userRepository.findOne({
@@ -148,7 +167,9 @@ export class StoresService {
 
     if (existingUser) {
       if (existingUser.store_id === storeId) {
-        throw new ConflictException('Người dùng đã là thành viên của cửa hàng này');
+        throw new ConflictException(
+          'Người dùng đã là thành viên của cửa hàng này',
+        );
       }
 
       if (existingUser.store_id !== null) {
@@ -168,7 +189,7 @@ export class StoresService {
     //   throw new ConflictException('An invitation for this email is already pending for this store');
     // }
 
-    const token = generateRandomToken()
+    const token = generateRandomToken();
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + INVITE_TOKEN_EXPIRATION_DAYS);
@@ -184,7 +205,9 @@ export class StoresService {
       message: inviteStaffDto.message || '',
     });
 
-    const savedInvitation = await this.invitationRepository.save(invitation) as Invitation;
+    const savedInvitation = (await this.invitationRepository.save(
+      invitation,
+    )) as Invitation;
 
     const invitationResponse: InviteStaffResponseDto = {
       message: 'Gửi lời mời thành công',
@@ -206,10 +229,17 @@ export class StoresService {
         name: store.name,
         status: store.status,
       },
-      note: 'Đường dẫn mời đã được tạo. Gửi đường dẫn này: /api/stores/' + storeId + '/invitations/accept?token=' + token,
+      note:
+        'Đường dẫn mời đã được tạo. Gửi đường dẫn này: /api/stores/' +
+        storeId +
+        '/invitations/accept?token=' +
+        token,
     };
 
-    await this.mailService.sendInvitationEmail(invitationResponse, inviteStaffDto.full_name);
+    await this.mailService.sendInvitationEmail(
+      invitationResponse,
+      inviteStaffDto.full_name,
+    );
 
     return invitationResponse;
   }
@@ -226,7 +256,11 @@ export class StoresService {
     return store;
   }
 
-  async updateStore(storeId: number, updateData: UpdateStoreDto, currentUserId: number) {
+  async updateStore(
+    storeId: number,
+    updateData: UpdateStoreDto,
+    currentUserId: number,
+  ) {
     const currentUser = await this.userRepository.findOne({
       where: { user_id: currentUserId },
     });
@@ -244,11 +278,45 @@ export class StoresService {
     }
 
     Object.assign(store, updateData);
-    const updatedStore = await this.storeRepository.save(store) as Store;
+    const updatedStore = (await this.storeRepository.save(store)) as Store;
 
     return {
       message: 'Cập nhật cửa hàng thành công',
       store: updatedStore,
+    };
+  }
+
+  async updateNotificationSchedule(
+    storeId: number,
+    cronExpression: string | null,
+    currentUserId: number,
+  ) {
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
+
+    if (!currentUser || currentUser.store_id !== storeId) {
+      throw new ForbiddenException('Bạn không có quyền cập nhật cửa hàng này');
+    }
+
+    const store = await this.storeRepository.findOne({
+      where: { id: storeId },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Không tìm thấy cửa hàng');
+    }
+
+    store.notification_cron = cronExpression;
+    await this.storeRepository.save(store);
+
+    // Cập nhật cron job ngay lập tức, không cần restart server
+    this.notificationScheduler.registerStoreJob(storeId, cronExpression);
+
+    return {
+      message: 'Cập nhật lịch thông báo thành công',
+      store_id: storeId,
+      notification_cron: cronExpression ?? 'default (0 0 8 * * *)',
     };
   }
 
@@ -258,13 +326,15 @@ export class StoresService {
     });
 
     if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('Bạn không có quyền xem danh sách nhân viên của cửa hàng này');
+      throw new ForbiddenException(
+        'Bạn không có quyền xem danh sách nhân viên của cửa hàng này',
+      );
     }
 
     const staff = await this.userRepository.find({
       where: { store_id: storeId },
       relations: {
-	      role: true
+        role: true,
       },
       select: {
         user_id: true,
@@ -350,7 +420,9 @@ export class StoresService {
     });
 
     if (!user) {
-      throw new NotFoundException('Không tìm thấy người dùng. Vui lòng đăng ký tài khoản trước');
+      throw new NotFoundException(
+        'Không tìm thấy người dùng. Vui lòng đăng ký tài khoản trước',
+      );
     }
 
     if (user.store_id === invitation.store_id) {

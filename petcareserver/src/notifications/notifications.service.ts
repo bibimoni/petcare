@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import {
@@ -9,6 +9,7 @@ import {
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { Product } from 'src/categories/entities/product.entity';
+import { buildNotificationProductUrl } from './notification.util';
 
 @Injectable()
 export class NotificationsService {
@@ -45,24 +46,20 @@ export class NotificationsService {
   async findById(
     storeId: number,
     notificationId: number,
-  ): Promise<Notification> {
-    const notification = await this.notificationRepository.findOne({
+  ): Promise<Notification | null> {
+    return this.notificationRepository.findOne({
       where: { notification_id: notificationId, store_id: storeId },
       relations: ['product', 'store'],
     });
-
-    if (!notification) {
-      throw new NotFoundException(`Notification ${notificationId} not found`);
-    }
-    return notification;
   }
 
   async update(
     storeId: number,
     notificationId: number,
     updateNotificationDto: UpdateNotificationDto,
-  ): Promise<Notification> {
+  ): Promise<Notification | null> {
     const notification = await this.findById(storeId, notificationId);
+    if (!notification) return null;
     Object.assign(notification, updateNotificationDto);
     return this.notificationRepository.save(notification);
   }
@@ -70,7 +67,7 @@ export class NotificationsService {
   async markAsRead(
     storeId: number,
     notificationId: number,
-  ): Promise<Notification> {
+  ): Promise<Notification | null> {
     return this.update(storeId, notificationId, {
       status: NotificationStatus.READ,
     });
@@ -89,7 +86,7 @@ export class NotificationsService {
   async archive(
     storeId: number,
     notificationId: number,
-  ): Promise<Notification> {
+  ): Promise<Notification | null> {
     return this.update(storeId, notificationId, {
       status: NotificationStatus.ARCHIVED,
     });
@@ -102,6 +99,21 @@ export class NotificationsService {
     });
   }
 
+  async hasNotificationToday(
+    storeId: number,
+    productId: number,
+    type: NotificationType,
+  ): Promise<boolean> {
+    const existing = await this.notificationRepository
+      .createQueryBuilder('n')
+      .where('n.store_id = :storeId', { storeId })
+      .andWhere('n.product_id = :productId', { productId })
+      .andWhere('n.type = :type', { type })
+      .andWhere('DATE(n.created_at) = CURRENT_DATE')
+      .getOne();
+    return !!existing;
+  }
+
   async createLowStockNotification(
     storeId: number,
     product: Product,
@@ -110,11 +122,13 @@ export class NotificationsService {
       store_id: storeId,
       product_id: product.product_id,
       type: NotificationType.LOW_STOCK,
-      title: `Cảnh báo: ${product.name} sắp hết hàng.`,
-      message: `Sản phẩm sắp hết hàng. Số lượng sản phẩm còn ${product.stock_quantity}. Nhấn để xem chi tiết.`,
+      title: `Warning: ${product.name} is running low`,
+      message: `The product is running low. Remaining quantity: ${product.stock_quantity}. Click to view details.`,
       product_name: product.name,
     });
-    notification.action_url = `/notifications/${notification.notification_id}/product-details`;
+    notification.action_url = buildNotificationProductUrl(
+      notification.notification_id,
+    );
     return this.notificationRepository.save(notification);
   }
 
@@ -126,12 +140,13 @@ export class NotificationsService {
       store_id: storeId,
       product_id: product.product_id,
       type: NotificationType.OUT_OF_STOCK,
-      title: `Cảnh báo: ${product.name} hết hàng`,
-      message: `Sản phẩm hết hàng. Nhấn để xem chi tiết.`,
+      title: `Alert: ${product.name} is out of stock`,
+      message: `The product is out of stock. Click to view details.`,
       product_name: product.name,
     });
-
-    notification.action_url = `/notifications/${notification.notification_id}/product-details`;
+    notification.action_url = buildNotificationProductUrl(
+      notification.notification_id,
+    );
     return this.notificationRepository.save(notification);
   }
 
@@ -143,12 +158,13 @@ export class NotificationsService {
       store_id: storeId,
       product_id: product.product_id,
       type: NotificationType.EXPIRY_WARNING,
-      title: `Cảnh báo: ${product.name} sắp hết hạn.`,
-      message: `Sản phẩm sắp hết hạn. Hạn sử dụng: ${product.expiry_date.toLocaleDateString()}. Nhấn để xem chi tiết.`,
+      title: `Warning: ${product.name} is nearing expiry`,
+      message: `The product is approaching its expiry date: ${product.expiry_date.toLocaleDateString()}. Click to view details.`,
       product_name: product.name,
     });
-
-    notification.action_url = `/notifications/${notification.notification_id}/product-details`;
+    notification.action_url = buildNotificationProductUrl(
+      notification.notification_id,
+    );
     return this.notificationRepository.save(notification);
   }
 
@@ -160,12 +176,13 @@ export class NotificationsService {
       store_id: storeId,
       product_id: product.product_id,
       type: NotificationType.EXPIRED,
-      title: `Cảnh báo: ${product.name} đã hết hạn.`,
-      message: `Sản phẩm đã hết hạn. Hạn sử dụng: ${product.expiry_date.toLocaleDateString()}. Nhấn để xem chi tiết.`,
+      title: `Alert: ${product.name} has expired`,
+      message: `The product has expired. Expiry date: ${product.expiry_date.toLocaleDateString()}. Click to view details.`,
       product_name: product.name,
     });
-
-    notification.action_url = `/notifications/${notification.notification_id}/product-details`;
+    notification.action_url = buildNotificationProductUrl(
+      notification.notification_id,
+    );
     return this.notificationRepository.save(notification);
   }
 }

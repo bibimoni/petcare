@@ -37,12 +37,12 @@ export class Notification {
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
-  @Column({ name: 'product_id' })
-  product_id: number;
+  @Column({ name: 'product_id', nullable: true })
+  product_id: number | null;
 
-  @ManyToOne(() => Product, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Product, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'product_id' })
-  product: Product;
+  product: Product | null;
 
   @Column({
     type: 'enum',
@@ -64,11 +64,11 @@ export class Notification {
   @Column({ type: 'text' })
   message: string;
 
-  @Column()
-  product_name: string;
+  @Column({ type: 'varchar', nullable: true })
+  product_name: string | null;
 
-  @Column({ nullable: true })
-  action_url: string;
+  @Column({ type: 'varchar', nullable: true })
+  action_url: string | null;
 
   @CreateDateColumn()
   created_at: Date;
