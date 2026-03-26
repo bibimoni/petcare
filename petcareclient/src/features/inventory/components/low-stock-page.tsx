@@ -4,14 +4,13 @@ import {
   ArrowLeft,
   Search,
   AlertTriangle,
-  Download,
-  ShoppingCart,
   ChevronLeft,
   ChevronRight,
   Loader2,
   Package,
 } from "lucide-react";
 import api from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
 
 interface ProductAlert {
   product_id: number;
@@ -21,6 +20,7 @@ interface ProductAlert {
   min_stock_level: number;
   sell_price: number;
   image_url?: string;
+  category_id?: number;
 
   level?: "severe" | "warning";
   categoryColor?: string;
@@ -29,34 +29,55 @@ interface ProductAlert {
 export default function LowStockPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<ProductAlert[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // State quản lý tìm kiếm và phân trang
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
 
   useEffect(() => {
     const fetchLowStockProducts = async () => {
       try {
         setIsLoading(true);
-        const response = await api.get("/products/alerts");
 
-        const formattedData = response.data.map((product: any) => {
-          const isSevere = product.stock_quantity === 0;
+        // Gọi song song 2 API: Cảnh báo và Danh mục
+        const [alertsRes, catRes] = await Promise.all([
+          api.get("/products/alerts"),
+          api.get("/categories?type=PRODUCT"),
+        ]);
 
-          return {
-            ...product,
-            image_url:
-              product.image_url ||
-              "https://images.unsplash.com/photo-1583337130417-3346a1be7dee",
-            level: isSevere ? "severe" : "warning",
-            categoryColor: "bg-orange-50 text-orange-700 border-orange-100",
-          };
-        });
+        const data = alertsRes.data || alertsRes;
+        const catData = catRes.data || catRes;
 
-        const lowStockItems = formattedData.filter(
-          (p: any) =>
-            p.stock_quantity < 3 ||
-            p.stock_quantity <= (p.min_stock_level || 0),
-        );
+        setCategories(Array.isArray(catData) ? catData : []);
 
-        setItems(lowStockItems);
+        // Đảm bảo data là mảng
+        if (Array.isArray(data)) {
+          const formattedData = data.map((product: any) => {
+            const isSevere = product.stock_quantity === 0;
+
+            return {
+              ...product,
+              image_url:
+                product.image_url ||
+                "https://images.unsplash.com/photo-1583337130417-3346a1be7dee",
+              level: isSevere ? "severe" : "warning",
+              categoryColor: "bg-orange-50 text-orange-700 border-orange-100",
+            };
+          });
+
+          const lowStockItems = formattedData.filter(
+            (p: any) =>
+              p.stock_quantity < 3 ||
+              p.stock_quantity <= (p.min_stock_level || 0),
+          );
+
+          setItems(lowStockItems);
+        } else {
+          setItems([]);
+        }
       } catch (error) {
         console.error("Lỗi khi tải danh sách sắp hết hàng:", error);
       } finally {
@@ -66,6 +87,29 @@ export default function LowStockPage() {
 
     fetchLowStockProducts();
   }, []);
+
+  // Lọc sản phẩm theo từ khóa tìm kiếm
+  const filteredItems = items.filter((item) => {
+    const lowerTerm = searchTerm.toLowerCase();
+    return item.name.toLowerCase().includes(lowerTerm);
+  });
+
+  const totalItems = filteredItems.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentItems = filteredItems.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Hàm tra cứu tên danh mục
+  const getCategoryName = (categoryId?: number) => {
+    if (!categoryId) return "Khác";
+    const category = categories.find((c) => c.category_id === categoryId);
+    return category ? category.name : "Khác";
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-background-light text-text-primary">
@@ -96,6 +140,8 @@ export default function LowStockPage() {
               className="w-full bg-white border-none pl-10 pr-4 py-3 rounded-xl shadow-sm ring-1 ring-[#f3ebe7] focus:ring-2 focus:ring-primary focus:outline-none placeholder:text-gray-400 text-sm transition-all"
               placeholder="Tìm kiếm sản phẩm..."
               type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
@@ -109,44 +155,37 @@ export default function LowStockPage() {
             <div className="flex items-center gap-2">
               <span className="bg-red-50 text-red-600 px-3 py-1 rounded-full text-sm font-bold border border-red-100 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
-                {items.length} sản phẩm cần nhập
+                {totalItems} sản phẩm cần chú ý
               </span>
               <p className="text-text-secondary text-sm">
                 Các sản phẩm dưới ngưỡng an toàn kho
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-primary text-primary font-bold text-sm hover:bg-primary/5 transition-colors bg-white">
-                <Download className="h-4 w-4" /> Xuất Excel
-              </button>
-              <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/30 font-bold text-sm transition-all transform hover:scale-105 active:scale-95">
-                <ShoppingCart className="h-4 w-4" /> Tạo phiếu nhập hàng loạt
-              </button>
-            </div>
           </div>
 
           {/* Table Area */}
-          <div className="bg-white rounded-2xl shadow-sm border border-[#f3ebe7] overflow-hidden min-h-[400px]">
+          <div className="bg-white rounded-2xl shadow-sm border border-[#f3ebe7] overflow-hidden min-h-[400px] flex flex-col">
             {isLoading ? (
-              // Trạng thái Loading
               <div className="flex flex-col items-center justify-center h-[400px] text-primary">
                 <Loader2 className="h-10 w-10 animate-spin mb-4" />
                 <p className="font-medium">Đang tải dữ liệu kho...</p>
               </div>
-            ) : items.length === 0 ? (
-              // Trạng thái không có sản phẩm nào sắp hết
+            ) : totalItems === 0 ? (
               <div className="flex flex-col items-center justify-center h-[400px] text-text-secondary">
                 <Package className="h-12 w-12 text-gray-300 mb-4" />
                 <p className="font-medium text-lg text-text-primary">
-                  Kho hàng an toàn
+                  {searchTerm
+                    ? "Không tìm thấy sản phẩm phù hợp"
+                    : "Kho hàng an toàn"}
                 </p>
                 <p className="text-sm">
-                  Hiện tại không có sản phẩm nào sắp hết hàng.
+                  {searchTerm
+                    ? "Vui lòng thử lại với từ khóa khác."
+                    : "Hiện tại không có sản phẩm nào sắp hết hàng."}
                 </p>
               </div>
             ) : (
-              // Bảng dữ liệu thật
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto flex-1">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-[#fcf9f8] border-b border-[#f3ebe7]">
@@ -160,7 +199,7 @@ export default function LowStockPage() {
                         Ảnh
                       </th>
                       <th className="p-4 text-xs font-semibold text-text-secondary uppercase">
-                        Tên sản phẩm (SKU)
+                        Tên sản phẩm
                       </th>
                       <th className="p-4 text-xs font-semibold text-text-secondary uppercase">
                         Danh mục
@@ -168,16 +207,13 @@ export default function LowStockPage() {
                       <th className="p-4 text-xs font-semibold text-text-secondary uppercase text-center">
                         Tồn kho hiện tại
                       </th>
-                      <th className="p-4 text-xs font-semibold text-text-secondary uppercase text-right">
+                      <th className="p-4 pr-6 text-xs font-semibold text-text-secondary uppercase text-right">
                         Giá bán
-                      </th>
-                      <th className="p-4 pr-6 text-xs font-semibold text-text-secondary uppercase text-center">
-                        Thao tác
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#f3ebe7] text-sm">
-                    {items.map((item) => (
+                    {currentItems.map((item) => (
                       <tr
                         key={item.product_id}
                         className={`group transition-colors border-l-4 ${
@@ -205,17 +241,12 @@ export default function LowStockPage() {
                             <span className="font-bold text-text-primary text-base">
                               {item.name}
                             </span>
-                            <span className="text-xs text-text-secondary font-mono mt-0.5">
-                              SKU: {item.sku}
-                            </span>
                           </div>
                         </td>
                         <td className="p-4">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${item.categoryColor}`}
-                          >
-                            Hàng hóa
-                          </span>
+                          <Badge className="bg-blue-50 text-blue-700 rounded-full px-2.5 py-0.5 text-xs font-medium border-none shadow-none hover:bg-blue-100">
+                            {getCategoryName(item.category_id)}
+                          </Badge>
                         </td>
                         <td className="p-4 text-center">
                           <div className="inline-flex flex-col items-center">
@@ -231,13 +262,8 @@ export default function LowStockPage() {
                             </span>
                           </div>
                         </td>
-                        <td className="p-4 text-right font-bold text-text-primary text-base">
+                        <td className="p-4 pr-6 text-right font-bold text-text-primary text-base">
                           {Number(item.sell_price).toLocaleString()}đ
-                        </td>
-                        <td className="p-4 pr-6 text-center">
-                          <button className="bg-gradient-to-r from-orange-400 to-primary hover:from-orange-500 hover:to-primary-dark text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md shadow-orange-200 transition-all hover:shadow-lg transform active:scale-95 flex items-center justify-center gap-2 mx-auto w-32">
-                            <ShoppingCart className="h-4 w-4" /> Nhập ngay
-                          </button>
                         </td>
                       </tr>
                     ))}
@@ -247,32 +273,78 @@ export default function LowStockPage() {
             )}
 
             {/* Pagination */}
-            <div className="p-4 border-t border-[#f3ebe7] flex items-center justify-between bg-gray-50/50">
-              <p className="text-sm text-text-secondary">
-                Hiển thị{" "}
-                <span className="font-bold text-text-primary">
-                  {items.length}
-                </span>{" "}
-                sản phẩm cần nhập hàng
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  className="p-2 rounded-lg border border-[#f3ebe7] text-text-secondary hover:bg-white disabled:opacity-50"
-                  disabled
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button className="w-9 h-9 rounded-lg bg-primary text-white font-bold text-sm shadow-md shadow-primary/30">
-                  1
-                </button>
-                <button
-                  className="p-2 rounded-lg border border-[#f3ebe7] text-text-secondary hover:bg-white disabled:opacity-50"
-                  disabled
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+            {totalItems > 0 && (
+              <div className="p-4 border-t border-[#f3ebe7] flex items-center justify-between bg-gray-50/50">
+                <p className="text-sm text-text-secondary">
+                  Hiển thị{" "}
+                  <span className="font-bold text-text-primary">
+                    {currentItems.length}
+                  </span>{" "}
+                  sản phẩm trong{" "}
+                  <span className="font-bold text-text-primary">
+                    {totalItems}
+                  </span>{" "}
+                  sản phẩm
+                </p>
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="p-2 rounded-lg border border-[#f3ebe7] text-text-secondary hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {[...Array(totalPages)].map((_, index) => {
+                        const pageNumber = index + 1;
+                        if (
+                          pageNumber === 1 ||
+                          pageNumber === totalPages ||
+                          (pageNumber >= currentPage - 1 &&
+                            pageNumber <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={pageNumber}
+                              onClick={() => setCurrentPage(pageNumber)}
+                              className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${
+                                currentPage === pageNumber
+                                  ? "bg-primary text-white shadow-md shadow-primary/30"
+                                  : "text-text-secondary hover:bg-gray-100"
+                              }`}
+                            >
+                              {pageNumber}
+                            </button>
+                          );
+                        } else if (
+                          pageNumber === currentPage - 2 ||
+                          pageNumber === currentPage + 2
+                        ) {
+                          return (
+                            <span key={pageNumber} className="text-gray-400">
+                              ...
+                            </span>
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
+                      disabled={currentPage === totalPages}
+                      className="p-2 rounded-lg border border-[#f3ebe7] text-text-secondary hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
         </div>
       </main>

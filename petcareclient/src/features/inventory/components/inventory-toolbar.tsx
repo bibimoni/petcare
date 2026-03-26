@@ -30,9 +30,10 @@ export function InventoryToolbar({
     const fetchCategories = async () => {
       try {
         setIsLoading(true);
-        // Gọi API lấy danh mục (Dựa theo categories.controller.ts ở BE)
-        const response = await api.get("/v1/categories");
-        setCategories(response.data);
+        const res = await api.get("/categories?type=PRODUCT");
+
+        const data = res.data || res;
+        setCategories(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Lỗi khi tải danh sách danh mục:", error);
       } finally {
@@ -51,8 +52,8 @@ export function InventoryToolbar({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary group-focus-within:text-primary transition-colors" />
           <Input
             className="w-full bg-white border-none pl-10 pr-4 py-6 rounded-xl shadow-sm ring-1 ring-[#f3ebe7] focus:ring-2 focus:ring-primary placeholder:text-gray-400 text-sm"
-            placeholder="Tìm kiếm sản phẩm, mã SKU..."
-            onChange={(e) => onSearch && onSearch(e.target.value)} // Truyền text tìm kiếm lên cha
+            placeholder="Tìm kiếm sản phẩm,..."
+            onChange={(e) => onSearch && onSearch(e.target.value)}
           />
         </div>
 
@@ -88,12 +89,12 @@ export function InventoryToolbar({
 
       {/* Nhóm nút hành động */}
       <div className="flex items-center gap-3">
-        <Button
+        {/* <Button
           variant="outline"
           className="border-primary text-primary font-bold rounded-xl h-11 px-5 hover:bg-primary/5"
         >
           <ClipboardList className="mr-2 h-4 w-4" /> Kiểm Kho
-        </Button>
+        </Button> */}
 
         {/* Form thêm sản phẩm mới */}
         <AddProductModal />

@@ -1,6 +1,4 @@
 import { useState } from "react";
-
-// Import các component con từ thư mục components
 import { InventoryStats } from "../components/inventory-stats";
 import { InventoryToolbar } from "../components/inventory-toolbar";
 import { InventoryTable } from "../components/inventory-table";

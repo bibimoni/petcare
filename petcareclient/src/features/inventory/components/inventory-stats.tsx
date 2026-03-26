@@ -16,7 +16,7 @@ export function InventoryStats() {
 
   // State lưu trữ dữ liệu thống kê
   const [stats, setStats] = useState({
-    totalProducts: 1240, // BE chưa có API đếm tổng số lượng tất cả sản phẩm
+    totalProducts: 0,
     lowStockCount: 0,
     expiringCount: 0,
     totalValue: 0,
@@ -27,36 +27,64 @@ export function InventoryStats() {
     const fetchStats = async () => {
       try {
         setIsLoading(true);
-        const [alertsRes, valueRes] = await Promise.all([
+
+        // 1. Gọi song song 3 API (Thêm API lấy danh mục để đếm sản phẩm)
+        const [alertsRes, valueRes, catRes] = await Promise.all([
           api.get("/products/alerts"),
           api.get("/products/total/sum"),
+          api.get("/categories?type=PRODUCT"),
         ]);
 
-        const alertsData = alertsRes.data;
-        const now = new Date();
+        const alertsData = alertsRes.data || alertsRes;
+        const valueData = valueRes.data || valueRes;
+        const categories = catRes.data || catRes;
+        const safeAlertsData = Array.isArray(alertsData) ? alertsData : [];
 
-        // Tính toán số sản phẩm sắp hết hàng
-        const lowStock = alertsData.filter(
+        // 2. Tính Sắp hết hàng
+        const lowStock = safeAlertsData.filter(
           (p: any) =>
             p.stock_quantity < 3 ||
             p.stock_quantity <= (p.min_stock_level || 0),
         ).length;
 
-        // Tính toán số sản phẩm sắp hết HSD
-        const expiringSoon = alertsData.filter((p: any) => {
+        // 3. Tính Sắp hết HSD
+        const expiringSoon = safeAlertsData.filter((p: any) => {
           if (!p.expiry_date) return false;
           const expDate = new Date(p.expiry_date);
           const daysLeft =
-            (expDate.getTime() - now.getTime()) / (1000 * 3600 * 24);
-          return daysLeft <= 30; // Chỉ đếm những sản phẩm còn dưới 30 ngày
+            (expDate.getTime() - new Date().getTime()) / (1000 * 3600 * 24);
+          return daysLeft <= 30;
         }).length;
 
-        // Cập nhật State
+        // 4. Logic tính "Tổng sản phẩm" tự động
+        let totalProductCount = 0;
+        if (Array.isArray(categories)) {
+          const productRequests = categories.map((cat: any) =>
+            api.get(`/products/category/${cat.category_id}`),
+          );
+          const productResponses = await Promise.all(productRequests);
+          const allProducts = productResponses.flatMap(
+            (res) => res.data || res,
+          );
+
+          // Đếm tổng số lượng CÁC MẶT HÀNG (Ví dụ: 10 mặt hàng)
+          // totalProductCount = allProducts.length;
+
+          // MẸO: Nếu bạn muốn đếm TỔNG SỐ LƯỢNG TỒN KHO (Ví dụ: 5000 gói hạt)
+          // thì hãy comment dòng trên lại và bỏ comment dòng dưới này:
+          totalProductCount = allProducts.reduce(
+            (sum, p) => sum + Number(p.stock_quantity),
+            0,
+          );
+        }
+
+        // 5. Cập nhật State
         setStats((prev) => ({
           ...prev,
+          totalProducts: totalProductCount, // <-- Đã được tính toán động
           lowStockCount: lowStock,
           expiringCount: expiringSoon,
-          totalValue: valueRes.data.value || 0,
+          totalValue: valueData.value || 0,
         }));
       } catch (error) {
         console.error("Lỗi khi tải thống kê kho hàng:", error);
@@ -78,20 +106,16 @@ export function InventoryStats() {
               Tổng sản phẩm
             </p>
             <h3 className="text-4xl font-bold text-text-primary">
-              {stats.totalProducts.toLocaleString("vi-VN")}
+              {isLoading ? (
+                <Loader2 className="animate-spin h-8 w-8 mt-1" />
+              ) : (
+                stats.totalProducts.toLocaleString("vi-VN")
+              )}
             </h3>
           </div>
           <div className="text-blue-500 bg-blue-100 p-2 rounded-lg">
             <Package size={24} />
           </div>
-        </div>
-        <div className="relative z-10 flex items-center gap-2 mt-auto">
-          <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-            <TrendingUp size={10} /> +24
-          </span>
-          <span className="text-xs text-text-secondary">
-            so với tháng trước
-          </span>
         </div>
       </div>
 
@@ -167,15 +191,6 @@ export function InventoryStats() {
             <Coins size={24} />
           </div>
         </div>
-        <div className="w-full bg-gray-100 rounded-full h-2 mt-auto overflow-hidden">
-          <div
-            className="bg-primary h-2 rounded-full"
-            style={{ width: "70%" }}
-          ></div>
-        </div>
-        <p className="text-xs text-text-secondary mt-2">
-          70% ngân sách nhập hàng
-        </p>
       </div>
     </div>
   );

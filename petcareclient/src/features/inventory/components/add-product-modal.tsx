@@ -17,7 +17,7 @@ import {
   Plus,
   Loader2,
 } from "lucide-react";
-import api from "@/lib/api"; 
+import api from "@/lib/api";
 
 interface Batch {
   id: string;
@@ -43,14 +43,21 @@ export function AddProductModal() {
     { id: crypto.randomUUID(), quantity: "", expiryDate: "" },
   ]);
 
+  // States phụ phục vụ chức năng "Thêm danh mục khác"
+  const [isOtherCategory, setIsOtherCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+
   // --- HÀM LẤY DANH MỤC ---
   useEffect(() => {
     if (isOpen) {
       const fetchCategories = async () => {
         try {
           setIsLoadingCategories(true);
-          const res = await api.get("/v1/categories");
-          setCategories(res.data);
+          const res = await api.get("/categories?type=PRODUCT");
+
+          // --- CHỐNG LỖI Ở ĐÂY ---
+          const data = res.data || res;
+          setCategories(Array.isArray(data) ? data : []);
         } catch (error) {
           console.error("Lỗi tải danh mục:", error);
         } finally {
@@ -80,61 +87,120 @@ export function AddProductModal() {
     );
   };
 
+  // Hàm xử lý khi chọn danh mục
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (val === "other") {
+      setIsOtherCategory(true);
+      setCategoryId(""); // Xóa categoryId cũ
+    } else {
+      setIsOtherCategory(false);
+      setCategoryId(val);
+      setNewCategoryName(""); // Xóa text nhập category mới nếu đổi ý
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!name || !categoryId || !costPrice || !sellPrice) {
+    // 1. Validate Form cơ bản
+    if (
+      !name ||
+      (!categoryId && !isOtherCategory) ||
+      !costPrice ||
+      !sellPrice
+    ) {
       alert("Vui lòng điền đầy đủ các trường có dấu *");
       return;
     }
+
+    if (isOtherCategory && !newCategoryName.trim()) {
+      alert("Vui lòng nhập tên danh mục mới!");
+      return;
+    }
+
     if (Number(costPrice) >= Number(sellPrice)) {
       alert("Giá bán phải lớn hơn giá vốn!");
       return;
     }
-
 
     const totalQuantity = batches.reduce(
       (acc, batch) => acc + Number(batch.quantity || 0),
       0,
     );
 
-    const validDates = batches.map((b) => b.expiryDate).filter(Boolean);
-    const earliestDate = validDates.length > 0 ? validDates.sort()[0] : null;
-
     if (totalQuantity <= 0) {
       alert("Vui lòng nhập số lượng lô hàng hợp lệ!");
       return;
     }
 
-    const payload = {
-      name: name,
-      category_id: Number(categoryId),
-      cost_price: Number(costPrice),
-      sell_price: Number(sellPrice),
-      stock_quantity: totalQuantity,
-      min_stock_level: 5, //  mức an toàn kho là 5
-      expiry_date: earliestDate ? new Date(earliestDate).toISOString() : null,
-      sku: `SP-${Date.now()}`, 
-    };
+    // 2. Xử lý Hạn sử dụng (Chống lỗi quá khứ & timezone)
+    const validDates = batches.map((b) => b.expiryDate).filter(Boolean);
+    let finalExpiryDate = null;
+
+    if (validDates.length > 0) {
+      const earliestDate = validDates.sort()[0];
+      finalExpiryDate = new Date(`${earliestDate}T23:59:59Z`).toISOString();
+    }
+
+    setIsSubmitting(true);
+    let finalCategoryId = Number(categoryId);
 
     try {
-      setIsSubmitting(true);
-      await api.post("/v1/products", payload);
+      // 3. Logic tạo Danh mục mới (Nếu chọn "Khác")
+      if (isOtherCategory) {
+        const catRes = await api.post("/categories", {
+          name: newCategoryName.trim(),
+          type: "PRODUCT",
+        });
+
+        const data = catRes.data || catRes;
+        finalCategoryId = data.category_id || data.id;
+      }
+
+      // 4. Lắp ráp Payload thông minh
+      const payload: any = {
+        name: name,
+        category_id: finalCategoryId,
+        cost_price: Number(costPrice),
+        sell_price: Number(sellPrice),
+        stock_quantity: totalQuantity,
+        min_stock_level: 5,
+      };
+
+      if (finalExpiryDate) {
+        payload.expiry_date = finalExpiryDate;
+      }
+
+      // 5. Gửi lên Backend
+      await api.post("/products", payload);
       alert("🎉 Nhập kho thành công!");
 
-      // Reset Form và đóng Modal
       setName("");
       setCategoryId("");
       setCostPrice("");
       setSellPrice("");
       setBatches([{ id: crypto.randomUUID(), quantity: "", expiryDate: "" }]);
+      setIsOtherCategory(false);
+      setNewCategoryName("");
       setIsOpen(false);
 
       window.location.reload();
     } catch (error: any) {
       console.error("Lỗi khi nhập kho:", error);
-      alert(
-        "Lỗi: " +
-          (error.response?.data?.message || "Không thể nhập kho lúc này"),
-      );
+
+      // 6. Bắt và hiển thị lỗi chính xác từ Backend
+      const errData = error.response?.data;
+      let errorMsg =
+        "Không thể nhập kho lúc này (Vui lòng kiểm tra F12/Console)";
+
+      if (errData && errData.message) {
+        if (Array.isArray(errData.message)) {
+          errorMsg = errData.message[0];
+        } else {
+          errorMsg = errData.message;
+        }
+      }
+
+      alert("Lỗi: " + errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -171,7 +237,7 @@ export function AddProductModal() {
             onSubmit={(e) => e.preventDefault()}
           >
             {/* Tên sản phẩm & Danh mục */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-[#1b110d]">
                   Tên sản phẩm <span className="text-red-500">*</span>
@@ -190,8 +256,8 @@ export function AddProductModal() {
                 </label>
                 <div className="relative">
                   <select
-                    value={categoryId}
-                    onChange={(e) => setCategoryId(e.target.value)}
+                    value={isOtherCategory ? "other" : categoryId}
+                    onChange={handleCategoryChange}
                     className="w-full px-4 py-2.5 rounded-xl border border-[#d4c5c0] focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm bg-[#fcf9f8] appearance-none text-[#1b110d]"
                   >
                     <option value="" disabled>
@@ -206,11 +272,29 @@ export function AddProductModal() {
                         </option>
                       ))
                     )}
+                    {/* Tùy chọn Thêm Mới */}
+                    <option value="other" className="font-bold text-primary">
+                      + Khác (Thêm mới...)
+                    </option>
                   </select>
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9a624c]">
                     <ChevronDown className="h-5 w-5" />
                   </span>
                 </div>
+
+                {/* Input hiện ra khi chọn "Khác" */}
+                {isOtherCategory && (
+                  <div className="mt-1 animate-in fade-in slide-in-from-top-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Nhập tên danh mục mới..."
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm transition-all bg-white"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -220,13 +304,13 @@ export function AddProductModal() {
                 <label className="text-sm font-semibold text-[#1b110d]">
                   Chi tiết lô hàng <span className="text-red-500">*</span>
                 </label>
-                <button
+                {/* <button
                   type="button"
                   onClick={addBatch}
                   className="text-xs font-semibold text-primary hover:text-primary-dark flex items-center gap-1 transition-colors"
                 >
                   <PlusCircle className="h-4 w-4" /> Thêm lô hàng
-                </button>
+                </button> */}
               </div>
 
               {batches.map((batch) => (
@@ -306,7 +390,7 @@ export function AddProductModal() {
             </div>
 
             {/* Upload Hình Ảnh */}
-            <div className="flex flex-col gap-2">
+            {/* <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-[#1b110d]">
                 Hình ảnh sản phẩm
               </label>
@@ -326,7 +410,7 @@ export function AddProductModal() {
                   </p>
                 </div>
               </div>
-            </div>
+            </div> */}
           </form>
         </div>
 
