@@ -1,22 +1,23 @@
-import { useState, useEffect } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogClose,
-} from "@/components/ui/dialog";
+  X,
+  Plus,
+  Check,
+  Trash2,
+  Package,
+  Loader2,
+  PlusCircle,
+  ChevronDown,
+  CloudUpload,
+} from "lucide-react";
+import { useState, useEffect } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
-  Package,
-  X,
-  ChevronDown,
-  PlusCircle,
-  Trash2,
-  CloudUpload,
-  Check,
-  Plus,
-  Loader2,
-} from "lucide-react";
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import api from "@/lib/api";
 
 interface Batch {
@@ -132,17 +133,16 @@ export function AddProductModal() {
       return;
     }
 
-    // 2. Xử lý Hạn sử dụng (Chống lỗi quá khứ & timezone)
-    const validDates = batches.map((b) => b.expiryDate).filter(Boolean);
-    let finalExpiryDate = null;
-
-    if (validDates.length > 0) {
-      const earliestDate = validDates.sort()[0];
-      finalExpiryDate = new Date(`${earliestDate}T23:59:59Z`).toISOString();
-    }
-
-    setIsSubmitting(true);
-    let finalCategoryId = Number(categoryId);
+    const payload = {
+      name: name,
+      category_id: Number(categoryId),
+      cost_price: Number(costPrice),
+      sell_price: Number(sellPrice),
+      stock_quantity: totalQuantity,
+      min_stock_level: 5, //  mức an toàn kho là 5
+      expiry_date: earliestDate ? new Date(earliestDate).toISOString() : null,
+      sku: `SP-${Date.now()}`,
+    };
 
     try {
       // 3. Logic tạo Danh mục mới (Nếu chọn "Khác")

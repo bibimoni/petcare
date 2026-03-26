@@ -49,16 +49,16 @@ export class AuthService {
     });
 
     if (!user || !user.password_hash) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
     const isPasswordValid = await comparePassword(loginDto.password, user.password_hash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
     if (user.status !== UserStatus.ACTIVE) {
-      throw new UnauthorizedException('Account is not active');
+      throw new UnauthorizedException('Tài khoản chưa được kích hoạt');
     }
 
     const permissions =
@@ -94,7 +94,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException('Email đã được sử dụng');
     }
 
     const hashedPassword = await hashPassword(registerDto.password);
@@ -114,7 +114,7 @@ export class AuthService {
     const { password_hash, ...userWithoutPassword } = savedUser;
 
     return {
-      message: 'User registered successfully',
+      message: 'Đăng ký tài khoản thành công',
       user: userWithoutPassword,
     };
   }
@@ -124,11 +124,11 @@ export class AuthService {
       where: { email: forgotPasswordDto.email },
 		});
 	  if (!user) {
-	  	throw new UnauthorizedException('User not found');
+	  	throw new UnauthorizedException('Email không tồn tại trong hệ thống');
 	  }
 
 		if (user.reset_password_expires_at && user.reset_password_expires_at >= new Date() && user.reset_password_token) {
-			throw new ConflictException('A password reset request is already pending for this email');
+			throw new ConflictException('Yêu cầu đặt lại mật khẩu đã được gửi, vui lòng kiểm tra email');
 		}
 
 		const token = generateRandomToken()
@@ -139,7 +139,7 @@ export class AuthService {
 		await this.mailService.sendResetPasswordEmail(user.email, token);
 
 		return {
-			message: 'If an account with that email exists, a password reset link has been sent.',
+			message: 'Link đặt lại mật khẩu đã được gửi đến email của bạn',
 		};
   }
 
@@ -149,20 +149,15 @@ export class AuthService {
 		});
 
 		if (!user) {
-	    throw new UnauthorizedException('Invalid token: token not found');
+	    throw new UnauthorizedException('Đường dẫn không hợp lệ');
 	  }
 
 	  if (!user.reset_password_expires_at) {
-	    throw new UnauthorizedException('Invalid token: no expiration set');
+	    throw new UnauthorizedException('Đường dẫn không hợp lệ');
 	  }
 
 	  if (user.reset_password_expires_at < new Date()) {
-	    const minutesElapsed = Math.floor(
-	      (new Date().getTime() - new Date(user.reset_password_expires_at).getTime()) / 60000
-	    );
-	    throw new UnauthorizedException(
-	      `Token expired ${Math.abs(minutesElapsed)} minutes ago. Please request a new one.`
-	    );
+	    throw new UnauthorizedException('Đường dẫn đã hết hạn, vui lòng yêu cầu đặt lại mật khẩu mới');
 	  }
 		user.password_hash = await hashPassword(newPassword);
 		user.reset_password_token = null;
@@ -170,6 +165,6 @@ export class AuthService {
 
 		await this.userRepository.save(user);
 
-		return { message: 'Password reset successfully' };
+		return { message: 'Đặt lại mật khẩu thành công' };
   }
 }

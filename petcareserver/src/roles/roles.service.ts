@@ -39,7 +39,7 @@ export class RolesService {
 
     if (!currentUser || currentUser.store_id !== storeId) {
       throw new ForbiddenException(
-        'You do not have permission to create roles for this store',
+        'Bạn không có quyền tạo vai trò cho cửa hàng này',
       );
     }
 
@@ -49,7 +49,7 @@ export class RolesService {
 
     if (existingRole) {
       throw new ConflictException(
-        `Role with name '${createRoleDto.name}' already exists in this store`,
+        `Vai trò '${createRoleDto.name}' đã tồn tại trong cửa hàng`,
       );
     }
 
@@ -57,7 +57,7 @@ export class RolesService {
       createRoleDto.permission_ids,
     );
     if (permissions.length !== createRoleDto.permission_ids.length) {
-      throw new NotFoundException('One or more permissions not found');
+      throw new NotFoundException('Một hoặc nhiều quyền không tồn tại');
     }
 
     const role = this.roleRepository.create({
@@ -89,7 +89,7 @@ export class RolesService {
 
     if (!currentUser || currentUser.store_id !== storeId) {
       throw new ForbiddenException(
-        'You do not have permission to view roles for this store',
+        'Bạn không có quyền xem vai trò của cửa hàng này',
       );
     }
 
@@ -132,7 +132,7 @@ export class RolesService {
     });
 
     if (!role) {
-      throw new NotFoundException('Role not found');
+      throw new NotFoundException('Không tìm thấy vai trò');
     }
 
     const currentUser = await this.userRepository.findOne({
@@ -141,7 +141,7 @@ export class RolesService {
 
     if (!currentUser || currentUser.store_id !== role.store_id) {
       throw new ForbiddenException(
-        'You do not have permission to view this role',
+        'Bạn không có quyền xem vai trò này',
       );
     }
 
@@ -174,11 +174,11 @@ export class RolesService {
     });
 
     if (!role) {
-      throw new NotFoundException('Role not found');
+      throw new NotFoundException('Không tìm thấy vai trò');
     }
 
     if (!role.is_editable) {
-      throw new ForbiddenException('This role cannot be edited');
+      throw new ForbiddenException('Vai trò này không thể chỉnh sửa');
     }
 
     const currentUser = await this.userRepository.findOne({
@@ -187,7 +187,7 @@ export class RolesService {
 
     if (!currentUser || currentUser.store_id !== role.store_id) {
       throw new ForbiddenException(
-        'You do not have permission to update this role',
+        'Bạn không có quyền cập nhật vai trò này',
       );
     }
 
@@ -198,7 +198,7 @@ export class RolesService {
 
       if (existingRole && existingRole.id !== roleId) {
         throw new ConflictException(
-          `Role with name '${updateRoleDto.name}' already exists in this store`,
+          `Vai trò '${updateRoleDto.name}' đã tồn tại trong cửa hàng`,
         );
       }
 
@@ -217,7 +217,7 @@ export class RolesService {
           updateRoleDto.permission_ids,
         );
         if (permissions.length !== updateRoleDto.permission_ids.length) {
-          throw new NotFoundException('One or more permissions not found');
+          throw new NotFoundException('Một hoặc nhiều quyền không tồn tại');
         }
 
         const rolePermissions = updateRoleDto.permission_ids.map(
@@ -244,11 +244,11 @@ export class RolesService {
     });
 
     if (!role) {
-      throw new NotFoundException('Role not found');
+      throw new NotFoundException('Không tìm thấy vai trò');
     }
 
     if (!role.is_editable || role.name === 'ADMIN') {
-      throw new ForbiddenException('Cannot delete system roles');
+      throw new ForbiddenException('Không thể xóa vai trò hệ thống');
     }
 
     const currentUser = await this.userRepository.findOne({
@@ -257,7 +257,7 @@ export class RolesService {
 
     if (!currentUser || currentUser.store_id !== role.store_id) {
       throw new ForbiddenException(
-        'You do not have permission to delete this role',
+        'Bạn không có quyền xóa vai trò này',
       );
     }
 
@@ -267,7 +267,7 @@ export class RolesService {
 
     if (usersWithRole > 0) {
       throw new ConflictException(
-        `Cannot delete role as it is assigned to ${usersWithRole} user(s). Please reassign users first.`,
+        `Không thể xóa vai trò vì đang có ${usersWithRole} người dùng được gán. Vui lòng gán lại vai trò trước`,
       );
     }
 
@@ -276,7 +276,7 @@ export class RolesService {
     await this.roleRepository.delete(roleId);
 
     return {
-      message: `Role '${role.name}' deleted successfully`,
+      message: `Xóa vai trò '${role.name}' thành công`,
     };
   }
 
@@ -287,7 +287,7 @@ export class RolesService {
 
     if (!currentUser || currentUser.store_id !== storeId) {
       throw new ForbiddenException(
-        'You do not have permission to view permissions for this store',
+        'Bạn không có quyền xem danh sách quyền của cửa hàng này',
       );
     }
 

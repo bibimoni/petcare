@@ -41,7 +41,10 @@ export class Service {
   price: number;
 
   @Column({ type: 'int', nullable: true })
-  duration_minutes: number;
+  min_weight: number;
+
+  @Column({ type: 'int', nullable: true })
+  max_weight: number;
 
   @Column({ type: 'text', nullable: true })
   description: string;

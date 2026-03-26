@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { InventoryStats } from "../components/inventory-stats";
-import { InventoryToolbar } from "../components/inventory-toolbar";
 import { InventoryTable } from "../components/inventory-table";
+import { InventoryToolbar } from "../components/inventory-toolbar";
 
 export default function InventoryPage() {
   // Tạo 2 state làm cầu nối liên lạc giữa Toolbar và Table

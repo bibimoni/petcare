@@ -6,6 +6,18 @@ import { login } from "@/lib/auth";
 
 type Errors = { email?: string; password?: string };
 
+export type User = {
+  email: string;
+  phone: string;
+  status: string;
+  user_id: number;
+  full_name: string;
+  role: string | null;
+  permissions: string[];
+  role_id: number | null;
+  store_id: number | null;
+};
+
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,16 +40,21 @@ export default function LoginForm() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const res = await login({ email, password });
+      const res = (await login({ email, password })) as {
+        user?: User;
+        status?: number;
+        access_token?: string;
+      };
 
       const token = res?.access_token;
       const user = res?.user || {};
+      console.log(user);
 
       if (token) {
         localStorage.setItem("accessToken", token);
         localStorage.setItem("user", JSON.stringify(user));
         toast.success("Đăng nhập thành công");
-        navigate("/profile");
+        navigate("/dashboard");
       }
     } catch (_err) {
       toast.error(
@@ -108,7 +125,7 @@ export default function LoginForm() {
               className="material-symbols-outlined"
               style={{ fontSize: "20px" }}
             >
-              visibility
+              {showPassword ? "visibility_off" : "visibility"}
             </span>
           </button>
         </div>

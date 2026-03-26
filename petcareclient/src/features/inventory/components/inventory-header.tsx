@@ -1,5 +1,5 @@
 import { Package } from "lucide-react";
-import { AddProductModal } from "./add-product-modal";
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,6 +8,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+
+import { AddProductModal } from "./add-product-modal";
 
 export function InventoryHeader() {
   return (

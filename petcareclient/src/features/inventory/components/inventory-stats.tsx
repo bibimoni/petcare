@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
 import {
-  Package,
-  AlertTriangle,
-  CalendarX,
   Coins,
+  Package,
+  Loader2,
+  CalendarX,
   TrendingUp,
   ArrowRight,
-  Loader2,
+  AlertTriangle,
 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
 import api from "@/lib/api";
 
 export function InventoryStats() {

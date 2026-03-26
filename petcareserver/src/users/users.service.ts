@@ -44,7 +44,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException('Không tìm thấy người dùng');
     }
 
     const permissions =
@@ -62,7 +62,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException('Không tìm thấy người dùng');
     }
 
     await this.userRepository.update(userId, updateProfileDto);
@@ -99,7 +99,7 @@ export class UsersService {
     });
 
     if (!updatedUser) {
-      throw new UnauthorizedException('Failed to update user');
+      throw new UnauthorizedException('Cập nhật thông tin thất bại');
     }
 
     const permissions =

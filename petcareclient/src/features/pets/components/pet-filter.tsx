@@ -1,33 +1,86 @@
-export default function PetFilters() {
+type Pet = {
+  breed?: string;
+  status?: string;
+};
+
+type PetFiltersProps = {
+  pets: Pet[];
+  sortBy: string;
+  breedFilter: string;
+  genderFilter: string;
+  statusFilter: string;
+  filteredCount: number;
+  setSortBy: (value: string) => void;
+  setBreedFilter: (value: string) => void;
+  setGenderFilter: (value: string) => void;
+  setStatusFilter: (value: string) => void;
+};
+
+export default function PetFilters({
+  breedFilter,
+  filteredCount,
+  genderFilter,
+  pets,
+  setBreedFilter,
+  setGenderFilter,
+  setSortBy,
+  setStatusFilter,
+  sortBy,
+  statusFilter,
+}: PetFiltersProps) {
+  const breedOptions = Array.from(
+    new Set(pets.map((pet) => String(pet.breed || "Khác"))),
+  );
+
   return (
     <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow mb-6">
-
       <div className="flex gap-3">
-
-        <select className="border rounded-full px-4 py-2">
-          <option>Tất cả loài</option>
-          <option>Dog</option>
-          <option>Cat</option>
+        <select
+          className="border rounded-full px-4 py-2"
+          value={breedFilter}
+          onChange={(e) => setBreedFilter(e.target.value)}
+        >
+          <option value="all">Tất cả giống</option>
+          {breedOptions.map((breed) => (
+            <option key={breed} value={breed}>
+              {breed}
+            </option>
+          ))}
         </select>
 
-        <select className="border rounded-full px-4 py-2">
-          <option>Tình trạng sức khỏe</option>
-          <option>Khỏe mạnh</option>
-          <option>Đang điều trị</option>
+        <select
+          className="border rounded-full px-4 py-2"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="all">Tình trạng sức khỏe</option>
+          <option value="ALIVE">Khỏe mạnh</option>
+          <option value="DECEASED">Bị bệnh</option>
         </select>
 
-        <select className="border rounded-full px-4 py-2">
-          <option>Sắp xếp theo</option>
-          <option>Tên</option>
-          <option>Tuổi</option>
+        <select
+          className="border rounded-full px-4 py-2"
+          value={genderFilter}
+          onChange={(e) => setGenderFilter(e.target.value)}
+        >
+          <option value="all">Giới tính</option>
+          <option value="FEMALE">Giống cái</option>
+          <option value="MALE">Giống đực</option>
         </select>
 
+        <select
+          className="border rounded-full px-4 py-2"
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+        >
+          <option value="nameAsc">Tên A-Z</option>
+          <option value="nameDesc">Tên Z-A</option>
+        </select>
       </div>
 
       <div className="text-sm text-gray-500">
-        Hiển thị 8 trong 124 pet
+        Hiển thị {filteredCount} trong {pets.length} pet
       </div>
-
     </div>
   );
 }

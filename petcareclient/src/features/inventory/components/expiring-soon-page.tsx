@@ -1,34 +1,40 @@
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
+  Tag,
+  Clock,
   Search,
-  ChevronRight,
+  Filter,
+  Trash2,
+  Percent,
+  Package,
+  Loader2,
+  ArrowLeft,
+  Megaphone,
+  CalendarX,
   ChevronLeft,
   ChevronDown,
-  Filter,
-  CalendarX,
-  Clock,
-  Package,
+  ChevronRight,
+  MoreVertical,
   AlertTriangle,
-  Loader2,
 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
 import api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 
 interface ExpiringAlert {
-  product_id: number;
-  name: string;
   sku: string;
-  stock_quantity: number;
+  name: string;
+  product_id: number;
   expiry_date: string;
-  category_id?: number;
+  stock_quantity: number;
 
-  expiryFormatted: string;
   daysLeft: number;
-  level: "severe" | "warning" | "notice" | "normal";
   image_url: string;
   hasDiscount: boolean;
+  // Custom fields cho UI
+  expiryFormatted: string;
+  level: "severe" | "warning" | "notice" | "normal";
 }
 
 export default function ExpiringSoonPage() {

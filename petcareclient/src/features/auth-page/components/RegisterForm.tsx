@@ -75,7 +75,7 @@ export default function RegisterForm() {
       });
       if (res?.status === 201) {
         toast.success("Đăng ký thành công");
-        navigate("/profile");
+        navigate("/login");
       }
     } finally {
       setLoading(false);
