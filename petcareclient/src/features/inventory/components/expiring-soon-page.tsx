@@ -1,22 +1,17 @@
 import {
-  Tag,
   Clock,
   Search,
   Filter,
-  Trash2,
-  Percent,
   Package,
   Loader2,
   ArrowLeft,
-  Megaphone,
   CalendarX,
   ChevronLeft,
   ChevronDown,
   ChevronRight,
-  MoreVertical,
   AlertTriangle,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
@@ -27,12 +22,12 @@ interface ExpiringAlert {
   name: string;
   product_id: number;
   expiry_date: string;
+  category_id?: number;
   stock_quantity: number;
 
   daysLeft: number;
   image_url: string;
   hasDiscount: boolean;
-  // Custom fields cho UI
   expiryFormatted: string;
   level: "severe" | "warning" | "notice" | "normal";
 }

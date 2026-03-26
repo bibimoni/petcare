@@ -133,16 +133,17 @@ export function AddProductModal() {
       return;
     }
 
-    const payload = {
-      name: name,
-      category_id: Number(categoryId),
-      cost_price: Number(costPrice),
-      sell_price: Number(sellPrice),
-      stock_quantity: totalQuantity,
-      min_stock_level: 5, //  mức an toàn kho là 5
-      expiry_date: earliestDate ? new Date(earliestDate).toISOString() : null,
-      sku: `SP-${Date.now()}`,
-    };
+    // 2. Xử lý Hạn sử dụng (Chống lỗi quá khứ & timezone)
+    const validDates = batches.map((b) => b.expiryDate).filter(Boolean);
+    let finalExpiryDate = null;
+
+    if (validDates.length > 0) {
+      const earliestDate = validDates.sort()[0];
+      finalExpiryDate = new Date(`${earliestDate}T23:59:59Z`).toISOString();
+    }
+
+    setIsSubmitting(true);
+    let finalCategoryId = Number(categoryId);
 
     try {
       // 3. Logic tạo Danh mục mới (Nếu chọn "Khác")

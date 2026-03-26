@@ -19,6 +19,7 @@ interface ProductAlert {
   product_id: number;
   sell_price: number;
   image_url?: string;
+  category_id?: number;
   stock_quantity: number;
   min_stock_level: number;
 
