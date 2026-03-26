@@ -1,12 +1,30 @@
 import { Edit, Trash2, PawPrint } from "lucide-react";
 
-export default function CustomerRow({ c }: any) {
+type CustomerRowProps = {
+  c: {
+    avatar?: string;
+    customer_id?: number | string;
+    full_name?: string;
+    id?: number | string;
+    last_visit?: string | null;
+    name?: string;
+    pets?: unknown[] | number;
+    phone?: string;
+  };
+};
+
+export default function CustomerRow({ c }: CustomerRowProps) {
+  const displayName = c.full_name || c.name || "Khách hàng";
+  const displayId = c.customer_id || c.id || "-";
+  const petCount = Array.isArray(c.pets) ? c.pets.length : Number(c.pets || 0);
+  const lastVisit = c.last_visit
+    ? new Date(c.last_visit).toLocaleDateString("vi-VN")
+    : "Chưa phát sinh";
+
   return (
     <tr className="hover:bg-gray-50">
-
       <td className="p-4">
         <div className="flex items-center gap-3">
-
           {c.avatar ? (
             <img
               src={c.avatar}
@@ -14,17 +32,14 @@ export default function CustomerRow({ c }: any) {
             />
           ) : (
             <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center font-bold">
-              {c.name[0]}
+              {displayName[0]}
             </div>
           )}
 
           <div>
-            <p className="font-semibold">{c.name}</p>
-            <p className="text-xs text-gray-500">
-              ID: #{c.id}
-            </p>
+            <p className="font-semibold">{displayName}</p>
+            <p className="text-xs text-gray-500">ID: #{displayId}</p>
           </div>
-
         </div>
       </td>
 
@@ -33,32 +48,26 @@ export default function CustomerRow({ c }: any) {
       <td className="p-4 text-center">
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-50 text-orange-600">
           <PawPrint size={14} />
-          {c.pets}
+          {petCount}
         </span>
       </td>
 
-      <td className="p-4 font-semibold">
-        {c.total.toLocaleString()}đ
-      </td>
-
-      <td className="p-4 text-gray-500">
-        {c.date}
-      </td>
+      <td className="p-4 text-gray-500">{lastVisit}</td>
 
       <td className="p-4 text-right">
         <div className="flex justify-end gap-2">
-
-          <button className="p-2 hover:bg-gray-100 rounded">
+          <button type="button" className="p-2 hover:bg-gray-100 rounded">
             <Edit size={16} />
           </button>
 
-          <button className="p-2 hover:bg-red-50 text-red-500 rounded">
+          <button
+            type="button"
+            className="p-2 hover:bg-red-50 text-red-500 rounded"
+          >
             <Trash2 size={16} />
           </button>
-
         </div>
       </td>
-
     </tr>
   );
 }

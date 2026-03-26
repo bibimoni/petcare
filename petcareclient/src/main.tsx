@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Route, Routes, BrowserRouter } from "react-router-dom";
+import { Route, Routes, BrowserRouter, useParams } from "react-router-dom";
 
 import "./index.css";
 import { Toaster } from "sonner";
@@ -11,12 +11,18 @@ import AuthPage from "./features/auth-page/auth-page";
 import ForgotPasswordPage from "./features/auth-page/forgot-password-page";
 import ResetPasswordPage from "./features/auth-page/reset-password-page";
 import { DashboardPage } from "./features/dashboard";
+import Order from "./features/order/order-detail-page";
 import ProfilePage from "./features/profile/profile";
 import PetListPage from "./features/pets/pages/pet-list-page";
 import CustomersPage from "./features/customer/customer-page";
 import InventoryPage from "./features/inventory/components/inventory-page";
 import LowStockPage from "./features/inventory/components/low-stock-page";
 import ExpiringSoonPage from "./features/inventory/components/expiring-soon-page";
+
+const OrderWrapper = () => {
+  const { orderId } = useParams<{ orderId: string }>();
+  return <Order orderId={orderId!} />;
+};
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -41,7 +47,14 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/pets" element={<PetListPage />} />
         <Route path="/customers" element={<CustomersPage />} />
-        <Route path="/orders" element={<Order />} />
+        <Route
+          path="/orders/:orderId"
+          element={
+            <ProtectedRoute>
+              <OrderWrapper />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/inventory/low-stock" element={<LowStockPage />} />
         <Route path="/inventory/expiring-soon" element={<ExpiringSoonPage />} />
