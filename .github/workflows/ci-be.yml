@@ -14,20 +14,6 @@ jobs:
     defaults:
       run:
         working-directory: ./petcareserver
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: petcare_dev
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -44,19 +30,21 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          POSTGRES_URI: postgresql://postgres:password@localhost:5432/petcare_dev
+
+      - name: Run tests
+        run: npm run test:e2e
+
 
   deploy:
     name: Deploy to Render
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
-    
+
     steps:
       - name: Trigger Render API Deploy Hook
         run: |
           curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
-          
+
       - name: Deployment Status
         run: |
           echo "Deployment triggered successfully!"

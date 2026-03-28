@@ -10,7 +10,7 @@ import { MailService } from '../mail/mail.service';
 import { InviteStaffResponseDto } from './dto/invite-staff-response.dto';
 import { AcceptInvitationResponseDto } from './dto/accept-invitation-response.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Store } from './entities/store.entity';
 import { User } from '../users/entities/user.entity';
 import { Role } from '../roles/entities/role.entity';
@@ -28,6 +28,10 @@ import {
 } from '../common/enum';
 import { generateRandomToken, INVITE_TOKEN_EXPIRATION_DAYS } from 'src/common';
 import { NotificationScheduler } from 'src/notifications/notification.scheduler';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { Notification, NotificationType } from 'src/notifications/entities/notification.entity';
+import { buildInvitationUrl } from 'src/notifications/notification.util';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class StoresService {
@@ -47,6 +51,9 @@ export class StoresService {
     private readonly mailService: MailService,
     @Inject(forwardRef(() => NotificationScheduler))
     private readonly notificationScheduler: NotificationScheduler,
+    private readonly notificationsService: NotificationsService,
+    private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
   ) {}
 
   async createStore(createStoreDto: CreateStoreDto, currentUserId: number) {
@@ -194,20 +201,44 @@ export class StoresService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + INVITE_TOKEN_EXPIRATION_DAYS);
 
-    const invitation = this.invitationRepository.create({
-      email: inviteStaffDto.email,
-      store_id: storeId,
-      role_id: inviteStaffDto.role_id,
-      status: InvitationStatus.PENDING,
-      token: token,
-      expires_at: expiresAt,
-      invited_by: currentUserId,
-      message: inviteStaffDto.message || '',
-    });
+    const savedInvitation = await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const invitation = transactionalEntityManager.create(Invitation, {
+          email: inviteStaffDto.email,
+          store_id: storeId,
+          role_id: inviteStaffDto.role_id,
+          status: InvitationStatus.PENDING,
+          token: token,
+          expires_at: expiresAt,
+          invited_by: currentUserId,
+          message: inviteStaffDto.message || '',
+        });
 
-    const savedInvitation = (await this.invitationRepository.save(
-      invitation,
-    )) as Invitation;
+        const saved = await transactionalEntityManager.save(invitation);
+
+        if (existingUser) {
+          try {
+            const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
+            const actionUrl = buildInvitationUrl(frontendUrl, token);
+
+            const notification = transactionalEntityManager.create(Notification, {
+              store_id: storeId,
+              user_id: existingUser.user_id,
+              type: NotificationType.STORE_INVITATION,
+              title: `Invitation to join ${store.name}`,
+              message: `You have been invited to join ${store.name} as ${role.name}. Click to view details.`,
+              action_url: actionUrl,
+            });
+
+            await transactionalEntityManager.save(notification);
+          } catch (error) {
+            console.error('Failed to create invitation notification:', error);
+          }
+        }
+
+        return saved;
+      },
+    );
 
     const invitationResponse: InviteStaffResponseDto = {
       message: 'Gửi lời mời thành công',
@@ -236,10 +267,14 @@ export class StoresService {
         token,
     };
 
-    await this.mailService.sendInvitationEmail(
-      invitationResponse,
-      inviteStaffDto.full_name,
-    );
+    try {
+      await this.mailService.sendInvitationEmail(
+        invitationResponse,
+        inviteStaffDto.full_name,
+      );
+    } catch (error) {
+      console.error('Failed to send invitation email:', error);
+    }
 
     return invitationResponse;
   }
@@ -442,6 +477,8 @@ export class StoresService {
     await this.invitationRepository.update(invitation.id, {
       status: InvitationStatus.ACCEPTED,
     });
+
+
 
     const updatedUser = await this.userRepository.findOne({
       where: { user_id: user.user_id },

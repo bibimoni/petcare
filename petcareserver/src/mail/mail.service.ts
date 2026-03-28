@@ -2,7 +2,8 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InviteStaffResponseDto } from '../stores/dto/invite-staff-response.dto';
-import { INVITE_PAGE_ROUTE, RESET_PASSWORD_PAGE_ROUTE, RESET_PASSWORD_TOKEN_EXPIRATION_MINUTES } from 'src/common';
+import { RESET_PASSWORD_PAGE_ROUTE, RESET_PASSWORD_TOKEN_EXPIRATION_MINUTES } from 'src/common';
+import { buildInvitationUrl } from '../notifications/notification.util';
 
 @Injectable()
 export class MailService {
@@ -13,8 +14,8 @@ export class MailService {
 
 	async sendInvitationEmail(invitationData: InviteStaffResponseDto, full_name?: string) {
 		try {
-			const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-			const invitationLink = `${frontendUrl}/${INVITE_PAGE_ROUTE}?token=${invitationData.invitation.token}`;
+			const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
+			const invitationLink = buildInvitationUrl(frontendUrl, invitationData.invitation.token);
 			const formattedExpiryDate = new Date(invitationData.invitation.expires_at).toLocaleDateString('en-US', {
 				year: 'numeric',
 				month: 'long',
