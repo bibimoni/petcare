@@ -37,16 +37,31 @@ export class NotificationsController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get notifications for a specific store' })
+  @ApiOperation({ summary: 'Get notifications for a specific store', deprecated: true })
   @ApiResponse({
     status: 200,
     description: 'Notifications retrieved successfully',
   })
+  @ApiResponse({ status: 200, description: 'Deprecated: Use GET /notifications/user instead' })
   async getStoreNotifications(
     @CurrentUser() user: any,
     @Query('status') status?: NotificationStatus,
   ): Promise<Notification[]> {
-    return this.notificationsService.findByStore(user.store_id, status);
+    return this.notificationsService.findByStore(user.store_id, user.user_id, status);
+  }
+
+  @Get('user')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all notifications for the current user' })
+  @ApiResponse({
+    status: 200,
+    description: 'User notifications retrieved successfully',
+  })
+  async getUserNotifications(
+    @CurrentUser() user: any,
+    @Query('status') status?: NotificationStatus,
+  ): Promise<Notification[]> {
+    return this.notificationsService.findByUser(user.user_id, user.store_id, status);
   }
 
   @Get(':id/product-details')
@@ -127,7 +142,7 @@ export class NotificationsController {
       user.store_id,
       body.notificationIds,
     );
-    return { message: 'Notifications marked as read' };
+    return { message: 'Đã đánh dấu đã đọc các thông báo' };
   }
 
   @Patch(':id/mark-read')
@@ -216,6 +231,6 @@ export class NotificationsController {
     @Param('id', ParseIntPipe) notificationId: number,
   ): Promise<{ message: string }> {
     await this.notificationsService.delete(user.store_id, notificationId);
-    return { message: 'Notification deleted successfully' };
+    return { message: 'Xóa thông báo thành công' };
   }
 }

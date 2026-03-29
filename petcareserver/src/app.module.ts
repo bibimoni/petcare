@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { envValidationSchema } from './config/env.validation';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -28,16 +28,31 @@ import { NotificationsModule } from './notifications/notifications.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('POSTGRES_URI'),
-        autoLoadEntities: true,
-        synchronize: true,
-        ssl:
-          process.env.NODE_ENV === 'production'
-            ? { rejectUnauthorized: false }
-            : false,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const dbType = (configService.get<string>('DB_TYPE') || 'postgres') as 'postgres' | 'sqlite';
+        
+        const baseConfig = {
+          type: dbType,
+          autoLoadEntities: true,
+          synchronize: true,
+          ssl:
+            process.env.NODE_ENV === 'production'
+              ? { rejectUnauthorized: false }
+              : false,
+        };
+
+        if (dbType === 'sqlite') {
+          return {
+            ...baseConfig,
+            database: ':memory:',
+          } as TypeOrmModuleOptions;
+        }
+
+        return {
+          ...baseConfig,
+          url: configService.get<string>('POSTGRES_URI'),
+        } as TypeOrmModuleOptions;
+      },
     }),
     AuthModule,
     UsersModule,

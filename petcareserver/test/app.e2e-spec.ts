@@ -1,19 +1,38 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ENTITIES, TEST_CONFIG, getTypeOrmTestConfig } from './test-database.helper';
+import { AppController } from '../src/app.controller';
+import { AppService } from '../src/app.service';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          load: [() => TEST_CONFIG],
+        }),
+        TypeOrmModule.forRootAsync({
+          useFactory: () => getTypeOrmTestConfig(),
+        }),
+        TypeOrmModule.forFeature(ENTITIES),
+      ],
+      controllers: [AppController],
+      providers: [AppService],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
+  }, 30000);
+
+  afterAll(async () => {
+    await app.close();
   });
 
   it('/ (GET)', () => {
