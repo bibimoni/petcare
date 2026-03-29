@@ -62,7 +62,7 @@ export class User {
   @Column({ type: 'text', nullable: true })
   reset_password_token: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   reset_password_expires_at: Date | null;
 
   @CreateDateColumn()
@@ -71,7 +71,7 @@ export class User {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   last_login_at: Date;
 
   @Column({ type: 'text', nullable: true })
