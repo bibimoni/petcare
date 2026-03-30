@@ -1,5 +1,5 @@
 import { X, User, Phone, MapPin, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -14,17 +14,30 @@ import {
 import { CustomerApi } from "@/features/customer/api/customer-api";
 import { handleApiError } from "@/lib/api";
 
-type AddCustomerModalProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreated: () => Promise<void> | void;
+type EditableCustomer = {
+  notes?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  fullName?: string;
+  full_name?: string;
+  id?: number | string;
+  customer_id?: number | string;
 };
 
-export default function AddCustomerModal({
+type EditCustomerModalProps = {
+  open: boolean;
+  customer: EditableCustomer | null;
+  onOpenChange: (open: boolean) => void;
+  onUpdated: () => Promise<void> | void;
+};
+
+export default function EditCustomerModal({
   open,
+  customer,
   onOpenChange,
-  onCreated,
-}: AddCustomerModalProps) {
+  onUpdated,
+}: EditCustomerModalProps) {
   const [errors, setErrors] = useState({
     fullName: "",
     email: "",
@@ -38,26 +51,29 @@ export default function AddCustomerModal({
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const resetForm = () => {
-    setFullName("");
-    setEmail("");
-    setPhone("");
-    setAddress("");
-    setNotes("");
+  useEffect(() => {
+    if (!open || !customer) {
+      return;
+    }
+
+    setFullName(String(customer.full_name ?? customer.fullName ?? ""));
+    setEmail(String(customer.email ?? ""));
+    setPhone(String(customer.phone ?? ""));
+    setAddress(String(customer.address ?? ""));
+    setNotes(String(customer.notes ?? ""));
     setErrors({
       fullName: "",
       email: "",
       phone: "",
       address: "",
     });
-  };
+  }, [customer, open]);
 
   const handleClose = () => {
     if (isSubmitting) {
       return;
     }
 
-    resetForm();
     onOpenChange(false);
   };
 
@@ -82,10 +98,18 @@ export default function AddCustomerModal({
       return;
     }
 
+    const customerId = String(customer?.customer_id ?? customer?.id ?? "");
+
+    if (!customerId) {
+      toast.error("Không tìm thấy ID khách hàng");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
-      await CustomerApi.createCustomer({
+      await CustomerApi.editCustomer({
+        id: customerId,
         fullName: fullName.trim(),
         phone: phone.trim(),
         email: email.trim(),
@@ -93,9 +117,8 @@ export default function AddCustomerModal({
         notes: notes.trim(),
       });
 
-      await onCreated();
-      toast.success("Thêm khách hàng mới thành công");
-      resetForm();
+      await onUpdated();
+      toast.success("Cập nhật khách hàng thành công");
       onOpenChange(false);
     } catch (error) {
       handleApiError(error);
@@ -111,10 +134,10 @@ export default function AddCustomerModal({
           <div className="flex items-start justify-between gap-4">
             <div>
               <DialogTitle className="text-xl leading-tight font-extrabold text-[#1f1816]">
-                Thêm khách hàng mới
+                Cập nhật khách hàng
               </DialogTitle>
               <DialogDescription className="mt-2 text-md leading-snug text-[#9f7461]">
-                Nhập thông tin khách hàng
+                Chỉnh sửa thông tin khách hàng
               </DialogDescription>
             </div>
 
@@ -260,7 +283,7 @@ export default function AddCustomerModal({
                   Đang lưu...
                 </>
               ) : (
-                "Lưu thông tin"
+                "Lưu cập nhật"
               )}
             </Button>
           </div>

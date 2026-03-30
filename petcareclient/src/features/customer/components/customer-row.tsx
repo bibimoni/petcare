@@ -11,9 +11,19 @@ type CustomerRowProps = {
     last_visit?: string | null;
     customer_id?: number | string;
   };
+  onEditCustomer: (customer: {
+    name?: string;
+    phone?: string;
+    avatar?: string;
+    full_name?: string;
+    id?: number | string;
+    pets?: unknown[] | number;
+    last_visit?: string | null;
+    customer_id?: number | string;
+  }) => void;
 };
 
-export default function CustomerRow({ c }: CustomerRowProps) {
+export default function CustomerRow({ c, onEditCustomer }: CustomerRowProps) {
   const displayName = c.full_name || c.name || "Khách hàng";
   const displayId = c.customer_id || c.id || "-";
   const petCount = Array.isArray(c.pets) ? c.pets.length : Number(c.pets || 0);
@@ -56,7 +66,11 @@ export default function CustomerRow({ c }: CustomerRowProps) {
 
       <td className="p-4 text-right">
         <div className="flex justify-end gap-2">
-          <button type="button" className="p-2 hover:bg-gray-100 rounded">
+          <button
+            type="button"
+            className="p-2 hover:bg-gray-100 rounded"
+            onClick={() => onEditCustomer(c)}
+          >
             <Edit size={16} />
           </button>
 

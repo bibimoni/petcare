@@ -2,11 +2,19 @@ import CustomerRow from "./customer-row";
 
 type CustomerTableProps = {
   customers: {
+    id?: number | string;
     customer_id?: number | string;
   }[];
+  onEditCustomer: (customer: {
+    id?: number | string;
+    customer_id?: number | string;
+  }) => void;
 };
 
-export default function CustomerTable({ customers }: CustomerTableProps) {
+export default function CustomerTable({
+  customers,
+  onEditCustomer,
+}: CustomerTableProps) {
   return (
     <div className="bg-white rounded-2xl shadow border overflow-hidden">
       <table className="w-full text-sm">
@@ -22,8 +30,12 @@ export default function CustomerTable({ customers }: CustomerTableProps) {
         </thead>
 
         <tbody>
-          {customers.map((c) => (
-            <CustomerRow key={c.customer_id} c={c} />
+          {customers.map((c, index) => (
+            <CustomerRow
+              key={String(c.customer_id ?? c.id ?? index)}
+              c={c}
+              onEditCustomer={onEditCustomer}
+            />
           ))}
         </tbody>
       </table>
