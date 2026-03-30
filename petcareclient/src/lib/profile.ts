@@ -39,6 +39,16 @@ export interface Order {
 }
 
 class ProfileService {
+  async getCustomerById(customerId: number): Promise<Customer> {
+    try {
+      const response = await axiosClient.get(`/customers/${customerId}`);
+      return response as unknown as Customer;
+    } catch (error) {
+      console.error("Error fetching customer by id:", error);
+      throw error;
+    }
+  }
+
   async getCustomerByPhone(phone: string): Promise<Customer> {
     try {
       console.log(`Fetching customer info for phone ${phone}...`);
