@@ -33,19 +33,9 @@ export default function ForgotPasswordForm() {
 
     setLoading(true);
     try {
-      const res = await forgotPassword({ email });
-      if (res?.status === 409) {
-        toast.error(
-          "Đã có liên kết đặt lại mật khẩu được gửi trước đó, hãy check mail của bạn!",
-        );
-        return;
-      } else if (res?.status === 401) {
-        toast.error("Người dùng không tồn tại");
-        return;
-      } else if (res?.status === 201) {
-        toast.success("Liên kết đặt lại mật khẩu đã được gửi.");
-        setEmail("");
-      }
+      await forgotPassword({ email });
+      toast.success("Liên kết đặt lại mật khẩu đã được gửi.");
+      setEmail("");
     } catch (_error) {
       toast.error("Không thể gửi yêu cầu. Vui lòng thử lại.");
     } finally {

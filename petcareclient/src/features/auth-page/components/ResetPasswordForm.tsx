@@ -56,11 +56,9 @@ export default function ResetPasswordForm() {
 
     setLoading(true);
     try {
-      const res = await resetPassword({ token: token!, newPassword });
-      if (res?.status === 201) {
-        toast.success("Mật khẩu đã được đặt lại thành công!");
-        navigate("/login");
-      }
+      await resetPassword({ token: token!, newPassword });
+      toast.success("Mật khẩu đã được đặt lại thành công!");
+      navigate("/login");
     } catch (_error) {
       toast.error("Không thể đặt lại mật khẩu. Vui lòng thử lại.");
     } finally {

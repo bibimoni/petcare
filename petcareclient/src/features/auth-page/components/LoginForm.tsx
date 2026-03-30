@@ -40,15 +40,9 @@ export default function LoginForm() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const res = (await login({ email, password })) as {
-        user?: User;
-        status?: number;
-        access_token?: string;
-      };
-
-      const token = res?.access_token;
-      const user = res?.user || {};
-      console.log(user);
+      const res = await login({ email, password });
+      const token = res?.data?.access_token;
+      const user = res?.data?.user || {};
 
       if (token) {
         localStorage.setItem("accessToken", token);

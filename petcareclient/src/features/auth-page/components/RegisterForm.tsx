@@ -67,16 +67,14 @@ export default function RegisterForm() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const res = await register({
+      await register({
         fullName: formData.fullName,
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
       });
-      if (res?.status === 201) {
-        toast.success("Đăng ký thành công");
-        navigate("/login");
-      }
+      toast.success("Đăng ký thành công");
+      navigate("/login");
     } finally {
       setLoading(false);
     }
