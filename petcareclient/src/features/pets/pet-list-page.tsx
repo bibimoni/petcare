@@ -4,13 +4,13 @@ import { handleApiError } from "@/lib/api";
 import { CustomerService } from "@/lib/customers";
 import { PetService } from "@/lib/pets";
 
-import { Sidebar } from "../../dashboard/components/sidebar";
-import { Footer } from "../../landing-page/components/footer";
-import Breadcrumb from "../components/break-crump";
-import PetFilters from "../components/pet-filter";
-import PetHeader from "../components/pet-header";
-import PetList from "../components/pet-list";
-import PetStats from "../components/pet-stats";
+import { Sidebar } from "../dashboard/components/sidebar";
+import { Footer } from "../landing-page/components/footer";
+import Breadcrumb from "./components/break-crump";
+import PetFilters from "./components/pet-filter";
+import PetHeader from "./components/pet-header";
+import PetList from "./components/pet-list";
+import PetStats from "./components/pet-stats";
 
 type ApiCustomer = {
   full_name?: string;
@@ -33,55 +33,11 @@ type UiPet = {
 
 let petsRequestPromise: Promise<UiPet[]> | null = null;
 
-const normalizeCustomers = (payload: unknown): ApiCustomer[] => {
-  if (Array.isArray(payload)) {
-    return payload as ApiCustomer[];
-  }
-
-  if (!payload || typeof payload !== "object") {
-    return [];
-  }
-
-  const responseObject = payload as Record<string, unknown>;
-
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as ApiCustomer[];
-  }
-
-  return Object.values(responseObject).filter(
-    (item): item is ApiCustomer =>
-      !!item && typeof item === "object" && "customer_id" in item,
-  );
-};
-
-const normalizePetList = (payload: unknown): Record<string, unknown>[] => {
-  if (Array.isArray(payload)) {
-    return payload as Record<string, unknown>[];
-  }
-
-  if (!payload || typeof payload !== "object") {
-    return [];
-  }
-
-  const responseObject = payload as Record<string, unknown>;
-
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as Record<string, unknown>[];
-  }
-
-  return Object.values(responseObject).filter(
-    (item): item is Record<string, unknown> =>
-      !!item && typeof item === "object",
-  );
-};
-
 const mapPetToUi = (pet: Record<string, unknown>, ownerName: string): UiPet => {
   const petName = String(pet.name ?? pet.pet_name ?? "Chưa đặt tên");
   const petType = String(
     pet.type ?? pet.species ?? pet.kind ?? pet.breed ?? "Khác",
   );
-
-  console.log("pet", pet);
 
   return {
     id:
@@ -102,11 +58,11 @@ const mapPetToUi = (pet: Record<string, unknown>, ownerName: string): UiPet => {
 
 const fetchAllPetsByCustomers = async (): Promise<UiPet[]> => {
   const customerRes = await CustomerService.getAll();
-  const customers = normalizeCustomers(customerRes);
+  const customers = customerRes.data;
   const customerIds = Array.from(
     new Set(
       customers
-        .map((customer) => Number(customer.customer_id))
+        .map((customer: ApiCustomer) => Number(customer.customer_id))
         .filter((id) => Number.isFinite(id)),
     ),
   );
@@ -114,13 +70,12 @@ const fetchAllPetsByCustomers = async (): Promise<UiPet[]> => {
   const petRequests = await Promise.all(
     customerIds.map(async (customerId) => {
       const customer = customers.find(
-        (item) => Number(item.customer_id) === customerId,
+        (item: ApiCustomer) => Number(item.customer_id) === customerId,
       );
       const ownerName = String(customer?.full_name ?? "Chưa rõ chủ");
-      const petRes = await PetService.getByCustomer(customerId);
-      const rawPets = normalizePetList(petRes);
+      const petRes = await PetService.getByCustomer(customerId as number);
 
-      return rawPets.map((pet) => mapPetToUi(pet, ownerName));
+      return petRes.map((pet) => mapPetToUi(pet, ownerName));
     }),
   );
 

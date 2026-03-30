@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Route, Routes, BrowserRouter } from "react-router-dom";
+import { Route, Routes, useParams, BrowserRouter } from "react-router-dom";
 
 import "./index.css";
 import { Toaster } from "sonner";
@@ -15,8 +15,16 @@ import { DashboardPage } from "./features/dashboard";
 import ExpiringSoonPage from "./features/inventory/expiring-soon-page";
 import InventoryPage from "./features/inventory/inventory-page";
 import LowStockPage from "./features/inventory/low-stock-page";
-import PetListPage from "./features/pets/pages/pet-list-page";
+import PetListPage from "./features/pets/pet-list-page";
+import CustomerProfilePage from "./features/profile/customer";
+import PetProfile from "./features/profile/pets";
 import ProfilePage from "./features/profile/profile";
+
+function PetProfileWrapper() {
+  const { id } = useParams();
+
+  return <PetProfile petId={Number(id)} />;
+}
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -40,7 +48,9 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/pets" element={<PetListPage />} />
+        <Route path="/pets/:id" element={<PetProfileWrapper />} />
         <Route path="/customers" element={<CustomersPage />} />
+        <Route path="/customer-profile" element={<CustomerProfilePage />} />
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/inventory/low-stock" element={<LowStockPage />} />
         <Route path="/inventory/expiring-soon" element={<ExpiringSoonPage />} />
