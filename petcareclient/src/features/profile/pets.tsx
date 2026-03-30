@@ -1,245 +1,570 @@
-import { useState, useEffect } from "react";
+import { Bell, Pencil, PawPrint, ChevronLeft } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
 
-import type { Customer, PetWithHistory, ServiceHistory } from "@/lib/pets";
+import EditPetModal from "../pets/components/edit-pet-modal";
+function Modal({
+  open,
+  title,
+  onClose,
+  width = "max-w-lg",
+  children,
+}: {
+  open: boolean;
+  title: string;
+  width?: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div
+        className={`relative w-full ${width} bg-white rounded-2xl shadow-2xl p-0 max-w-lg mx-auto`}
+      >
+        <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b">
+          <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+          <button
+            className="text-gray-400 hover:text-gray-700 text-2xl font-bold"
+            onClick={onClose}
+            aria-label="Đóng"
+            type="button"
+          >
+            ×
+          </button>
+        </div>
+        <div className="p-6 max-h-[70vh] overflow-y-auto">{children}</div>
+      </div>
+    </div>
+  );
+}
 
-import { PetService } from "@/lib/pets";
+import { Link, useNavigate } from "react-router-dom";
+
+import { handleApiError } from "@/lib/api";
+import {
+  type Pet,
+  PetService,
+  type Customer,
+  type ServiceHistory,
+  type PetWeightHistory,
+} from "@/lib/pets";
+
+import { Sidebar } from "../dashboard/components/sidebar";
+
+interface PetProfileDetail extends Pet {
+  pet_id?: number;
+  avatar_url?: string;
+  customer?: Customer & {
+    notes?: string;
+    customer_id?: number;
+    total_spend?: string;
+  };
+}
+
+type PetWeightWithNotes = PetWeightHistory & {
+  notes?: string;
+};
 
 export default function PetProfile({ petId }: { petId: number }) {
-  const [pet, setPet] = useState<PetWithHistory | null>(null);
-  const [owner, setOwner] = useState<Customer | null>(null);
+  const [modalOpen, setModalOpen] = useState<null | "weights" | "services">(
+    null,
+  );
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [pet, setPet] = useState<PetProfileDetail | null>(null);
   const [services, setServices] = useState<ServiceHistory[]>([]);
+  const [weights, setWeights] = useState<PetWeightWithNotes[]>([]);
 
-  useEffect(() => {
-    if (!petId || isNaN(Number(petId))) return;
+  const navigate = useNavigate();
 
-    const fetchData = async () => {
-      const petData = await PetService.getPetDetails(petId);
-      setPet(petData);
+  const rawUser = localStorage.getItem("user");
+  const user = rawUser ? JSON.parse(rawUser) : null;
 
-      const ownerData = await PetService.getByCustomer(petData.customer_id);
-      setOwner(ownerData);
-
-      const serviceData = await PetService.getPetServiceHistory(petId);
-      setServices(serviceData);
-    };
-
-    fetchData();
-  }, [petId]);
-
-  const formatDate = (date?: string) => {
-    if (!date) return "--";
-    return new Date(date).toLocaleDateString("vi-VN");
+  const sidebarUser = {
+    email: String(user?.email ?? ""),
+    full_name: String(user?.full_name ?? ""),
+    phone: String(user?.phone ?? ""),
   };
 
-  if (!pet) {
+  useEffect(() => {
+    if (!petId || Number.isNaN(Number(petId))) {
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        const [petData, weightData, serviceData] = await Promise.all([
+          PetService.getPetDetails(petId),
+          PetService.getPetWeightHistory(petId, 20),
+          PetService.getPetServiceHistory(petId),
+        ]);
+
+        setPet(petData as PetProfileDetail);
+        setWeights(
+          [...(weightData as PetWeightWithNotes[])].sort(
+            (a, b) =>
+              new Date(b.recorded_date).getTime() -
+              new Date(a.recorded_date).getTime(),
+          ),
+        );
+        setServices(serviceData);
+      } catch (error) {
+        handleApiError(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchData();
+  }, [petId]);
+
+  const owner = pet?.customer;
+  const ownerId = owner?.customer_id;
+
+  const latestWeight = useMemo(() => {
+    if (!weights.length) {
+      return "--";
+    }
+
+    return `${weights[0].weight} kg`;
+  }, [weights]);
+
+  const formatDate = (date?: string) => {
+    if (!date) {
+      return "--";
+    }
+
+    return new Date(date).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground text-sm">Loading...</p>
+      <div className="flex h-screen w-full overflow-hidden bg-[#f6f1ee]">
+        <Sidebar userInfo={sidebarUser} />
+        <main className="flex flex-1 items-center justify-center">
+          <div className="rounded-2xl border border-orange-100 bg-white px-6 py-5 shadow-sm">
+            <p className="text-sm font-medium text-[#9a6a57]">
+              Đang tải hồ sơ thú cưng...
+            </p>
+          </div>
+        </main>
       </div>
     );
   }
 
-  const weightHistory = [...(pet.weight_history || [])].sort(
-    (a, b) =>
-      new Date(b.recorded_date).getTime() - new Date(a.recorded_date).getTime(),
-  );
+  if (!pet) {
+    return (
+      <div className="flex h-screen w-full overflow-hidden bg-[#f6f1ee]">
+        <Sidebar userInfo={sidebarUser} />
+        <main className="flex flex-1 items-center justify-center">
+          <div className="rounded-2xl border border-orange-100 bg-white px-6 py-5 shadow-sm">
+            <p className="text-sm font-medium text-[#9a6a57]">
+              Không tìm thấy thú cưng.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const statusLabel =
+    pet.status === "ALIVE"
+      ? "Khỏe mạnh"
+      : pet.status === "DECEASED"
+        ? "Bị bệnh"
+        : pet.status;
 
   return (
-    <div className="bg-background min-h-screen px-10 py-8">
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-8">
-        <button className="text-sm text-primary">
-          ← Quay lại / Thú cưng /
-          <span className="text-foreground font-medium"> Hồ sơ chi tiết</span>
-        </button>
+    <div className="flex h-screen w-full overflow-hidden bg-[#f6f1ee]">
+      <Sidebar userInfo={sidebarUser} />
 
-        <button className="bg-primary text-white hover:opacity-90 px-5 py-2 rounded-full text-sm font-medium shadow-sm">
-          Sửa hồ sơ
-        </button>
-      </div>
+      <main className="flex flex-1 flex-col overflow-hidden">
+        <header className="flex items-center justify-between border-b border-[#eddcd3] bg-[#fbf6f3] px-6 py-4">
+          <div className="flex items-center gap-5">
+            <button
+              type="button"
+              onClick={() => navigate("/pets")}
+              className="inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-[#9a6a57] transition hover:bg-[#f3e8e2]"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Quay lại
+            </button>
 
-      <div className="grid grid-cols-3 gap-7">
-        {/* LEFT */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-          <img
-            src={pet.image_url || "https://placehold.co/300x300"}
-            className="w-full h-[220px] object-cover rounded-xl"
-          />
+            <div className="hidden items-center gap-2 text-sm text-[#9a6a57] md:flex">
+              <Link to="/pets" className="hover:underline text-[#9a6a57]">
+                Thú cưng
+              </Link>
+              <span>/</span>
+              <span className="font-semibold text-[#67483b]">
+                Hồ sơ chi tiết
+              </span>
+            </div>
+          </div>
 
-          <h2 className="text-xl font-semibold mt-4 text-foreground text-center">
-            {pet.name}
-          </h2>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="rounded-full border border-[#ead8cf] bg-white p-2.5 text-[#9d6f5b] transition hover:bg-[#f8eeea]"
+            >
+              <Bell className="h-4 w-4" />
+            </button>
 
-          <p className="text-primary text-sm mt-1 flex items-center gap-1 text-center justify-center">
-            🐾 {pet.breed}
-          </p>
+            <button
+              type="button"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-orange-600/80 px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#e29573]"
+              onClick={() => setEditModalOpen(true)}
+            >
+              <Pencil className="h-4 w-4" />
+              Sửa Hồ Sơ
+            </button>
+            {/* EditPetModal mới */}
+            <EditPetModal
+              open={editModalOpen}
+              onClose={() => setEditModalOpen(false)}
+              pet={pet}
+              onUpdated={(updatedPet) =>
+                setPet((prev) => (prev ? { ...prev, ...updatedPet } : prev))
+              }
+            />
+          </div>
+        </header>
 
-          {/* OWNER */}
-          {owner && (
-            <div className="mt-3 bg-muted border border-border rounded-xl p-4">
-              <div className="flex items-center text-sm text-left">
-                <div
-                  className="bg-cover bg-center w-12 h-12 rounded-full"
-                  style={{
-                    backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuAslYVWWVdw9SnBU1FHEyrbH7V2T-ODVEAwGHC4xu8P_Dr-IHhsE76mvlKHddhEneQPG6y8A3mC23STZ_S9McIJbyxeUmWVNvJPkmItJRf2tb6Qof_bMIBmdpF0irZUezBgTLFca9PxCQ1P1cSDUkCb2zcqa5VkC69QsuH5zMivn82V9PvDZvX_-b3k2lK8wrqHb2b9ND6ix1FcZqttTA5GeSt6cpXeFPnihmToGXcCt38tVQmswaCiKlFBotO9vNwaEy49fL6Ofajh')`,
-                  }}
-                ></div>
-                <div>
-                  <p className="text-primary uppercase tracking-wide">
-                    CHỦ SỞ HỮU
-                  </p>
-                  <p className="font-medium text-foreground">
-                    {owner.full_name}
-                  </p>
+        <section className="flex-1 overflow-y-auto p-6 lg:p-8">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+            <aside className="rounded-3xl border border-[#ead8cf] bg-white p-5 shadow-sm">
+              <div className="relative overflow-hidden rounded-2xl">
+                <img
+                  src={
+                    pet.avatar_url ||
+                    pet.image_url ||
+                    "https://placehold.co/640x480"
+                  }
+                  alt={pet.name}
+                  className="h-56 w-full object-cover"
+                />
+                <span className="absolute right-3 top-3 rounded-full bg-[#d8f0e6] px-3 py-1 text-xs font-semibold text-[#2d8460]">
+                  {statusLabel}
+                </span>
+                <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                  <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-[#6d4f42]">
+                    {pet.gender === "MALE" ? "Đực" : "Cái"}
+                  </span>
+                  <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-[#6d4f42]">
+                    {pet.dob
+                      ? `${new Date().getFullYear() - new Date(pet.dob).getFullYear()} tuổi`
+                      : "--"}
+                  </span>
                 </div>
               </div>
 
-              <div className="mt-3 text-sm text-primary space-y-1">
-                <p>📞 {owner.phone}</p>
-                <p>✉️ {owner.email}</p>
-                <p>📍 {owner.address}</p>
-              </div>
-            </div>
-          )}
+              <h2 className="mt-5 text-center text-2xl font-black text-[#211711]">
+                {pet.name}
+              </h2>
+              <p className="mt-2 flex items-center justify-center gap-1 text-base font-semibold text-orange-600/80">
+                <PawPrint className="h-4 w-4" />
+                {pet.breed}
+              </p>
 
-          <div className="mt-6 border border-border rounded-xl py-3 text-center text-xs text-primary">
-            Pet ID:
-            <span className="ml-1 font-semibold text-foreground">
-              {pet.pet_code}
-            </span>
-          </div>
-        </div>
+              <button
+                type="button"
+                className="mt-6 w-full rounded-2xl border border-[#efdacf] bg-[#fbf5f2] p-4 text-left transition-all hover:cursor-pointer hover:shadow-[0_10px_24px_-12px_rgba(239,170,140,0.7)] disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={!ownerId}
+                onClick={() => {
+                  if (ownerId) {
+                    navigate(`/customers/${ownerId}`);
+                  }
+                }}
+              >
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#c28d73]">
+                  Chủ sở hữu
+                </p>
+                <p className="mt-1 text-md font-bold text-[#2b1d17]">
+                  {owner?.full_name || "Chưa rõ chủ"}
+                </p>
 
-        {/* RIGHT */}
-        <div className="col-span-2 space-y-6">
-          {/* DETAILS */}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-            <h3 className="text-sm font-semibold text-foreground mb-4">
-              <span className="text-primary mr-2">•</span>
-              Chi tiết hồ sơ
-            </h3>
+                <div className="mt-3 space-y-1 text-sm text-[#805a4a]">
+                  <p>Số điện thoại: {owner?.phone || "--"}</p>
+                </div>
+              </button>
 
-            <div className="grid grid-cols-2 gap-y-5 text-sm">
-              <div>
-                <p className="text-primary text-sm">NGÀY SINH (DOB)</p>
-                <p className="font-medium text-foreground mt-1">
-                  {formatDate(pet.dob)}
+              <div className="mt-4 rounded-2xl border border-[#efdacf] px-4 py-3 text-center">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#b88a73]">
+                  Mã Pet ID
+                </p>
+                <p className="mt-1 text-sm font-bold text-[#402b22]">
+                  {pet.pet_code}
                 </p>
               </div>
+            </aside>
 
-              <div>
-                <p className="text-primary text-sm">GIỚI TÍNH</p>
-                <p className="font-medium text-foreground mt-1">{pet.gender}</p>
+            <div className="space-y-6">
+              <div className="rounded-3xl border border-[#ead8cf] bg-white shadow-sm">
+                <div className="flex items-center gap-7 border-b border-[#f0e2da] px-5 py-3 text-sm font-semibold text-[#b88469]">
+                  <button type="button" className="text-orange-600/80">
+                    Thông tin chung
+                  </button>
+                </div>
+
+                <div className="p-5">
+                  <h3 className="mb-4 text-lg font-black text-[#241811]">
+                    Chi tiết hồ sơ
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-5 text-sm md:grid-cols-2">
+                    <div className="rounded-2xl bg-[#faf3ef] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[#b78a74]">
+                        Ngày sinh
+                      </p>
+                      <p className="mt-1 text-md font-bold text-[#3a2921]">
+                        {formatDate(pet.dob)}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl bg-[#faf3ef] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[#b78a74]">
+                        Cân nặng hiện tại
+                      </p>
+                      <p className="mt-1 text-md font-bold text-[#3a2921]">
+                        {latestWeight}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl bg-[#faf3ef] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[#b78a74]">
+                        Giới tính
+                      </p>
+                      <p className="mt-1 text-md font-bold text-[#3a2921]">
+                        {pet.gender === "MALE" ? "Đực" : "Cái"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl bg-[#faf3ef] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[#b78a74]">
+                        Trạng thái
+                      </p>
+                      <p className="mt-1 text-md font-bold text-[#2f9b64]">
+                        {statusLabel}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 rounded-2xl bg-[#faf3ef] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#b78a74]">
+                      Ghi chú
+                    </p>
+                    <p className="mt-2 text-sm italic text-[#62463a]">
+                      {pet.notes || "Chưa có ghi chú"}
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <p className="text-primary text-sm">CHỦNG LOẠI (BREED)</p>
-                <p className="font-medium text-foreground mt-1">{pet.breed}</p>
+              <div className="rounded-3xl border border-[#ead8cf] bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-black text-[#241811]">
+                    Tình trạng sức khỏe gần đây
+                  </h3>
+                  <button
+                    type="button"
+                    className="text-sm font-semibold text-orange-600/80"
+                    onClick={() => setModalOpen("weights")}
+                  >
+                    Xem tất cả
+                  </button>
+                </div>
+                <div className="overflow-x-auto rounded-2xl border border-[#f1e2d9]">
+                  <table className="w-full min-w-[560px] text-sm">
+                    <thead className="bg-[#fcf5f1] text-left text-[#b6856d]">
+                      <tr>
+                        <th className="px-4 py-3 font-semibold">Ngày</th>
+                        <th className="px-4 py-3 font-semibold">Loại khám</th>
+                        <th className="px-4 py-3 font-semibold">Ghi chú</th>
+                        <th className="px-4 py-3 text-right font-semibold">
+                          Trạng thái
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {weights.slice(0, 5).map((weight) => (
+                        <tr
+                          key={weight.id}
+                          className="border-t border-[#f1e2d9] text-[#5f453a]"
+                        >
+                          <td className="px-4 py-3">
+                            {formatDate(weight.recorded_date)}
+                          </td>
+                          <td className="px-4 py-3">Theo dõi cân nặng</td>
+                          <td className="px-4 py-3">
+                            {weight.notes || "Định kỳ"}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="rounded-full bg-[#def4e8] px-3 py-1 text-xs font-semibold text-[#2d9b65]">
+                              Hoàn thành
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      {!weights.length && (
+                        <tr>
+                          <td
+                            className="px-4 py-6 text-center text-sm text-[#a67d6c]"
+                            colSpan={4}
+                          >
+                            Chưa có dữ liệu cân nặng.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
-              <div>
-                <p className="text-primary text-sm">TRẠNG THÁI</p>
-                <p className="font-medium text-green-500 mt-1">{pet.status}</p>
+              <div className="rounded-3xl border border-[#ead8cf] bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-black text-[#241811]">
+                    Lịch sử dịch vụ & Mua hàng
+                  </h3>
+                  <button
+                    type="button"
+                    className="text-sm font-semibold text-orange-600/80"
+                    onClick={() => setModalOpen("services")}
+                  >
+                    Xem tất cả
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {services.slice(0, 5).map((service) => (
+                    <div
+                      key={service.order_id}
+                      className="flex items-center justify-between rounded-2xl border border-[#f1e2d9] bg-[#fffaf8] px-4 py-3"
+                    >
+                      <div>
+                        <p className="font-semibold text-[#3d2a21]">
+                          {service.service_name}
+                        </p>
+                        <p className="text-sm text-[#ad7f6a]">
+                          {service.duration_minutes} phút
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-[#3d2a21]">
+                          {service.price.toLocaleString("vi-VN")}đ
+                        </p>
+                        <p className="text-sm text-[#ad7f6a]">
+                          {formatDate(service.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {!services.length && (
+                    <div className="rounded-2xl border border-[#f1e2d9] bg-[#fffaf8] px-4 py-6 text-center text-sm text-[#ad7f6a]">
+                      Chưa có lịch sử dịch vụ.
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+              {/* Modal for weights */}
+              <Modal
+                open={modalOpen === "weights"}
+                onClose={() => setModalOpen(null)}
+                title="Tất cả tình trạng sức khỏe"
+                width="max-w-4xl"
+              >
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[700px] text-sm">
+                    <thead className="bg-[#fcf5f1] text-left text-[#b6856d]">
+                      <tr>
+                        <th className="px-4 py-3 font-semibold">Ngày</th>
+                        <th className="px-4 py-3 font-semibold">Loại khám</th>
+                        <th className="px-4 py-3 font-semibold">Ghi chú</th>
+                        <th className="px-4 py-3 text-right font-semibold">
+                          Trạng thái
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {weights.map((weight) => (
+                        <tr
+                          key={weight.id}
+                          className="border-t border-[#f1e2d9] text-[#5f453a]"
+                        >
+                          <td className="px-4 py-3">
+                            {formatDate(weight.recorded_date)}
+                          </td>
+                          <td className="px-4 py-3">Theo dõi cân nặng</td>
+                          <td className="px-4 py-3">
+                            {weight.notes || "Định kỳ"}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="rounded-full bg-[#def4e8] px-3 py-1 text-xs font-semibold text-[#2d9b65]">
+                              Hoàn thành
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      {!weights.length && (
+                        <tr>
+                          <td
+                            className="px-4 py-6 text-center text-sm text-[#a67d6c]"
+                            colSpan={4}
+                          >
+                            Chưa có dữ liệu cân nặng.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </Modal>
 
-            <div className="mt-5">
-              <p className="text-primary text-sm">GHI CHÚ (NOTES)</p>
-              <p className="italic text-foreground mt-1 text-sm">{pet.notes}</p>
+              {/* Modal for services */}
+              <Modal
+                open={modalOpen === "services"}
+                onClose={() => setModalOpen(null)}
+                title="Tất cả lịch sử dịch vụ & mua hàng"
+                width="max-w-4xl"
+              >
+                <div className="space-y-3">
+                  {services.map((service) => (
+                    <div
+                      key={service.order_id}
+                      className="flex items-center justify-between rounded-2xl border border-[#f1e2d9] bg-[#fffaf8] px-4 py-3"
+                    >
+                      <div>
+                        <p className="font-semibold text-[#3d2a21]">
+                          {service.service_name}
+                        </p>
+                        <p className="text-sm text-[#ad7f6a]">
+                          {service.duration_minutes} phút
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-[#3d2a21]">
+                          {service.price.toLocaleString("vi-VN")}đ
+                        </p>
+                        <p className="text-sm text-[#ad7f6a]">
+                          {formatDate(service.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {!services.length && (
+                    <div className="rounded-2xl border border-[#f1e2d9] bg-[#fffaf8] px-4 py-6 text-center text-sm text-[#ad7f6a]">
+                      Chưa có lịch sử dịch vụ.
+                    </div>
+                  )}
+                </div>
+              </Modal>
             </div>
           </div>
-
-          {/* WEIGHT */}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-            <h3 className="text-sm font-semibold text-foreground mb-4">
-              <span className="text-primary mr-2">•</span>
-              Lịch sử cân nặng
-            </h3>
-
-            <table className="w-full text-sm ">
-              <thead className="text-primary">
-                <tr>
-                  <th className="text-left pb-2">Ngày ghi</th>
-                  <th className="text-center pb-2">Cân nặng (kg)</th>
-                  <th className="text-right pb-2">Thay đổi</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {weightHistory.map((w, i) => {
-                  const prev = weightHistory[i + 1];
-                  const diff = prev
-                    ? +(w.weight - prev.weight).toFixed(1)
-                    : null;
-
-                  return (
-                    <tr key={w.id} className="border-t border-border">
-                      <td className="py-2">{formatDate(w.recorded_date)}</td>
-
-                      <td className="text-center font-medium text-foreground">
-                        {w.weight}
-                      </td>
-
-                      <td
-                        className={`text-right font-medium ${
-                          diff === null
-                            ? "text-muted-foreground"
-                            : diff > 0
-                              ? "text-green-500"
-                              : "text-red-400"
-                        }`}
-                      >
-                        {diff === null ? "--" : diff > 0 ? `+${diff}` : diff}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* SERVICES */}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-            <div className="flex justify-between mb-4">
-              <h3 className="text-sm font-semibold text-foreground">
-                <span className="text-primary mr-2">•</span>
-                Tình trạng sức khỏe gần đây
-              </h3>
-
-              <span className="text-sm text-primary cursor-pointer">
-                Xem tất cả
-              </span>
-            </div>
-
-            <table className="w-full text-sm text-center">
-              <thead className="text-primary">
-                <tr>
-                  <th>Thời gian</th>
-                  <th>Loại khám</th>
-                  <th>Ghi chú</th>
-                  <th>Trạng thái</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {services.map((s, i) => (
-                  <tr key={i} className="border-t border-border text-center">
-                    <td className="py-2">{formatDate(s.created_at)}</td>
-                    <td>{s.service_name}</td>
-                    <td>{s.duration_minutes} phút</td>
-
-                    <td>
-                      <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-medium">
-                        Hoàn thành
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }

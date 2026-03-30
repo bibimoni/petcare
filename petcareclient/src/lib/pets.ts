@@ -51,10 +51,25 @@ export interface ServiceHistory {
   duration_minutes: number;
 }
 
-const unwrap = <T>(res: any): T => {
-  if (res?.data?.data) return res.data.data;
-  if (res?.data) return res.data;
-  return res;
+const unwrap = <T>(res: unknown): T => {
+  if (!res || typeof res !== "object") {
+    return res as T;
+  }
+
+  const response = res as { data?: unknown };
+
+  if (response.data && typeof response.data === "object") {
+    const nested = response.data as { data?: unknown };
+    if (nested.data !== undefined) {
+      return nested.data as T;
+    }
+  }
+
+  if (response.data !== undefined) {
+    return response.data as T;
+  }
+
+  return res as T;
 };
 
 export const PetService = {
@@ -83,8 +98,13 @@ export const PetService = {
     return unwrap<PetWithHistory>(res);
   },
 
-  async getPetWeightHistory(petId: number): Promise<PetWeightHistory[]> {
-    const res = await axiosClient.get(`/pets/${petId}/weight`);
+  async getPetWeightHistory(
+    petId: number,
+    limit?: number,
+  ): Promise<PetWeightHistory[]> {
+    const res = await axiosClient.get(`/pets/${petId}/weight`, {
+      params: limit && { limit },
+    });
     const data = unwrap<PetWeightHistory[]>(res);
     return Array.isArray(data) ? data : [];
   },

@@ -34,7 +34,6 @@ export default function CustomerProfilePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [ordersError, setOrdersError] = useState(false);
 
-  // Kiểm tra đăng nhập
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
@@ -44,18 +43,6 @@ export default function CustomerProfilePage() {
     }
     setIsAuthenticated(true);
   }, [navigate]);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const phone = phoneFromUrl;
-
-    if (phone) {
-      fetchCustomerData(phone);
-    } else {
-      setLoading(false);
-    }
-  }, [phoneFromUrl, isAuthenticated]);
 
   const fetchCustomerData = async (phone: string) => {
     try {
@@ -109,6 +96,21 @@ export default function CustomerProfilePage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const phone = phoneFromUrl;
+
+    const fetchData = async () => {
+      if (phone) {
+        await fetchCustomerData(phone);
+      } else {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [phoneFromUrl, isAuthenticated]);
 
   const handleSearch = async () => {
     if (!searchPhone.trim()) {

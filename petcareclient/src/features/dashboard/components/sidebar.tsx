@@ -50,7 +50,7 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
   };
 
   return (
-    <aside className="hidden w-64 flex-col border-r border-gray-100 dark:border-gray-800 bg-surface-light dark:bg-surface-dark lg:flex z-20 shadow-sm">
+    <aside className="z-20 hidden w-64 flex-col border-r border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-surface-dark lg:flex">
       {/* Logo Section */}
       <div className="flex h-20 items-center gap-3 px-6">
         <Logo />
@@ -59,7 +59,10 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
       {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
         {NAV_ITEMS.map((item) => {
-          const isActive = location.pathname === item.href;
+          const isActive =
+            location.pathname === item.href ||
+            (item.href !== "/" &&
+              location.pathname.startsWith(`${item.href}/`));
           return (
             <button
               key={item.id}
