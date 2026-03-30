@@ -11,12 +11,18 @@ import CustomerPagination from "./components/customer-pagination";
 import CustomerTable from "./components/customer-table";
 import CustomerTabs from "./components/customer-tabs";
 import CustomerToolbar from "./components/customer-toolbar";
+import EditCustomerModal from "./components/edit-customer-modal";
 import { Footer } from "./components/footer";
 
 type ApiCustomer = {
   phone?: string;
+  notes?: string;
+  email?: string;
   pets?: unknown[];
+  address?: string;
+  fullName?: string;
   full_name?: string;
+  id?: number | string;
   [key: string]: unknown;
   last_visit?: string | null;
   customer_id?: number | string;
@@ -62,11 +68,27 @@ export default function CustomersPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<ApiCustomer | null>(
+    null,
+  );
   const [customers, setCustomers] = useState<ApiCustomer[]>([]);
 
   const fetchCustomers = async () => {
     const res = await CustomerService.getAll();
     setCustomers(normalizeCustomers(res));
+  };
+
+  const handleEditCustomer = (customer: ApiCustomer) => {
+    setSelectedCustomer(customer);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditModalOpenChange = (open: boolean) => {
+    setIsEditModalOpen(open);
+    if (!open) {
+      setSelectedCustomer(null);
+    }
   };
 
   useEffect(() => {
@@ -122,6 +144,13 @@ export default function CustomersPage() {
         onOpenChange={setIsAddModalOpen}
       />
 
+      <EditCustomerModal
+        open={isEditModalOpen}
+        customer={selectedCustomer}
+        onUpdated={fetchCustomers}
+        onOpenChange={handleEditModalOpenChange}
+      />
+
       <main className="flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto bg-[#faf7f5] p-8">
           <Breadcrumb />
@@ -158,7 +187,10 @@ export default function CustomersPage() {
                   />
                 </div>
 
-                <CustomerTable customers={paginatedCustomers} />
+                <CustomerTable
+                  customers={paginatedCustomers}
+                  onEditCustomer={handleEditCustomer}
+                />
 
                 <div className="flex items-center justify-between mt-4">
                   {filtered.length > 0 && (
