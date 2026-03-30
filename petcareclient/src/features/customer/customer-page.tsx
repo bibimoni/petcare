@@ -4,6 +4,7 @@ import { handleApiError } from "@/lib/api";
 import { CustomerService } from "@/lib/customers";
 
 import { Sidebar } from "../dashboard/components/sidebar";
+import AddCustomerModal from "./components/add-customer-modal";
 import Breadcrumb from "./components/break-crump";
 import CustomerHeader from "./components/customer-header";
 import CustomerPagination from "./components/customer-pagination";
@@ -60,14 +61,19 @@ export default function CustomersPage() {
   const [sort, setSort] = useState("desc");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [customers, setCustomers] = useState<ApiCustomer[]>([]);
+
+  const fetchCustomers = async () => {
+    const res = await CustomerService.getAll();
+    setCustomers(normalizeCustomers(res));
+  };
 
   useEffect(() => {
     const run = async () => {
       try {
         setLoading(true);
-        const res = await CustomerService.getAll();
-        setCustomers(normalizeCustomers(res));
+        await fetchCustomers();
       } catch (err) {
         console.error("Lỗi:", err);
         handleApiError(err);
@@ -110,10 +116,16 @@ export default function CustomersPage() {
     <div className="flex h-screen w-full overflow-hidden">
       <Sidebar userInfo={sidebarUser} />
 
+      <AddCustomerModal
+        open={isAddModalOpen}
+        onCreated={fetchCustomers}
+        onOpenChange={setIsAddModalOpen}
+      />
+
       <main className="flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto bg-[#faf7f5] p-8">
           <Breadcrumb />
-          <CustomerHeader />
+          <CustomerHeader onAddCustomer={() => setIsAddModalOpen(true)} />
 
           <div className="flex-1 p-6 space-y-6">
             {loading ? (
