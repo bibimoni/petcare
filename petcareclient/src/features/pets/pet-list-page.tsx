@@ -58,12 +58,12 @@ const mapPetToUi = (pet: Record<string, unknown>, ownerName: string): UiPet => {
 
 const fetchAllPetsByCustomers = async (): Promise<UiPet[]> => {
   const customerRes = await CustomerService.getAll();
-  const customers = customerRes.data;
+  const customers = customerRes.data as ApiCustomer[];
   const customerIds = Array.from(
     new Set(
       customers
         .map((customer: ApiCustomer) => Number(customer.customer_id))
-        .filter((id) => Number.isFinite(id)),
+        .filter((id: number) => Number.isFinite(id)),
     ),
   );
 
@@ -75,7 +75,9 @@ const fetchAllPetsByCustomers = async (): Promise<UiPet[]> => {
       const ownerName = String(customer?.full_name ?? "Chưa rõ chủ");
       const petRes = await PetService.getByCustomer(customerId as number);
 
-      return petRes.map((pet) => mapPetToUi(pet, ownerName));
+      return (petRes as Record<string, unknown>[]).map((pet) =>
+        mapPetToUi(pet, ownerName),
+      );
     }),
   );
 
