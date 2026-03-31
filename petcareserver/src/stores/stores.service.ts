@@ -225,8 +225,8 @@ export class StoresService {
               store_id: storeId,
               user_id: existingUser.user_id,
               type: NotificationType.STORE_INVITATION,
-              title: `Invitation to join ${store.name}`,
-              message: `You have been invited to join ${store.name} as ${role.name}. Click to view details.`,
+              title: `Lời mời tham gia ${store.name}`,
+              message: `Bạn đã được mời tham gia ${store.name} với vai trò ${role.name}. Nhấn để xem chi tiết.`,
               action_url: actionUrl,
             });
 

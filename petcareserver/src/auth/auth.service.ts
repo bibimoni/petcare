@@ -2,10 +2,11 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryFailedError } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
@@ -89,12 +90,24 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    const existingUser = await this.userRepository.findOne({
+    // Check for existing email
+    const existingUserByEmail = await this.userRepository.findOne({
       where: { email: registerDto.email },
     });
 
-    if (existingUser) {
+    if (existingUserByEmail) {
       throw new ConflictException('Email đã được sử dụng');
+    }
+
+    // Check for existing phone (if provided)
+    if (registerDto.phone) {
+      const existingUserByPhone = await this.userRepository.findOne({
+        where: { phone: registerDto.phone },
+      });
+
+      if (existingUserByPhone) {
+        throw new ConflictException('Số điện thoại đã được sử dụng');
+      }
     }
 
     const hashedPassword = await hashPassword(registerDto.password);
@@ -108,15 +121,37 @@ export class AuthService {
       status: UserStatus.ACTIVE,
     });
 
-    const savedUser = await this.userRepository.save(user);
+    try {
+      const savedUser = await this.userRepository.save(user);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password_hash, ...userWithoutPassword } = savedUser;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password_hash, ...userWithoutPassword } = savedUser;
 
-    return {
-      message: 'Đăng ký tài khoản thành công',
-      user: userWithoutPassword,
-    };
+      return {
+        message: 'Đăng ký tài khoản thành công',
+        user: userWithoutPassword,
+      };
+    } catch (error) {
+      // Handle database unique constraint violations
+      if (error instanceof QueryFailedError) {
+        const errorMessage = error.message.toLowerCase();
+        
+        if (errorMessage.includes('email')) {
+          throw new ConflictException('Email đã được sử dụng');
+        }
+        
+        if (errorMessage.includes('phone')) {
+          throw new ConflictException('Số điện thoại đã được sử dụng');
+        }
+        
+        // Generic unique constraint violation
+        throw new ConflictException('Dữ liệu đã tồn tại trong hệ thống');
+      }
+      
+      // Log unexpected errors for debugging
+      console.error('Registration error:', error);
+      throw new InternalServerErrorException('Đã xảy ra lỗi khi đăng ký tài khoản');
+    }
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
