@@ -19,6 +19,7 @@ import PetListPage from "./features/pets/pet-list-page";
 import CustomerProfilePage from "./features/profile/customer";
 import PetProfile from "./features/profile/pets";
 import ProfilePage from "./features/profile/profile";
+import NotificationPage from "./features/notification/notification-page";
 
 function PetProfileWrapper() {
   const { id } = useParams();
@@ -59,6 +60,14 @@ createRoot(document.getElementById("root")!).render(
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationPage />
             </ProtectedRoute>
           }
         />

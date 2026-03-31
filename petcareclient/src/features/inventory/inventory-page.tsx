@@ -1,21 +1,13 @@
 import { useState } from "react";
 
-import { Sidebar } from "../dashboard/components/sidebar";
+import { Sidebar } from "@/components/Sidebar";
+
 import { InventoryStats } from "./components/inventory-stats";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryToolbar } from "./components/inventory-toolbar";
+import { sidebarUser } from "@/lib/user";
 
 export default function InventoryPage() {
-  const rawUser = localStorage.getItem("user");
-  const user = rawUser ? JSON.parse(rawUser) : null;
-
-  const sidebarUser = {
-    email: String(user?.email ?? ""),
-    full_name: String(user?.full_name ?? ""),
-    phone: String(user?.phone ?? ""),
-  };
-
-  // Tạo 2 state làm cầu nối liên lạc giữa Toolbar và Table
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryId, setCategoryId] = useState("all");
 

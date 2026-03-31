@@ -48,7 +48,11 @@ export default function LoginForm() {
         localStorage.setItem("accessToken", token);
         localStorage.setItem("user", JSON.stringify(user));
         toast.success("Đăng nhập thành công");
-        navigate("/dashboard");
+        if (user.role == null) {
+          navigate("/notification");
+        } else {
+          navigate("/dashboard");
+        }
       }
     } catch (_err) {
       toast.error(

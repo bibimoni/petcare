@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 
+import { Sidebar } from "@/components/Sidebar";
 import { handleApiError } from "@/lib/api";
 import { CustomerService } from "@/lib/customers";
 
-import { Sidebar } from "../dashboard/components/sidebar";
 import AddCustomerModal from "./components/add-customer-modal";
 import Breadcrumb from "./components/break-crump";
 import CustomerHeader from "./components/customer-header";
@@ -13,6 +13,7 @@ import CustomerTabs from "./components/customer-tabs";
 import CustomerToolbar from "./components/customer-toolbar";
 import EditCustomerModal from "./components/edit-customer-modal";
 import { Footer } from "./components/footer";
+import { sidebarUser } from "@/lib/user";
 
 type ApiCustomer = {
   phone?: string;
@@ -53,15 +54,6 @@ const normalizeCustomers = (payload: unknown): ApiCustomer[] => {
 };
 
 export default function CustomersPage() {
-  const rawUser = localStorage.getItem("user");
-  const user = rawUser ? JSON.parse(rawUser) : null;
-
-  const sidebarUser = {
-    email: String(user?.email ?? ""),
-    full_name: String(user?.full_name ?? ""),
-    phone: String(user?.phone ?? ""),
-  };
-
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("all");
   const [sort, setSort] = useState("desc");

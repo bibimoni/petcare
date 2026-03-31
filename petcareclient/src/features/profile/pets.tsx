@@ -40,6 +40,7 @@ function Modal({
 
 import { Link, useNavigate } from "react-router-dom";
 
+import { Sidebar } from "@/components/Sidebar";
 import { handleApiError } from "@/lib/api";
 import {
   type Pet,
@@ -48,8 +49,7 @@ import {
   type ServiceHistory,
   type PetWeightHistory,
 } from "@/lib/pets";
-
-import { Sidebar } from "../dashboard/components/sidebar";
+import { sidebarUser } from "@/lib/user";
 
 interface PetProfileDetail extends Pet {
   pet_id?: number;
@@ -76,15 +76,6 @@ export default function PetProfile({ petId }: { petId: number }) {
   const [weights, setWeights] = useState<PetWeightWithNotes[]>([]);
 
   const navigate = useNavigate();
-
-  const rawUser = localStorage.getItem("user");
-  const user = rawUser ? JSON.parse(rawUser) : null;
-
-  const sidebarUser = {
-    email: String(user?.email ?? ""),
-    full_name: String(user?.full_name ?? ""),
-    phone: String(user?.phone ?? ""),
-  };
 
   useEffect(() => {
     if (!petId || Number.isNaN(Number(petId))) {
