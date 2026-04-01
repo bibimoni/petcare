@@ -1,11 +1,11 @@
 import { useState } from "react";
 
 import { Sidebar } from "@/components/Sidebar";
+import { sidebarUser } from "@/lib/user";
 
 import { InventoryStats } from "./components/inventory-stats";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryToolbar } from "./components/inventory-toolbar";
-import { sidebarUser } from "@/lib/user";
 
 export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState("");

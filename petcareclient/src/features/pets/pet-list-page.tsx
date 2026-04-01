@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { handleApiError } from "@/lib/api";
 import { CustomerService } from "@/lib/customers";
 import { PetService } from "@/lib/pets";
+import { sidebarUser } from "@/lib/user";
 
 import { Footer } from "../landing-page/components/footer";
 import Breadcrumb from "./components/break-crump";
@@ -11,7 +12,6 @@ import PetFilters from "./components/pet-filter";
 import PetHeader from "./components/pet-header";
 import PetList from "./components/pet-list";
 import PetStats from "./components/pet-stats";
-import { sidebarUser } from "@/lib/user";
 
 type ApiCustomer = {
   full_name?: string;

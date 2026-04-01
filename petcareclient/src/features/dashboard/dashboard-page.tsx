@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
 import { Sidebar } from "@/components/Sidebar";
+import { sidebarUser } from "@/lib/user";
 
 import {
   type StatsData,
@@ -15,7 +16,6 @@ import { Footer } from "./components/footer";
 import { Header } from "./components/header";
 import { RevenueChart } from "./components/revenue-chart";
 import { StatsGrid } from "./components/stats-grid";
-import { sidebarUser } from "@/lib/user";
 
 export const DashboardPage = () => {
   const [stats, setStats] = useState<StatsData | null>(null);

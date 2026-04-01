@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { handleApiError } from "@/lib/api";
 import { CustomerService } from "@/lib/customers";
+import { sidebarUser } from "@/lib/user";
 
 import AddCustomerModal from "./components/add-customer-modal";
 import Breadcrumb from "./components/break-crump";
@@ -13,7 +14,6 @@ import CustomerTabs from "./components/customer-tabs";
 import CustomerToolbar from "./components/customer-toolbar";
 import EditCustomerModal from "./components/edit-customer-modal";
 import { Footer } from "./components/footer";
-import { sidebarUser } from "@/lib/user";
 
 type ApiCustomer = {
   phone?: string;

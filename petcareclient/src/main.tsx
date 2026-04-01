@@ -15,11 +15,11 @@ import { DashboardPage } from "./features/dashboard";
 import ExpiringSoonPage from "./features/inventory/expiring-soon-page";
 import InventoryPage from "./features/inventory/inventory-page";
 import LowStockPage from "./features/inventory/low-stock-page";
+import NotificationPage from "./features/notification/notification-page";
 import PetListPage from "./features/pets/pet-list-page";
 import CustomerProfilePage from "./features/profile/customer";
 import PetProfile from "./features/profile/pets";
 import ProfilePage from "./features/profile/profile";
-import NotificationPage from "./features/notification/notification-page";
 
 function PetProfileWrapper() {
   const { id } = useParams();
