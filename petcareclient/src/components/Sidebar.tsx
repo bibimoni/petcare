@@ -66,8 +66,7 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
   };
 
   // If role is null, show only limited nav items
-  const navItems =
-    userInfo.role == null ? LIMITED_NAV_ITEMS : DEFAULT_NAV_ITEMS;
+  const navItems = !userInfo.role ? LIMITED_NAV_ITEMS : DEFAULT_NAV_ITEMS;
 
   return (
     <aside className="z-20 hidden w-64 flex-col border-r border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-surface-dark lg:flex">

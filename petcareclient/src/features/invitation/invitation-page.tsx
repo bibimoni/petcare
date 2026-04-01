@@ -122,6 +122,27 @@ export default function InvitationPage() {
 
   const selectedStore = selectedDetail?.store;
 
+  const buildAcceptInvitationHref = (
+    actionUrl: string,
+    notificationId: string,
+  ) => {
+    try {
+      const parsedUrl = new URL(actionUrl);
+      const token = parsedUrl.searchParams.get("token");
+
+      if (!token) return actionUrl;
+
+      const params = new URLSearchParams({
+        notificationId,
+        token,
+      });
+
+      return `/accept-invitation?${params.toString()}`;
+    } catch {
+      return actionUrl;
+    }
+  };
+
   return (
     <Dialog
       open={detailModalOpen}
@@ -222,7 +243,10 @@ export default function InvitationPage() {
                     </div>
                     <div className="flex gap-4 w-full">
                       <a
-                        href={currentNotification.action_url}
+                        href={buildAcceptInvitationHref(
+                          currentNotification.action_url,
+                          currentNotification.notification_id,
+                        )}
                         onClick={(event) => event.stopPropagation()}
                         className="flex-1 bg-orange-600/80 hover:bg-[#f5a96a] text-white font-bold py-3 rounded-xl transition text-center"
                       >
