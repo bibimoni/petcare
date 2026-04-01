@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 
+import { Sidebar } from "@/components/Sidebar";
+import { sidebarUser } from "@/lib/user";
+
 import {
   type StatsData,
   type RevenueData,
@@ -12,7 +15,6 @@ import { ActivityFeed } from "./components/activity-feed";
 import { Footer } from "./components/footer";
 import { Header } from "./components/header";
 import { RevenueChart } from "./components/revenue-chart";
-import { Sidebar } from "./components/sidebar";
 import { StatsGrid } from "./components/stats-grid";
 
 export const DashboardPage = () => {
@@ -21,9 +23,6 @@ export const DashboardPage = () => {
   const [activities, setActivities] = useState<ActivityFeedData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const raw = localStorage.getItem("user");
-  const user = raw ? JSON.parse(raw) : null;
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -63,7 +62,7 @@ export const DashboardPage = () => {
   return (
     <div className="flex h-screen w-full overflow-hidden">
       {/* Sidebar */}
-      <Sidebar userInfo={user} />
+      <Sidebar userInfo={sidebarUser} />
 
       {/* Main Content */}
       <main className="flex flex-1 flex-col overflow-hidden relative">

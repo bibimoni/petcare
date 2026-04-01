@@ -11,7 +11,16 @@ interface NavItem {
   label: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
+interface SidebarProps {
+  userInfo: {
+    email: string;
+    phone: string;
+    full_name: string;
+    role: string | null;
+  };
+}
+
+const DEFAULT_NAV_ITEMS: NavItem[] = [
   {
     id: "dashboard",
     label: "Dashboard",
@@ -26,13 +35,20 @@ const NAV_ITEMS: NavItem[] = [
   { id: "reports", label: "Báo cáo", icon: "bar_chart", href: "/reports" },
 ];
 
-interface SidebarProps {
-  userInfo: {
-    email: string;
-    phone: string;
-    full_name: string;
-  };
-}
+const LIMITED_NAV_ITEMS: NavItem[] = [
+  {
+    id: "create-store",
+    label: "Tạo cửa hàng",
+    icon: "store",
+    href: "/create-store",
+  },
+  {
+    id: "invitations",
+    label: "Lời mời",
+    icon: "notifications",
+    href: "/invitations",
+  },
+];
 
 export const Sidebar = ({ userInfo }: SidebarProps) => {
   const navigate = useNavigate();
@@ -49,6 +65,9 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
     navigate("/login");
   };
 
+  // If role is null, show only limited nav items
+  const navItems = !userInfo.role ? LIMITED_NAV_ITEMS : DEFAULT_NAV_ITEMS;
+
   return (
     <aside className="z-20 hidden w-64 flex-col border-r border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-surface-dark lg:flex">
       {/* Logo Section */}
@@ -58,7 +77,7 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
 
       {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const isActive =
             location.pathname === item.href ||
             (item.href !== "/" &&

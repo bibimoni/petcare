@@ -4,20 +4,12 @@ import { toast } from "sonner";
 
 import type { Pet, Order, Customer } from "@/lib/profile";
 
+import { Sidebar } from "@/components/Sidebar";
 import { profileService } from "@/lib/profile";
-
-import { Sidebar } from "../dashboard";
+import { sidebarUser } from "@/lib/user";
 
 export default function CustomerProfilePage() {
   const navigate = useNavigate();
-  const rawUser = localStorage.getItem("user");
-  const user = rawUser ? JSON.parse(rawUser) : null;
-
-  const sidebarUser = {
-    email: String(user?.email ?? ""),
-    full_name: String(user?.full_name ?? ""),
-    phone: String(user?.phone ?? ""),
-  };
 
   const [searchParams] = useSearchParams();
   const phoneFromUrl = searchParams.get("phone");

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 
+import { Sidebar } from "@/components/Sidebar";
 import { handleApiError } from "@/lib/api";
 import { CustomerService } from "@/lib/customers";
 import { PetService } from "@/lib/pets";
+import { sidebarUser } from "@/lib/user";
 
-import { Sidebar } from "../dashboard/components/sidebar";
 import { Footer } from "../landing-page/components/footer";
 import Breadcrumb from "./components/break-crump";
 import PetFilters from "./components/pet-filter";
@@ -90,15 +91,6 @@ const fetchAllPetsByCustomers = async (): Promise<UiPet[]> => {
 };
 
 export default function PetListPage() {
-  const rawUser = localStorage.getItem("user");
-  const user = rawUser ? JSON.parse(rawUser) : null;
-
-  const sidebarUser = {
-    email: String(user?.email ?? ""),
-    full_name: String(user?.full_name ?? ""),
-    phone: String(user?.phone ?? ""),
-  };
-
   const [breedFilter, setBreedFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
