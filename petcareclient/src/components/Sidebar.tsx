@@ -43,10 +43,10 @@ const LIMITED_NAV_ITEMS: NavItem[] = [
     href: "/create-store",
   },
   {
-    id: "notifications",
-    label: "Thông báo",
+    id: "invitations",
+    label: "Lời mời",
     icon: "notifications",
-    href: "/notifications",
+    href: "/invitations",
   },
 ];
 

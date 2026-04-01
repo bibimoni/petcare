@@ -15,7 +15,7 @@ import { DashboardPage } from "./features/dashboard";
 import ExpiringSoonPage from "./features/inventory/expiring-soon-page";
 import InventoryPage from "./features/inventory/inventory-page";
 import LowStockPage from "./features/inventory/low-stock-page";
-import NotificationPage from "./features/notification/notification-page";
+import InvitationPage from "./features/invitation/invitation-page";
 import PetListPage from "./features/pets/pet-list-page";
 import CustomerProfilePage from "./features/profile/customer";
 import PetProfile from "./features/profile/pets";
@@ -64,10 +64,10 @@ createRoot(document.getElementById("root")!).render(
           }
         />
         <Route
-          path="/notifications"
+          path="/invitations"
           element={
             <ProtectedRoute>
-              <NotificationPage />
+              <InvitationPage />
             </ProtectedRoute>
           }
         />
