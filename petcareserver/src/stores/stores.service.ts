@@ -226,17 +226,14 @@ export class StoresService {
               this.configService.get<string>('FRONTEND_URL') || '';
             const actionUrl = buildInvitationUrl(frontendUrl, token);
 
-            const notification = transactionalEntityManager.create(
-              Notification,
-              {
-                store_id: storeId,
-                user_id: existingUser.user_id,
-                type: NotificationType.STORE_INVITATION,
-                title: `Invitation to join ${store.name}`,
-                message: `You have been invited to join ${store.name} as ${role.name}. Click to view details.`,
-                action_url: actionUrl,
-              },
-            );
+            const notification = transactionalEntityManager.create(Notification, {
+              store_id: storeId,
+              user_id: existingUser.user_id,
+              type: NotificationType.STORE_INVITATION,
+              title: `Lời mời tham gia ${store.name}`,
+              message: `Bạn đã được mời tham gia ${store.name} với vai trò ${role.name}. Nhấn để xem chi tiết.`,
+              action_url: actionUrl,
+            });
 
             await transactionalEntityManager.save(notification);
           } catch (error) {

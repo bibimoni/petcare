@@ -258,8 +258,8 @@ export class NotificationsService {
       store_id: dto.storeId,
       user_id: dto.userId,
       type: NotificationType.STORE_INVITATION,
-      title: `Invitation to join ${dto.storeName}`,
-      message: `You have been invited to join ${dto.storeName} as ${dto.roleName}. Click to view details.`,
+      title: `Lời mời tham gia ${dto.storeName}`,
+      message: `Bạn đã được mời tham gia ${dto.storeName} với vai trò ${dto.roleName}. Nhấn để xem chi tiết.`,
       action_url: actionUrl,
     });
 

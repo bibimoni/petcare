@@ -90,8 +90,8 @@ describe('NotificationsService', () => {
         store_id: storeId,
         user_id: userId,
         type: NotificationType.STORE_INVITATION,
-        title: `Invitation to join ${storeName}`,
-        message: `You have been invited to join ${storeName} as ${roleName}. Click to view details.`,
+        title: `Lời mời tham gia ${storeName}`,
+        message: `Bạn đã được mời tham gia ${storeName} với vai trò ${roleName}. Nhấn để xem chi tiết.`,
         action_url: `${frontendUrl}/accept-invitation?token=${invitationToken}`,
       });
       expect(notificationRepository.save).toHaveBeenCalled();
@@ -125,8 +125,8 @@ describe('NotificationsService', () => {
         store_id: storeId,
         user_id: userId,
         type: NotificationType.STORE_INVITATION,
-        title: `Invitation to join ${storeName}`,
-        message: `You have been invited to join ${storeName} as ${roleName}. Click to view details.`,
+        title: `Lời mời tham gia ${storeName}`,
+        message: `Bạn đã được mời tham gia ${storeName} với vai trò ${roleName}. Nhấn để xem chi tiết.`,
         action_url: undefined,
       });
       expect(result.action_url).toBeUndefined();

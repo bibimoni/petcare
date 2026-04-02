@@ -23,30 +23,30 @@ export class MailService {
 			});
 
 			const textContent = `
-You're invited to join ${invitationData.store.name}!
+Bạn được mời tham gia ${invitationData.store.name}!
 
-${full_name ? `Hello ${full_name},` : 'Hello,'}
+${full_name ? `Xin chào ${full_name},` : 'Xin chào,'}
 
-You have been invited to join our team as a ${invitationData.role.name}.
-${invitationData.role.description ? `Role Description: ${invitationData.role.description}` : ''}
+Bạn đã được mời tham gia đội ngũ của chúng tôi với vai trò ${invitationData.role.name}.
+${invitationData.role.description ? `Mô tả vai trò: ${invitationData.role.description}` : ''}
 
-Store: ${invitationData.store.name}
-Role: ${invitationData.role.name}
-${invitationData.invitation.message ? `Message: ${invitationData.invitation.message}` : ''}
+Cửa hàng: ${invitationData.store.name}
+Vai trò: ${invitationData.role.name}
+${invitationData.invitation.message ? `Lời nhắn: ${invitationData.invitation.message}` : ''}
 
-To accept this invitation, please visit:
+Để chấp nhận lời mời này, vui lòng truy cập:
 ${invitationLink}
 
-This invitation will expire on: ${formattedExpiryDate}
+Lời mời này sẽ hết hạn vào: ${formattedExpiryDate}
 
-If you did not expect this invitation, please ignore this email.
+Nếu bạn không mong đợi lời mời này, vui lòng bỏ qua email này.
 
 ---
-This is an automated email. Please do not reply.`;
+Đây là email tự động. Vui lòng không trả lời.`;
 
 			await this.mailerService.sendMail({
 				to: invitationData.invitation.email,
-				subject: `Invitation to join ${invitationData.store.name} as ${invitationData.role.name}`,
+				subject: `Lời mời tham gia ${invitationData.store.name} với vai trò ${invitationData.role.name}`,
 				text: textContent,
 			});
 
