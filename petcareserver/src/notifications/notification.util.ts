@@ -11,6 +11,9 @@ export const buildNotificationProductUrl = (notificationId: number): string => {
  * @param token - The invitation token
  * @returns The complete invitation URL
  */
-export const buildInvitationUrl = (frontendUrl: string, token: string): string => {
+export const buildInvitationUrl = (
+  frontendUrl: string,
+  token: string,
+): string => {
   return `${frontendUrl}/${INVITE_PAGE_ROUTE}?token=${token}`;
 };

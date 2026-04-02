@@ -29,7 +29,10 @@ import {
 import { generateRandomToken, INVITE_TOKEN_EXPIRATION_DAYS } from 'src/common';
 import { NotificationScheduler } from 'src/notifications/notification.scheduler';
 import { NotificationsService } from 'src/notifications/notifications.service';
-import { Notification, NotificationType } from 'src/notifications/entities/notification.entity';
+import {
+  Notification,
+  NotificationType,
+} from 'src/notifications/entities/notification.entity';
 import { buildInvitationUrl } from 'src/notifications/notification.util';
 import { ConfigService } from '@nestjs/config';
 
@@ -83,11 +86,12 @@ export class StoresService {
       country: createStoreDto.country,
       postal_code: createStoreDto.postal_code,
       logo_url: createStoreDto.logo_url,
+      notification_cron: createStoreDto.notification_cron ?? null,
     });
 
     const savedStore = (await this.storeRepository.save(store)) as Store;
 
-    this.notificationScheduler.registerStoreJob(savedStore.id, null);
+    this.notificationScheduler.registerStoreJob(savedStore.id, savedStore.notification_cron);
 
     let adminRole = await this.roleRepository.findOne({
       where: { name: 'ADMIN', store_id: savedStore.id },
@@ -218,17 +222,21 @@ export class StoresService {
 
         if (existingUser) {
           try {
-            const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
+            const frontendUrl =
+              this.configService.get<string>('FRONTEND_URL') || '';
             const actionUrl = buildInvitationUrl(frontendUrl, token);
 
-            const notification = transactionalEntityManager.create(Notification, {
-              store_id: storeId,
-              user_id: existingUser.user_id,
-              type: NotificationType.STORE_INVITATION,
-              title: `Invitation to join ${store.name}`,
-              message: `You have been invited to join ${store.name} as ${role.name}. Click to view details.`,
-              action_url: actionUrl,
-            });
+            const notification = transactionalEntityManager.create(
+              Notification,
+              {
+                store_id: storeId,
+                user_id: existingUser.user_id,
+                type: NotificationType.STORE_INVITATION,
+                title: `Invitation to join ${store.name}`,
+                message: `You have been invited to join ${store.name} as ${role.name}. Click to view details.`,
+                action_url: actionUrl,
+              },
+            );
 
             await transactionalEntityManager.save(notification);
           } catch (error) {
@@ -312,8 +320,16 @@ export class StoresService {
       throw new NotFoundException('Không tìm thấy cửa hàng');
     }
 
+    // Track if notification_cron was updated
+    const wasNotificationCronUpdated = updateData.notification_cron !== undefined;
+
     Object.assign(store, updateData);
     const updatedStore = (await this.storeRepository.save(store)) as Store;
+
+    // Register the notification job if cron was updated
+    if (wasNotificationCronUpdated && updatedStore.notification_cron) {
+      this.notificationScheduler.registerStoreJob(storeId, updatedStore.notification_cron);
+    }
 
     return {
       message: 'Cập nhật cửa hàng thành công',
@@ -477,8 +493,6 @@ export class StoresService {
     await this.invitationRepository.update(invitation.id, {
       status: InvitationStatus.ACCEPTED,
     });
-
-
 
     const updatedUser = await this.userRepository.findOne({
       where: { user_id: user.user_id },
