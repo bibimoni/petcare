@@ -16,6 +16,7 @@ import CustomersPage from "./features/customer/customer-page";
 import InventoryPage from "./features/inventory/components/inventory-page";
 import LowStockPage from "./features/inventory/components/low-stock-page";
 import ExpiringSoonPage from "./features/inventory/components/expiring-soon-page";
+import ServicesPage from "./features/service/components/service-page";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -43,6 +44,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/inventory/low-stock" element={<LowStockPage />} />
         <Route path="/inventory/expiring-soon" element={<ExpiringSoonPage />} />
+        <Route path="/service" element={<ServicesPage />} />
         <Route
           path="/profile"
           element={

@@ -83,7 +83,6 @@ axiosClient.interceptors.request.use(
 
 axiosClient.interceptors.response.use(
   (response) => {
-    // CHỈ TRẢ VỀ NGUYÊN BẢN RESPONSE CỦA AXIOS
     return response;
   },
   async (error) => {
