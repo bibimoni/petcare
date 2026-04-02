@@ -6,7 +6,10 @@ export class CreateInvitationNotificationDto {
   @IsNumber()
   storeId: number;
 
-  @ApiProperty({ example: 2, description: 'User ID to receive the notification' })
+  @ApiProperty({
+    example: 2,
+    description: 'User ID to receive the notification',
+  })
   @IsNumber()
   userId: number;
 

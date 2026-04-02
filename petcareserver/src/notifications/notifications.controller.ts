@@ -35,21 +35,6 @@ import { MarkMultipleAsReadDto } from './dto/mark-tuple-notification.req';
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  @Get()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get notifications for a specific store', deprecated: true })
-  @ApiResponse({
-    status: 200,
-    description: 'Notifications retrieved successfully',
-  })
-  @ApiResponse({ status: 200, description: 'Deprecated: Use GET /notifications/user instead' })
-  async getStoreNotifications(
-    @CurrentUser() user: any,
-    @Query('status') status?: NotificationStatus,
-  ): Promise<Notification[]> {
-    return this.notificationsService.findByStore(user.store_id, user.user_id, status);
-  }
-
   @Get('user')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all notifications for the current user' })
@@ -61,7 +46,11 @@ export class NotificationsController {
     @CurrentUser() user: any,
     @Query('status') status?: NotificationStatus,
   ): Promise<Notification[]> {
-    return this.notificationsService.findByUser(user.user_id, user.store_id, status);
+    return this.notificationsService.findByUser(
+      user.user_id,
+      user.store_id,
+      status,
+    );
   }
 
   @Get(':id/product-details')
