@@ -6,7 +6,7 @@ export const customers = [
     pets: 2,
     total: 5200000,
     date: "12/10/2023",
-    avatar: "https://randomuser.me/api/portraits/men/32.jpg"
+    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
   },
   {
     id: "KH002",
@@ -16,7 +16,7 @@ export const customers = [
     total: 12500000,
     date: "05/09/2023",
     avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-    vip: true
+    vip: true,
   },
   {
     id: "KH003",
@@ -24,7 +24,7 @@ export const customers = [
     phone: "0988 777 666",
     pets: 3,
     total: 850000,
-    date: "20/11/2023"
+    date: "20/11/2023",
   },
   {
     id: "KH004",
@@ -33,7 +33,7 @@ export const customers = [
     pets: 1,
     total: 2100000,
     date: "01/12/2023",
-    avatar: "https://randomuser.me/api/portraits/women/68.jpg"
+    avatar: "https://randomuser.me/api/portraits/women/68.jpg",
   },
   {
     id: "KH005",
@@ -41,7 +41,7 @@ export const customers = [
     phone: "0966 888 999",
     pets: 0,
     total: 0,
-    date: "15/12/2023"
+    date: "15/12/2023",
   },
   {
     id: "KH006",
@@ -51,7 +51,7 @@ export const customers = [
     total: 6400000,
     date: "22/11/2023",
     avatar: "https://randomuser.me/api/portraits/women/21.jpg",
-    vip: true
+    vip: true,
   },
   {
     id: "KH007",
@@ -60,7 +60,7 @@ export const customers = [
     pets: 1,
     total: 1200000,
     date: "10/10/2023",
-    avatar: "https://randomuser.me/api/portraits/men/41.jpg"
+    avatar: "https://randomuser.me/api/portraits/men/41.jpg",
   },
   {
     id: "KH008",
@@ -70,7 +70,7 @@ export const customers = [
     total: 9800000,
     date: "28/11/2023",
     avatar: "https://randomuser.me/api/portraits/men/55.jpg",
-    vip: true
+    vip: true,
   },
   {
     id: "KH009",
@@ -79,7 +79,7 @@ export const customers = [
     pets: 2,
     total: 3300000,
     date: "17/11/2023",
-    avatar: "https://randomuser.me/api/portraits/women/19.jpg"
+    avatar: "https://randomuser.me/api/portraits/women/19.jpg",
   },
   {
     id: "KH010",
@@ -88,7 +88,7 @@ export const customers = [
     pets: 3,
     total: 7400000,
     date: "05/12/2023",
-    avatar: "https://randomuser.me/api/portraits/men/63.jpg"
+    avatar: "https://randomuser.me/api/portraits/men/63.jpg",
   },
   {
     id: "KH011",
@@ -97,7 +97,7 @@ export const customers = [
     pets: 1,
     total: 1500000,
     date: "13/11/2023",
-    avatar: "https://randomuser.me/api/portraits/women/50.jpg"
+    avatar: "https://randomuser.me/api/portraits/women/50.jpg",
   },
   {
     id: "KH012",
@@ -106,7 +106,7 @@ export const customers = [
     pets: 2,
     total: 4600000,
     date: "25/10/2023",
-    avatar: "https://randomuser.me/api/portraits/men/22.jpg"
+    avatar: "https://randomuser.me/api/portraits/men/22.jpg",
   },
   {
     id: "KH013",
@@ -115,6 +115,6 @@ export const customers = [
     pets: 1,
     total: 2700000,
     date: "30/11/2023",
-    avatar: "https://randomuser.me/api/portraits/women/72.jpg"
-  }
+    avatar: "https://randomuser.me/api/portraits/women/72.jpg",
+  },
 ];

@@ -8,11 +8,15 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { OrdersModule } from './orders/orders.module';
 import { CustomersModule } from './customers/customers.module';
-import { ProductsModule } from './products/products.module';
+import { PetsModule } from './pets/pets.module';
+import { ProductsModule } from './categories/products/products.module';
+import { ServicesModule } from './categories/services/services.module';
+import { CategoriesModule } from './categories/categories.module';
 import { StoresModule } from './stores/stores.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { RolesModule } from './roles/roles.module';
 import { MailModule } from './mail/mail.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -24,22 +28,30 @@ import { MailModule } from './mail/mail.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('POSTGRES_URI'),
         autoLoadEntities: true,
         synchronize: true,
+        ssl:
+          process.env.NODE_ENV === 'production'
+            ? { rejectUnauthorized: false }
+            : false,
       }),
     }),
     AuthModule,
     UsersModule,
     OrdersModule,
     CustomersModule,
+    PetsModule,
     ProductsModule,
+    ServicesModule,
+    CategoriesModule,
     StoresModule,
     PermissionsModule,
     RolesModule,
     MailModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
-import { Pet } from './entities/pet.entity';
+import { Pet } from '../pets/entities/pet.entity';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
@@ -36,9 +36,7 @@ export class CustomersService {
       return await this.customerRepository.save(customer);
     } catch (error: any) {
       if (error.code === '23505') {
-        throw new ConflictException(
-          `Customer with phone ${dto.phone} already exists in this store`,
-        );
+        throw new ConflictException('Số điện thoại này đã được đăng ký');
       }
 
       throw error;
@@ -61,7 +59,20 @@ export class CustomersService {
       },
     });
     if (!customer) {
-      throw new NotFoundException('Customer not found');
+      throw new NotFoundException('Không tìm thấy khách hàng');
+    }
+    return customer;
+  }
+
+  async findById(storeId: number, customerId: number): Promise<Customer> {
+    const customer = await this.customerRepository.findOne({
+      where: {
+        store_id: storeId,
+        customer_id: customerId,
+      },
+    });
+    if (!customer) {
+      throw new NotFoundException('Không tìm thấy khách hàng');
     }
     return customer;
   }
@@ -76,7 +87,7 @@ export class CustomersService {
     });
 
     if (!customer) {
-      throw new NotFoundException('Customer not found');
+      throw new NotFoundException('Không tìm thấy khách hàng');
     }
 
     if (dto.phone && dto.phone !== customer.phone) {
@@ -85,7 +96,7 @@ export class CustomersService {
       });
 
       if (existed) {
-        throw new ConflictException('Phone already exists in this store');
+        throw new ConflictException('Số điện thoại đã được sử dụng');
       }
     }
 
@@ -103,12 +114,12 @@ export class CustomersService {
     });
 
     if (!customer) {
-      throw new NotFoundException('Customer not found');
+      throw new NotFoundException('Không tìm thấy khách hàng');
     }
 
     await this.customerRepository.softRemove(customer);
 
-    return { message: 'Customer deleted successfully' };
+    return { message: 'Xóa khách hàng thành công' };
   }
 
   async uploadPetAvatar(
@@ -117,7 +128,7 @@ export class CustomersService {
     file: Express.Multer.File,
   ) {
     if (!file) {
-      throw new BadRequestException('File is required');
+      throw new BadRequestException('Vui lòng chọn file ảnh');
     }
     const pet = await this.petRepository.findOne({
       relations: {
@@ -129,7 +140,7 @@ export class CustomersService {
     });
     if (!pet) {
       throw new BadRequestException(
-        'Pet not found or you do not have permission to update this pet',
+        'Không tìm thấy thú cưng hoặc bạn không có quyền cập nhật',
       );
     }
 

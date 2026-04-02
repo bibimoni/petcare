@@ -1,15 +1,16 @@
-import { PawPrint, Dog, Cat, Bird } from "lucide-react";
+import { Dog, Cat, Mars, Venus, PawPrint } from "lucide-react";
 
 type Pet = {
-  type: string;
+  gender?: string;
   status?: string;
 };
 
 export default function PetStats({ pets }: { pets: Pet[] }) {
   const total = pets.length;
-  const dogs = pets.filter((p) => p.type === "Dog").length;
-  const cats = pets.filter((p) => p.type === "Cat").length;
-  const treating = pets.filter((p) => p.status === "treating").length;
+  const healthy = pets.filter((p) => p.status === "ALIVE").length;
+  const unhealthy = pets.filter((p) => p.status === "DECEASED").length;
+  const male = pets.filter((p) => p.gender === "MALE").length;
+  const female = pets.filter((p) => p.gender === "FEMALE").length;
 
   const stats = [
     {
@@ -20,30 +21,37 @@ export default function PetStats({ pets }: { pets: Pet[] }) {
       iconColor: "text-orange-200",
     },
     {
-      label: "CHÓ",
-      value: dogs,
+      label: "KHỎE MẠNH",
+      value: healthy,
       icon: Dog,
       bg: "bg-blue-50",
       iconColor: "text-blue-200",
     },
     {
-      label: "MÈO",
-      value: cats,
+      label: "BỊ BỆNH",
+      value: unhealthy,
       icon: Cat,
       bg: "bg-purple-50",
       iconColor: "text-purple-200",
     },
     {
-      label: "CHIM",
-      value: treating,
-      icon: Bird,
+      label: "GIỐNG ĐỰC",
+      value: male,
+      icon: Mars,
       bg: "bg-red-50",
       iconColor: "text-red-200",
+    },
+    {
+      label: "GIỐNG CÁI",
+      value: female,
+      icon: Venus,
+      bg: "bg-pink-50",
+      iconColor: "text-pink-200",
     },
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-6 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-6">
       {stats.map((s) => {
         const Icon = s.icon;
 

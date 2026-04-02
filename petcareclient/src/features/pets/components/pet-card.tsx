@@ -1,33 +1,37 @@
 import OwnerInfo from "./owner-info";
 
-
-type Pet = {
+export type Pet = {
   id: number;
   name: string;
-  type: string;
-  ownerName: string;
+  breed: string;
+  gender: string;
   imageUrl: string;
+  customer?: {
+    fullName: string;
+  };
 };
-
-export default function PetCard({ pet }: { pet: Pet }) {
+export default function PetCard({ pet }: { pet: any }) {
   return (
     <div className="bg-white rounded-2xl shadow overflow-hidden">
       <img
-        src={pet.imageUrl}
+        src={pet.imageUrl || "https://via.placeholder.com/150"} // Thêm ảnh mặc định nếu pet chưa có ảnh
         className="w-full h-56 object-cover"
+        alt={pet.name}
       />
 
       <div className="p-4">
         <h3 className="font-bold text-lg">{pet.name}</h3>
 
         <p className="text-gray-500 text-sm">
-          {pet.type}
+          {pet.breed || pet.type}{" "}
+          {/* Dự phòng nếu BE trả về breed thay vì type */}
         </p>
 
-        <OwnerInfo name={pet.ownerName} />
+        {/* Sửa lại chỗ này để lấy tên chủ từ object customer của BE */}
+        <OwnerInfo name={pet.customer?.fullName || "Chưa rõ chủ"} />
 
         <div className="mt-3 text-xs text-gray-500">
-          ID: {pet.id}
+          ID: {pet.id} - Giới tính: {pet.gender === "MALE" ? "Đực" : "Cái"}
         </div>
       </div>
     </div>

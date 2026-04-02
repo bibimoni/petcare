@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsString,
@@ -32,7 +32,7 @@ export class CreateCustomerDto {
   })
   phone: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'john.doe@example.com',
     description: 'Customer email address (optional)',
     required: false,
@@ -41,7 +41,7 @@ export class CreateCustomerDto {
   @IsEmail()
   email?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '123 Main St, Anytown, USA',
     description: 'Customer address (optional)',
     required: false,
@@ -50,7 +50,7 @@ export class CreateCustomerDto {
   @IsString()
   address?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'VIP customer',
     description: 'Additional notes',
     required: false,

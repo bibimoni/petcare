@@ -1,26 +1,23 @@
+import {
+  Edit3,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle,
+  PackageSearch,
+} from "lucide-react";
 import { useState, useEffect } from "react";
+
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
+  TableRow,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Edit3,
-  AlertTriangle,
-  Loader2,
-  PackageSearch,
-  ChevronLeft,
-  ChevronRight,
-  X,
-  Camera,
-  Trash2,
-  ChevronDown,
-} from "lucide-react";
 import api from "@/lib/api";
 
 interface InventoryTableProps {
@@ -35,11 +32,8 @@ export function InventoryTable({
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- STATES PHỤ CHO MODAL EDIT ---
-  const [categories, setCategories] = useState<any[]>([]);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
@@ -108,95 +102,7 @@ export function InventoryTable({
     return "Còn hàng";
   };
 
-  //  HÀM MỞ MODAL VÀ ĐIỀN DỮ LIỆU
-  const openEditModal = (product: any) => {
-    let formattedDate = "";
-    if (product.expiry_date) {
-      formattedDate = new Date(product.expiry_date).toISOString().split("T")[0];
-    }
-
-    const formattedCostPrice = product.cost_price
-      ? Number(product.cost_price).toString()
-      : "";
-    const formattedSellPrice = product.sell_price
-      ? Number(product.sell_price).toString()
-      : "";
-
-    setEditingProduct({
-      ...product,
-      cost_price: formattedCostPrice,
-      sell_price: formattedSellPrice,
-      expiry_date: formattedDate,
-    });
-    setIsEditModalOpen(true);
-  };
-
-  //  HÀM CẬP NHẬT SẢN PHẨM
-  const handleUpdateProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUpdating(true);
-    try {
-      const payload: any = {
-        name: editingProduct.name,
-        category_id: Number(editingProduct.category_id),
-        stock_quantity: Number(editingProduct.stock_quantity),
-        cost_price: Number(editingProduct.cost_price),
-        sell_price: Number(editingProduct.sell_price),
-        image_url: editingProduct.image_url,
-      };
-
-      if (editingProduct.expiry_date) {
-        payload.expiry_date = new Date(
-          `${editingProduct.expiry_date}T23:59:59Z`,
-        ).toISOString();
-      }
-
-      await api.patch(`/products/${editingProduct.product_id}`, payload);
-      alert("Cập nhật sản phẩm thành công!");
-      setIsEditModalOpen(false);
-      window.location.reload();
-    } catch (error: any) {
-      console.error(error);
-      alert(
-        "Lỗi cập nhật: " + (error.response?.data?.message || "Không xác định"),
-      );
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  //  HÀM XÓA SẢN PHẨM
-  const handleDeleteProduct = async () => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này vĩnh viễn?"))
-      return;
-    setIsUpdating(true);
-    try {
-      await api.delete(`/products/${editingProduct.product_id}`);
-      alert("Đã xóa sản phẩm!");
-      setIsEditModalOpen(false);
-      window.location.reload();
-    } catch (error: any) {
-      alert(
-        "Lỗi xóa sản phẩm: " +
-          (error.response?.data?.message || "Không xác định"),
-      );
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  //  HÀM ĐỔI ẢNH TẠM THỜI
-  const handleChangeImage = () => {
-    const url = window.prompt(
-      "Vui lòng dán đường link (URL) hình ảnh vào đây:",
-      editingProduct.image_url || "",
-    );
-    if (url) {
-      setEditingProduct({ ...editingProduct, image_url: url });
-    }
-  };
-
-  // Tính toán phân trang
+  //  PHÂN TRANG
   const totalItems = products.length;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;

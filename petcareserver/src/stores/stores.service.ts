@@ -3,6 +3,8 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { MailService } from '../mail/mail.service';
 import { InviteStaffResponseDto } from './dto/invite-staff-response.dto';
@@ -18,8 +20,14 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { Invitation } from './entities/invitation.entity';
-import { UserStatus, StoreStatus, PermissionScope, InvitationStatus } from '../common/enum';
+import {
+  UserStatus,
+  StoreStatus,
+  PermissionScope,
+  InvitationStatus,
+} from '../common/enum';
 import { generateRandomToken, INVITE_TOKEN_EXPIRATION_DAYS } from 'src/common';
+import { NotificationScheduler } from 'src/notifications/notification.scheduler';
 
 @Injectable()
 export class StoresService {
@@ -37,6 +45,8 @@ export class StoresService {
     @InjectRepository(Invitation)
     private invitationRepository: Repository<Invitation>,
     private readonly mailService: MailService,
+    @Inject(forwardRef(() => NotificationScheduler))
+    private readonly notificationScheduler: NotificationScheduler,
   ) {}
 
   async createStore(createStoreDto: CreateStoreDto, currentUserId: number) {
@@ -45,7 +55,7 @@ export class StoresService {
     });
 
     if (!existingUser) {
-      throw new ForbiddenException('User already has a store');
+      throw new ForbiddenException('Người dùng đã có cửa hàng');
     }
 
     const existingStore = await this.storeRepository.findOne({
@@ -53,7 +63,7 @@ export class StoresService {
     });
 
     if (existingStore) {
-      throw new ConflictException('Store name already exists');
+      throw new ConflictException('Tên cửa hàng đã tồn tại');
     }
 
     const store = this.storeRepository.create({
@@ -68,7 +78,9 @@ export class StoresService {
       logo_url: createStoreDto.logo_url,
     });
 
-    const savedStore = await this.storeRepository.save(store) as Store;
+    const savedStore = (await this.storeRepository.save(store)) as Store;
+
+    this.notificationScheduler.registerStoreJob(savedStore.id, null);
 
     let adminRole = await this.roleRepository.findOne({
       where: { name: 'ADMIN', store_id: savedStore.id },
@@ -83,7 +95,7 @@ export class StoresService {
         is_system_role: false,
       });
 
-      adminRole = await this.roleRepository.save(newAdminRole) as Role;
+      adminRole = (await this.roleRepository.save(newAdminRole)) as Role;
 
       const storePermissions = await this.permissionRepository.find({
         where: { scope: PermissionScope.STORE },
@@ -105,25 +117,30 @@ export class StoresService {
     });
 
     return {
-      message: 'Store created successfully',
+      message: 'Tạo cửa hàng thành công',
       store: savedStore,
       admin_role: {
         id: adminRole.id,
         name: adminRole.name,
         description: adminRole.description,
       },
-      note: 'You have been assigned as Store Admin with full access',
+      note: 'Bạn đã được gán làm Quản trị viên cửa hàng với toàn quyền truy cập',
     };
   }
 
-
-  async inviteStaff(storeId: number, inviteStaffDto: InviteStaffDto, currentUserId: number) {
+  async inviteStaff(
+    storeId: number,
+    inviteStaffDto: InviteStaffDto,
+    currentUserId: number,
+  ) {
     const currentUser = await this.userRepository.findOne({
       where: { user_id: currentUserId },
     });
 
     if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('You do not have permission to invite staff to this store');
+      throw new ForbiddenException(
+        'Bạn không có quyền mời nhân viên vào cửa hàng này',
+      );
     }
 
     const store = await this.storeRepository.findOne({
@@ -131,7 +148,7 @@ export class StoresService {
     });
 
     if (!store) {
-      throw new NotFoundException('Store not found');
+      throw new NotFoundException('Không tìm thấy cửa hàng');
     }
 
     const role = await this.roleRepository.findOne({
@@ -139,7 +156,9 @@ export class StoresService {
     });
 
     if (!role) {
-      throw new NotFoundException('Role not found or does not belong to this store');
+      throw new NotFoundException(
+        'Không tìm thấy vai trò hoặc vai trò không thuộc cửa hàng này',
+      );
     }
 
     const existingUser = await this.userRepository.findOne({
@@ -148,11 +167,13 @@ export class StoresService {
 
     if (existingUser) {
       if (existingUser.store_id === storeId) {
-        throw new ConflictException('User is already a member of this store');
+        throw new ConflictException(
+          'Người dùng đã là thành viên của cửa hàng này',
+        );
       }
 
       if (existingUser.store_id !== null) {
-        throw new ConflictException('User with this email already belongs to another store');
+        throw new ConflictException('Email này đã thuộc về một cửa hàng khác');
       }
     }
 
@@ -168,7 +189,7 @@ export class StoresService {
     //   throw new ConflictException('An invitation for this email is already pending for this store');
     // }
 
-    const token = generateRandomToken()
+    const token = generateRandomToken();
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + INVITE_TOKEN_EXPIRATION_DAYS);
@@ -184,10 +205,12 @@ export class StoresService {
       message: inviteStaffDto.message || '',
     });
 
-    const savedInvitation = await this.invitationRepository.save(invitation) as Invitation;
+    const savedInvitation = (await this.invitationRepository.save(
+      invitation,
+    )) as Invitation;
 
     const invitationResponse: InviteStaffResponseDto = {
-      message: 'Invitation sent successfully',
+      message: 'Gửi lời mời thành công',
       invitation: {
         id: savedInvitation.id,
         email: savedInvitation.email,
@@ -206,10 +229,17 @@ export class StoresService {
         name: store.name,
         status: store.status,
       },
-      note: 'An invitation link has been generated. Send this link: /api/stores/' + storeId + '/invitations/accept?token=' + token,
+      note:
+        'Đường dẫn mời đã được tạo. Gửi đường dẫn này: /api/stores/' +
+        storeId +
+        '/invitations/accept?token=' +
+        token,
     };
 
-    await this.mailService.sendInvitationEmail(invitationResponse, inviteStaffDto.full_name);
+    await this.mailService.sendInvitationEmail(
+      invitationResponse,
+      inviteStaffDto.full_name,
+    );
 
     return invitationResponse;
   }
@@ -220,19 +250,23 @@ export class StoresService {
     });
 
     if (!store) {
-      throw new NotFoundException('Store not found');
+      throw new NotFoundException('Không tìm thấy cửa hàng');
     }
 
     return store;
   }
 
-  async updateStore(storeId: number, updateData: UpdateStoreDto, currentUserId: number) {
+  async updateStore(
+    storeId: number,
+    updateData: UpdateStoreDto,
+    currentUserId: number,
+  ) {
     const currentUser = await this.userRepository.findOne({
       where: { user_id: currentUserId },
     });
 
     if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('You do not have permission to update this store');
+      throw new ForbiddenException('Bạn không có quyền cập nhật cửa hàng này');
     }
 
     const store = await this.storeRepository.findOne({
@@ -240,15 +274,49 @@ export class StoresService {
     });
 
     if (!store) {
-      throw new NotFoundException('Store not found');
+      throw new NotFoundException('Không tìm thấy cửa hàng');
     }
 
     Object.assign(store, updateData);
-    const updatedStore = await this.storeRepository.save(store) as Store;
+    const updatedStore = (await this.storeRepository.save(store)) as Store;
 
     return {
-      message: 'Store updated successfully',
+      message: 'Cập nhật cửa hàng thành công',
       store: updatedStore,
+    };
+  }
+
+  async updateNotificationSchedule(
+    storeId: number,
+    cronExpression: string | null,
+    currentUserId: number,
+  ) {
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
+
+    if (!currentUser || currentUser.store_id !== storeId) {
+      throw new ForbiddenException('Bạn không có quyền cập nhật cửa hàng này');
+    }
+
+    const store = await this.storeRepository.findOne({
+      where: { id: storeId },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Không tìm thấy cửa hàng');
+    }
+
+    store.notification_cron = cronExpression;
+    await this.storeRepository.save(store);
+
+    // Cập nhật cron job ngay lập tức, không cần restart server
+    this.notificationScheduler.registerStoreJob(storeId, cronExpression);
+
+    return {
+      message: 'Cập nhật lịch thông báo thành công',
+      store_id: storeId,
+      notification_cron: cronExpression ?? 'default (0 0 8 * * *)',
     };
   }
 
@@ -258,13 +326,15 @@ export class StoresService {
     });
 
     if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('You do not have permission to view staff of this store');
+      throw new ForbiddenException(
+        'Bạn không có quyền xem danh sách nhân viên của cửa hàng này',
+      );
     }
 
     const staff = await this.userRepository.find({
       where: { store_id: storeId },
       relations: {
-	      role: true
+        role: true,
       },
       select: {
         user_id: true,
@@ -315,18 +385,18 @@ export class StoresService {
     });
 
     if (!invitation) {
-      throw new NotFoundException('Invalid or expired invitation token');
+      throw new NotFoundException('Đường dẫn mời không hợp lệ hoặc đã hết hạn');
     }
 
     if (invitation.status !== InvitationStatus.PENDING) {
-      throw new ConflictException('This invitation has already been processed');
+      throw new ConflictException('Lời mời này đã được xử lý trước đó');
     }
 
     if (new Date() > invitation.expires_at) {
       await this.invitationRepository.update(invitation.id, {
         status: InvitationStatus.EXPIRED,
       });
-      throw new ConflictException('This invitation has expired');
+      throw new ConflictException('Lời mời đã hết hạn');
     }
 
     const store = await this.storeRepository.findOne({
@@ -334,7 +404,7 @@ export class StoresService {
     });
 
     if (!store) {
-      throw new NotFoundException('Store not found');
+      throw new NotFoundException('Không tìm thấy cửa hàng');
     }
 
     const role = await this.roleRepository.findOne({
@@ -342,7 +412,7 @@ export class StoresService {
     });
 
     if (!role) {
-      throw new NotFoundException('Role not found');
+      throw new NotFoundException('Không tìm thấy vai trò');
     }
 
     const user = await this.userRepository.findOne({
@@ -350,15 +420,17 @@ export class StoresService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found. Please register an account first.');
+      throw new NotFoundException(
+        'Không tìm thấy người dùng. Vui lòng đăng ký tài khoản trước',
+      );
     }
 
     if (user.store_id === invitation.store_id) {
-      throw new ConflictException('You are already a member of this store');
+      throw new ConflictException('Bạn đã là thành viên của cửa hàng này');
     }
 
     if (user.store_id !== null) {
-      throw new ConflictException('You are already a member of another store');
+      throw new ConflictException('Bạn đã là thành viên của một cửa hàng khác');
     }
 
     await this.userRepository.update(user.user_id, {
@@ -376,11 +448,11 @@ export class StoresService {
     });
 
     if (!updatedUser) {
-      throw new NotFoundException('User not found after update');
+      throw new NotFoundException('Không tìm thấy người dùng sau khi cập nhật');
     }
 
     const response: AcceptInvitationResponseDto = {
-      message: 'Invitation accepted successfully',
+      message: 'Chấp nhận lời mời thành công',
       user: {
         user_id: updatedUser.user_id,
         email: updatedUser.email,
@@ -397,7 +469,7 @@ export class StoresService {
         name: role.name,
         description: role.description,
       },
-      note: 'You have been successfully added to the store. Please log in to continue.',
+      note: 'Bạn đã được thêm vào cửa hàng thành công. Vui lòng đăng nhập để tiếp tục',
     };
 
     return response;

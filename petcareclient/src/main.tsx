@@ -10,13 +10,18 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AuthPage from "./features/auth-page/auth-page";
 import ForgotPasswordPage from "./features/auth-page/forgot-password-page";
 import ResetPasswordPage from "./features/auth-page/reset-password-page";
-import ProfilePage from "./features/profile/profile";
-import PetListPage from "./features/pets/pages/pet-list-page";
 import CustomersPage from "./features/customer/customer-page";
+import { DashboardPage } from "./features/dashboard";
+import ExpiringSoonPage from "./features/inventory/components/expiring-soon-page";
 import InventoryPage from "./features/inventory/components/inventory-page";
 import LowStockPage from "./features/inventory/components/low-stock-page";
+<<<<<<< HEAD
 import ExpiringSoonPage from "./features/inventory/components/expiring-soon-page";
 import ServicesPage from "./features/service/components/service-page";
+=======
+import PetListPage from "./features/pets/pages/pet-list-page";
+import ProfilePage from "./features/profile/profile";
+>>>>>>> 94a27b5c0b21679837bae600f7def60eb862542b
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -45,6 +50,14 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/inventory/low-stock" element={<LowStockPage />} />
         <Route path="/inventory/expiring-soon" element={<ExpiringSoonPage />} />
         <Route path="/service" element={<ServicesPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/profile"
           element={
