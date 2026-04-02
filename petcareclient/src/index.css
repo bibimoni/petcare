@@ -115,13 +115,15 @@
   --color-button-primary: var(--button-primary);
 }
 
-@layer base {  html {
+@layer base {
+  html {
     scroll-behavior: smooth;
-  }  * {
+  }
+  * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Fira-Sans', sans-serif;
+    font-family: "Fira-Sans", sans-serif;
   }
 }

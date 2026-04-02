@@ -21,6 +21,7 @@ import PetListPage from "./features/pets/pet-list-page";
 import CustomerProfilePage from "./features/profile/customer";
 import PetProfile from "./features/profile/pets";
 import ProfilePage from "./features/profile/profile";
+import ServicesPage from "./features/service/components/service-page";
 
 function PetProfileWrapper() {
   const { id } = useParams();
@@ -56,6 +57,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/inventory/low-stock" element={<LowStockPage />} />
         <Route path="/inventory/expiring-soon" element={<ExpiringSoonPage />} />
+        <Route path="/service" element={<ServicesPage />} />
         <Route
           path="/dashboard"
           element={
