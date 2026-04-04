@@ -26,7 +26,7 @@ export class Invitation {
   role_id: number;
 
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: InvitationStatus,
     default: InvitationStatus.PENDING,
   })

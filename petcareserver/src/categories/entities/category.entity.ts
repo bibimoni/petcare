@@ -26,7 +26,7 @@ export class Category {
   @Column({ unique: true })
   name: string;
 
-  @Column({ type: 'enum', enum: CategoryType })
+  @Column({ type: 'simple-enum', enum: CategoryType })
   type: CategoryType;
 
   @OneToMany(() => Product, (product) => product.category)

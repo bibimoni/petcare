@@ -29,7 +29,9 @@ export class AuthController {
   @Post('register')
   @ApiOperation({ summary: 'Register a new user account' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({ status: 409, description: 'Email already exists' })
+  @ApiResponse({ status: 400, description: 'Invalid input data (validation errors)' })
+  @ApiResponse({ status: 409, description: 'Email or phone number already exists' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   @ApiBody({ type: RegisterDto })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
