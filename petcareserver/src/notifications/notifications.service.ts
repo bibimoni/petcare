@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import {
   Notification,
   NotificationType,
@@ -9,13 +10,15 @@ import {
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { Product } from 'src/categories/entities/product.entity';
-import { buildNotificationProductUrl } from './notification.util';
+import { buildNotificationProductUrl, buildInvitationUrl } from './notification.util';
+import { CreateInvitationNotificationDto } from './dto/create-invitation-notification.dto';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(
@@ -29,12 +32,51 @@ export class NotificationsService {
 
   async findByStore(
     storeId: number,
+    userId?: number,
     status?: NotificationStatus,
   ): Promise<Notification[]> {
     const query = this.notificationRepository
       .createQueryBuilder('notification')
       .where('notification.store_id = :storeId', { storeId })
+      .andWhere(
+        '(notification.user_id IS NULL OR notification.user_id = :userId)',
+        { userId },
+      )
       .orderBy('notification.created_at', 'DESC');
+
+    if (status) {
+      query.andWhere('notification.status = :status', { status });
+    }
+
+    return query.getMany();
+  }
+
+  /**
+   * Find all notifications for a user, including:
+   * - Personal notifications (user_id = userId)
+   * - Store-wide notifications (store_id = user.store_id AND user_id IS NULL)
+   *
+   * @param userId - The user's ID
+   * @param storeId - Optional store ID. If provided, includes store-wide notifications
+   * @param status - Optional status filter
+   */
+  async findByUser(
+    userId: number,
+    storeId?: number | null,
+    status?: NotificationStatus,
+  ): Promise<Notification[]> {
+    const query = this.notificationRepository
+      .createQueryBuilder('notification')
+      .orderBy('notification.created_at', 'DESC');
+
+    if (storeId) {
+      query.where(
+        '(notification.user_id = :userId OR (notification.store_id = :storeId AND notification.user_id IS NULL))',
+        { userId, storeId },
+      );
+    } else {
+      query.where('notification.user_id = :userId', { userId });
+    }
 
     if (status) {
       query.andWhere('notification.status = :status', { status });
@@ -184,5 +226,43 @@ export class NotificationsService {
       notification.notification_id,
     );
     return this.notificationRepository.save(notification);
+  }
+
+  async createInvitationNotification(
+    storeIdOrDto: number | CreateInvitationNotificationDto,
+    userId?: number,
+    storeName?: string,
+    roleName?: string,
+    invitationToken?: string,
+  ): Promise<Notification> {
+    let dto: CreateInvitationNotificationDto;
+
+    if (typeof storeIdOrDto === 'object') {
+      dto = storeIdOrDto;
+    } else {
+      dto = {
+        storeId: storeIdOrDto,
+        userId: userId!,
+        storeName: storeName!,
+        roleName: roleName!,
+        invitationToken,
+      };
+    }
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
+    const actionUrl = dto.invitationToken
+      ? buildInvitationUrl(frontendUrl, dto.invitationToken)
+      : undefined;
+
+    const notification = await this.create({
+      store_id: dto.storeId,
+      user_id: dto.userId,
+      type: NotificationType.STORE_INVITATION,
+      title: `Lời mời tham gia ${dto.storeName}`,
+      message: `Bạn đã được mời tham gia ${dto.storeName} với vai trò ${dto.roleName}. Nhấn để xem chi tiết.`,
+      action_url: actionUrl,
+    });
+
+    return notification;
   }
 }

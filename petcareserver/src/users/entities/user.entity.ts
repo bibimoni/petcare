@@ -13,6 +13,7 @@ import { Role } from '../../roles/entities/role.entity';
 import { Store } from '../../stores/entities/store.entity';
 import { UserStatus } from '../../common/enum';
 import { Index } from 'typeorm';
+import { Notification } from '../../notifications/entities/notification.entity';
 
 @Entity('users')
 @Index(['phone', 'email'], { unique: true })
@@ -55,13 +56,13 @@ export class User {
   @JoinColumn({ name: 'role_id' })
   role: Role;
 
-  @Column({ type: 'enum', enum: UserStatus, default: UserStatus.LOCKED })
+  @Column({ type: 'simple-enum', enum: UserStatus, default: UserStatus.LOCKED })
   status: UserStatus;
 
   @Column({ type: 'text', nullable: true })
   reset_password_token: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   reset_password_expires_at: Date | null;
 
   @CreateDateColumn()
@@ -70,7 +71,7 @@ export class User {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   last_login_at: Date;
 
   @Column({ type: 'text', nullable: true })
@@ -81,4 +82,7 @@ export class User {
 
   @OneToMany(() => Order, (order) => order.cancelled_by_user)
   cancelled_orders: Order[];
+
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notifications: Notification[];
 }

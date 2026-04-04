@@ -1,0 +1,13 @@
+process.env.NODE_ENV = 'test';
+process.env.DB_TYPE = 'sqlite';
+process.env.POSTGRES_URI = 'sqlite::memory:';
+process.env.CLD_CLOUD_NAME = 'test_cloud';
+process.env.CLD_API_KEY = '123456789012345';
+process.env.CLD_API_SECRET = 'test_api_secret_12345';
+process.env.EMAIL_HOST = 'smtp.test.com';
+process.env.EMAIL_PORT = '587';
+process.env.EMAIL_USER = 'test@test.com';
+process.env.GOOGLE_APP_PASSWORD = 'test_password';
+process.env.FRONTEND_URL = 'http://localhost:3000';
+process.env.JWT_SECRET = 'test_jwt_secret_key';
+process.env.JWT_EXPIRES_IN = '1d';

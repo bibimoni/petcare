@@ -61,7 +61,7 @@ export class Product {
   expiry_date: Date;
 
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: ProductStatus,
     default: ProductStatus.ACTIVE,
   })

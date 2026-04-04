@@ -18,7 +18,7 @@ export class Permission {
   slug: string;
 
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: PermissionScope,
   })
   scope: PermissionScope;

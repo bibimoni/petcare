@@ -35,18 +35,22 @@ import { MarkMultipleAsReadDto } from './dto/mark-tuple-notification.req';
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  @Get()
+  @Get('user')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get notifications for a specific store' })
+  @ApiOperation({ summary: 'Get all notifications for the current user' })
   @ApiResponse({
     status: 200,
-    description: 'Notifications retrieved successfully',
+    description: 'User notifications retrieved successfully',
   })
-  async getStoreNotifications(
+  async getUserNotifications(
     @CurrentUser() user: any,
     @Query('status') status?: NotificationStatus,
   ): Promise<Notification[]> {
-    return this.notificationsService.findByStore(user.store_id, status);
+    return this.notificationsService.findByUser(
+      user.user_id,
+      user.store_id,
+      status,
+    );
   }
 
   @Get(':id/product-details')
@@ -127,7 +131,7 @@ export class NotificationsController {
       user.store_id,
       body.notificationIds,
     );
-    return { message: 'Notifications marked as read' };
+    return { message: 'Đã đánh dấu đã đọc các thông báo' };
   }
 
   @Patch(':id/mark-read')
@@ -216,6 +220,6 @@ export class NotificationsController {
     @Param('id', ParseIntPipe) notificationId: number,
   ): Promise<{ message: string }> {
     await this.notificationsService.delete(user.store_id, notificationId);
-    return { message: 'Notification deleted successfully' };
+    return { message: 'Xóa thông báo thành công' };
   }
 }
