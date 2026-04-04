@@ -8,7 +8,6 @@ import {
   MaxLength,
 } from 'class-validator';
 import { StoreStatus } from '../../common/enum';
-import { IsCronExpression } from '../../common/validators/cron-expression.validator';
 
 export class UpdateStoreDto {
   @ApiProperty({
@@ -98,15 +97,4 @@ export class UpdateStoreDto {
   @IsUrl({}, { message: 'Logo URL must be a valid URL' })
   @IsOptional()
   logo_url?: string;
-
-  @ApiProperty({
-    example: '0 0 8 * * *',
-    description:
-      'Cron expression for notification schedule (e.g., "0 0 8 * * *" for 8am daily). If null, uses default system schedule',
-    required: false,
-  })
-  @IsString({ message: 'Notification cron must be a string' })
-  @IsCronExpression({ message: 'Invalid cron expression format' })
-  @IsOptional()
-  notification_cron?: string | null;
 }

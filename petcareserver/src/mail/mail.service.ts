@@ -2,8 +2,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InviteStaffResponseDto } from '../stores/dto/invite-staff-response.dto';
-import { RESET_PASSWORD_PAGE_ROUTE, RESET_PASSWORD_TOKEN_EXPIRATION_MINUTES } from 'src/common';
-import { buildInvitationUrl } from '../notifications/notification.util';
+import { INVITE_PAGE_ROUTE, RESET_PASSWORD_PAGE_ROUTE, RESET_PASSWORD_TOKEN_EXPIRATION_MINUTES } from 'src/common';
 
 @Injectable()
 export class MailService {
@@ -14,8 +13,8 @@ export class MailService {
 
 	async sendInvitationEmail(invitationData: InviteStaffResponseDto, full_name?: string) {
 		try {
-			const frontendUrl = this.configService.get<string>('FRONTEND_URL') || '';
-			const invitationLink = buildInvitationUrl(frontendUrl, invitationData.invitation.token);
+			const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+			const invitationLink = `${frontendUrl}/${INVITE_PAGE_ROUTE}?token=${invitationData.invitation.token}`;
 			const formattedExpiryDate = new Date(invitationData.invitation.expires_at).toLocaleDateString('en-US', {
 				year: 'numeric',
 				month: 'long',
@@ -23,30 +22,30 @@ export class MailService {
 			});
 
 			const textContent = `
-Bạn được mời tham gia ${invitationData.store.name}!
+You're invited to join ${invitationData.store.name}!
 
-${full_name ? `Xin chào ${full_name},` : 'Xin chào,'}
+${full_name ? `Hello ${full_name},` : 'Hello,'}
 
-Bạn đã được mời tham gia đội ngũ của chúng tôi với vai trò ${invitationData.role.name}.
-${invitationData.role.description ? `Mô tả vai trò: ${invitationData.role.description}` : ''}
+You have been invited to join our team as a ${invitationData.role.name}.
+${invitationData.role.description ? `Role Description: ${invitationData.role.description}` : ''}
 
-Cửa hàng: ${invitationData.store.name}
-Vai trò: ${invitationData.role.name}
-${invitationData.invitation.message ? `Lời nhắn: ${invitationData.invitation.message}` : ''}
+Store: ${invitationData.store.name}
+Role: ${invitationData.role.name}
+${invitationData.invitation.message ? `Message: ${invitationData.invitation.message}` : ''}
 
-Để chấp nhận lời mời này, vui lòng truy cập:
+To accept this invitation, please visit:
 ${invitationLink}
 
-Lời mời này sẽ hết hạn vào: ${formattedExpiryDate}
+This invitation will expire on: ${formattedExpiryDate}
 
-Nếu bạn không mong đợi lời mời này, vui lòng bỏ qua email này.
+If you did not expect this invitation, please ignore this email.
 
 ---
-Đây là email tự động. Vui lòng không trả lời.`;
+This is an automated email. Please do not reply.`;
 
 			await this.mailerService.sendMail({
 				to: invitationData.invitation.email,
-				subject: `Lời mời tham gia ${invitationData.store.name} với vai trò ${invitationData.role.name}`,
+				subject: `Invitation to join ${invitationData.store.name} as ${invitationData.role.name}`,
 				text: textContent,
 			});
 

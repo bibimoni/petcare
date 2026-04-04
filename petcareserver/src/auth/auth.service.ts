@@ -2,11 +2,10 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, QueryFailedError } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
@@ -90,23 +89,12 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    // Check for existing email
-    const existingUserByEmail = await this.userRepository.findOne({
+    const existingUser = await this.userRepository.findOne({
       where: { email: registerDto.email },
     });
 
-    if (existingUserByEmail) {
+    if (existingUser) {
       throw new ConflictException('Email đã được sử dụng');
-    }
-
-    if (registerDto.phone) {
-      const existingUserByPhone = await this.userRepository.findOne({
-        where: { phone: registerDto.phone },
-      });
-
-      if (existingUserByPhone) {
-        throw new ConflictException('Số điện thoại đã được sử dụng');
-      }
     }
 
     const hashedPassword = await hashPassword(registerDto.password);
@@ -120,33 +108,15 @@ export class AuthService {
       status: UserStatus.ACTIVE,
     });
 
-    try {
-      const savedUser = await this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
 
-      const { password_hash, ...userWithoutPassword } = savedUser;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password_hash, ...userWithoutPassword } = savedUser;
 
-      return {
-        message: 'Đăng ký tài khoản thành công',
-        user: userWithoutPassword,
-      };
-    } catch (error) {
-      if (error instanceof QueryFailedError) {
-        const errorMessage = error.message.toLowerCase();
-        
-        if (errorMessage.includes('email')) {
-          throw new ConflictException('Email đã được sử dụng');
-        }
-        
-        if (errorMessage.includes('phone')) {
-          throw new ConflictException('Số điện thoại đã được sử dụng');
-        }
-        
-        throw new ConflictException('Dữ liệu đã tồn tại trong hệ thống');
-      }
-      
-      console.error('Registration error:', error);
-      throw new InternalServerErrorException('Đã xảy ra lỗi khi đăng ký tài khoản');
-    }
+    return {
+      message: 'Đăng ký tài khoản thành công',
+      user: userWithoutPassword,
+    };
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {

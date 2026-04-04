@@ -50,7 +50,7 @@ export class Pet {
   pet_code: string;
 
   @Column({
-    type: 'simple-enum',
+    type: 'enum',
     enum: PetGender,
     nullable: false,
   })
@@ -72,7 +72,7 @@ export class Pet {
   notes: string;
 
   @Column({
-    type: 'simple-enum',
+    type: 'enum',
     enum: PetStatus,
     default: PetStatus.ALIVE,
   })

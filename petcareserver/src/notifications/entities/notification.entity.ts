@@ -9,14 +9,12 @@ import {
 } from 'typeorm';
 import { Store } from '../../stores/entities/store.entity';
 import { Product } from '../../categories/entities/product.entity';
-import { User } from '../../users/entities/user.entity';
 
 export enum NotificationType {
   LOW_STOCK = 'LOW_STOCK',
   EXPIRY_WARNING = 'EXPIRY_WARNING',
   EXPIRED = 'EXPIRED',
   OUT_OF_STOCK = 'OUT_OF_STOCK',
-  STORE_INVITATION = 'STORE_INVITATION',
 }
 
 export enum NotificationStatus {
@@ -46,25 +44,15 @@ export class Notification {
   @JoinColumn({ name: 'product_id' })
   product: Product | null;
 
-  @Column({ name: 'user_id', nullable: true })
-  user_id: number | null;
-
-  @ManyToOne(() => User, {
-    onDelete: 'CASCADE',
-    nullable: true,
-  })
-  @JoinColumn({ name: 'user_id' })
-  user: User | null;
-
   @Column({
-    type: 'simple-enum',
+    type: 'enum',
     enum: NotificationType,
     default: NotificationType.LOW_STOCK,
   })
   type: NotificationType;
 
   @Column({
-    type: 'simple-enum',
+    type: 'enum',
     enum: NotificationStatus,
     default: NotificationStatus.UNREAD,
   })
