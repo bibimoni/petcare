@@ -145,7 +145,6 @@ export class ProductsService {
 
   async deleteProduct(storeId: number, productId: number): Promise<void> {
     const product = await this.findByProduct(storeId, productId);
-
     await this.productRepository.delete({
       product_id: product.product_id,
       store_id: product.store_id,
@@ -189,7 +188,6 @@ export class ProductsService {
         category_id: categoryId,
       },
     });
-
     return products.map((p) => ({
       product_id: p.product_id,
       name: p.name,

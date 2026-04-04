@@ -1,0 +1,264 @@
+import {
+  Coins,
+  Package,
+  Loader2,
+  CalendarX,
+  ArrowRight,
+  AlertTriangle,
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+import api from "@/lib/api";
+
+const normalizeCategories = (payload: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(payload)) {
+    return payload as Record<string, unknown>[];
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const responseObject = payload as Record<string, unknown>;
+
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as Record<string, unknown>[];
+  }
+
+  return Object.values(responseObject).filter(
+    (item): item is Record<string, unknown> =>
+      !!item && typeof item === "object" && "category_id" in item,
+  );
+};
+
+const normalizeProducts = (payload: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(payload)) {
+    return payload as Record<string, unknown>[];
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const responseObject = payload as Record<string, unknown>;
+
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as Record<string, unknown>[];
+  }
+
+  return Object.values(responseObject).filter(
+    (item): item is Record<string, unknown> =>
+      !!item && typeof item === "object" && "product_id" in item,
+  );
+};
+
+const normalizeAlerts = (payload: unknown): Record<string, unknown>[] => {
+  return normalizeProducts(payload);
+};
+
+type ProductLike = {
+  category_id?: number;
+  expiry_date?: string;
+  stock_quantity?: number;
+  min_stock_level?: number;
+};
+
+type DataValue = {
+  status: number;
+  value?: number;
+};
+
+export function InventoryStats() {
+  const navigate = useNavigate();
+
+  // State lưu trữ dữ liệu thống kê
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    lowStockCount: 0,
+    expiringCount: 0,
+    totalValue: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setIsLoading(true);
+
+        // 1. Gọi song song 3 API (Thêm API lấy danh mục để đếm sản phẩm)
+        const [alertsRes, valueRes, catRes] = await Promise.all([
+          api.get("/products/alerts"),
+          api.get("/products/total/sum"),
+          api.get("/categories?type=PRODUCT"),
+        ]);
+
+        const alertsData = normalizeAlerts(alertsRes);
+        const valueData = valueRes as DataValue;
+        const categories = normalizeCategories(catRes);
+
+        // 2. Tính Sắp hết hàng
+        const lowStock = alertsData.filter((product) => {
+          const p = product as ProductLike;
+          return (
+            Number(p.stock_quantity || 0) < 3 ||
+            Number(p.stock_quantity || 0) <= Number(p.min_stock_level || 0)
+          );
+        }).length;
+
+        // 3. Tính Sắp hết HSD
+        const expiringSoon = alertsData.filter((product) => {
+          const p = product as ProductLike;
+          if (!p.expiry_date) return false;
+          const expDate = new Date(p.expiry_date);
+          const daysLeft =
+            (expDate.getTime() - new Date().getTime()) / (1000 * 3600 * 24);
+          return daysLeft <= 30;
+        }).length;
+
+        // 4. Logic tính "Tổng sản phẩm" tự động
+        let totalProductCount = 0;
+        if (Array.isArray(categories)) {
+          const productRequests = categories.map((category) => {
+            const cat = category as ProductLike;
+            return api.get(`/products/category/${cat.category_id}`);
+          });
+          const productResponses = await Promise.all(productRequests);
+          const allProducts = productResponses.flatMap((res) =>
+            normalizeProducts(res),
+          );
+
+          // Đếm tổng số lượng CÁC MẶT HÀNG (Ví dụ: 10 mặt hàng)
+          // totalProductCount = allProducts.length;
+
+          // MẸO: Nếu bạn muốn đếm TỔNG SỐ LƯỢNG TỒN KHO (Ví dụ: 5000 gói hạt)
+          // thì hãy comment dòng trên lại và bỏ comment dòng dưới này:
+          totalProductCount = allProducts.reduce(
+            (sum, p) => sum + Number(p.stock_quantity || 0),
+            0,
+          );
+        }
+
+        // 5. Cập nhật State
+        setStats((prev) => ({
+          ...prev,
+          totalProducts: totalProductCount, // <-- Đã được tính toán động
+          lowStockCount: lowStock,
+          expiringCount: expiringSoon,
+          totalValue: Number(valueData.value || 0),
+        }));
+      } catch (error) {
+        console.error("Lỗi khi tải thống kê kho hàng:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+      {/* 1. Tổng sản phẩm */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#f3ebe7] flex flex-col justify-between h-40 group hover:shadow-md transition-all relative overflow-hidden">
+        <div className="relative z-10 flex justify-between items-start">
+          <div>
+            <p className="text-text-secondary font-medium mb-1">
+              Tổng sản phẩm
+            </p>
+            <h3 className="text-4xl font-bold text-text-primary">
+              {isLoading ? (
+                <Loader2 className="animate-spin h-8 w-8 mt-1" />
+              ) : (
+                stats.totalProducts.toLocaleString("vi-VN")
+              )}
+            </h3>
+          </div>
+          <div className="text-blue-500 bg-blue-100 p-2 rounded-lg">
+            <Package size={24} />
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Sắp hết hàng */}
+      <div
+        onClick={() => navigate("/inventory/low-stock")}
+        className="bg-[#fff9c4]/40 p-6 rounded-2xl shadow-sm border border-yellow-200 flex flex-col justify-between h-40 relative overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform"
+      >
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-yellow-800 font-medium mb-1">Sắp hết hàng</p>
+            <h3 className="text-4xl font-bold text-yellow-900">
+              {isLoading ? (
+                <Loader2 className="animate-spin h-8 w-8 mt-1" />
+              ) : (
+                stats.lowStockCount
+              )}
+            </h3>
+          </div>
+          <div className="text-yellow-700 bg-yellow-200/60 p-2 rounded-lg animate-pulse">
+            <AlertTriangle size={24} />
+          </div>
+        </div>
+        <button
+          type="button"
+          className="text-xs font-bold text-yellow-900 hover:underline flex items-center gap-1"
+        >
+          Xem danh sách <ArrowRight size={12} />
+        </button>
+      </div>
+
+      {/* 3. Sắp hết HSD */}
+      <div
+        onClick={() => navigate("/inventory/expiring-soon")}
+        className="bg-orange-50 p-6 rounded-2xl shadow-sm border border-orange-200 flex flex-col justify-between h-40 relative overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform"
+      >
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-orange-800 font-medium mb-1">Sắp hết HSD</p>
+            <h3 className="text-4xl font-bold text-orange-900">
+              {isLoading ? (
+                <Loader2 className="animate-spin h-8 w-8 mt-1" />
+              ) : (
+                stats.expiringCount
+              )}
+            </h3>
+          </div>
+          <div className="text-orange-600 bg-orange-200/60 p-2 rounded-lg">
+            <CalendarX size={24} />
+          </div>
+        </div>
+        <button
+          type="button"
+          className="text-xs font-bold text-orange-900 hover:underline flex items-center gap-1"
+        >
+          Xem danh sách <ArrowRight size={12} />
+        </button>
+      </div>
+
+      {/* 4. Giá trị kho */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#f3ebe7] flex flex-col justify-between h-40">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-text-secondary font-medium mb-1">Giá trị kho</p>
+            <h3 className="text-3xl font-bold text-text-primary">
+              {isLoading ? (
+                <Loader2 className="animate-spin h-8 w-8 mt-1" />
+              ) : (
+                <>
+                  {stats.totalValue.toLocaleString("vi-VN")}
+                  <span className="text-lg text-text-secondary font-normal ml-1">
+                    đ
+                  </span>
+                </>
+              )}
+            </h3>
+          </div>
+          <div className="text-green-500 bg-green-100 p-2 rounded-lg">
+            <Coins size={24} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
