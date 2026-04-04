@@ -50,7 +50,7 @@ export class Service {
   description: string;
 
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: ServiceStatus,
     default: ServiceStatus.ACTIVE,
   })

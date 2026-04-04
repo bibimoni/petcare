@@ -25,7 +25,7 @@ export class Store {
   name: string;
 
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: StoreStatus,
     default: StoreStatus.ACTIVE,
   })

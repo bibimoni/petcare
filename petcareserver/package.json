@@ -23,8 +23,7 @@
     "migration:generate": "npm run typeorm -- -d src/database/data-source.ts migration:generate",
     "migration:create": "npm run typeorm -- migration:create",
     "migration:run": "npm run typeorm -- -d src/database/data-source.ts migration:run",
-    "migration:revert": "npm run typeorm -- -d src/database/data-source.ts migration:revert",
-    "seed:khoi": "ts-node scripts/seed-customers-khoi.ts"
+    "migration:revert": "npm run typeorm -- -d src/database/data-source.ts migration:revert"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",
@@ -57,13 +56,13 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
-    "@faker-js/faker": "^10.3.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
+    "@types/mocha": "^10.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^22.10.7",
     "@types/nodemailer": "^7.0.10",
@@ -77,6 +76,7 @@
     "jest": "^30.0.0",
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
+    "sqlite3": "^5.1.7",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",

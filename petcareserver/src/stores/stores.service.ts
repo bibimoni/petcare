@@ -10,7 +10,7 @@ import { MailService } from '../mail/mail.service';
 import { InviteStaffResponseDto } from './dto/invite-staff-response.dto';
 import { AcceptInvitationResponseDto } from './dto/accept-invitation-response.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Store } from './entities/store.entity';
 import { User } from '../users/entities/user.entity';
 import { Role } from '../roles/entities/role.entity';
@@ -28,6 +28,13 @@ import {
 } from '../common/enum';
 import { generateRandomToken, INVITE_TOKEN_EXPIRATION_DAYS } from 'src/common';
 import { NotificationScheduler } from 'src/notifications/notification.scheduler';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import {
+  Notification,
+  NotificationType,
+} from 'src/notifications/entities/notification.entity';
+import { buildInvitationUrl } from 'src/notifications/notification.util';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class StoresService {
@@ -47,6 +54,9 @@ export class StoresService {
     private readonly mailService: MailService,
     @Inject(forwardRef(() => NotificationScheduler))
     private readonly notificationScheduler: NotificationScheduler,
+    private readonly notificationsService: NotificationsService,
+    private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
   ) {}
 
   async createStore(createStoreDto: CreateStoreDto, currentUserId: number) {
@@ -76,11 +86,12 @@ export class StoresService {
       country: createStoreDto.country,
       postal_code: createStoreDto.postal_code,
       logo_url: createStoreDto.logo_url,
+      notification_cron: createStoreDto.notification_cron ?? null,
     });
 
     const savedStore = (await this.storeRepository.save(store)) as Store;
 
-    this.notificationScheduler.registerStoreJob(savedStore.id, null);
+    this.notificationScheduler.registerStoreJob(savedStore.id, savedStore.notification_cron);
 
     let adminRole = await this.roleRepository.findOne({
       where: { name: 'ADMIN', store_id: savedStore.id },
@@ -194,20 +205,45 @@ export class StoresService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + INVITE_TOKEN_EXPIRATION_DAYS);
 
-    const invitation = this.invitationRepository.create({
-      email: inviteStaffDto.email,
-      store_id: storeId,
-      role_id: inviteStaffDto.role_id,
-      status: InvitationStatus.PENDING,
-      token: token,
-      expires_at: expiresAt,
-      invited_by: currentUserId,
-      message: inviteStaffDto.message || '',
-    });
+    const savedInvitation = await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const invitation = transactionalEntityManager.create(Invitation, {
+          email: inviteStaffDto.email,
+          store_id: storeId,
+          role_id: inviteStaffDto.role_id,
+          status: InvitationStatus.PENDING,
+          token: token,
+          expires_at: expiresAt,
+          invited_by: currentUserId,
+          message: inviteStaffDto.message || '',
+        });
 
-    const savedInvitation = (await this.invitationRepository.save(
-      invitation,
-    )) as Invitation;
+        const saved = await transactionalEntityManager.save(invitation);
+
+        if (existingUser) {
+          try {
+            const frontendUrl =
+              this.configService.get<string>('FRONTEND_URL') || '';
+            const actionUrl = buildInvitationUrl(frontendUrl, token);
+
+            const notification = transactionalEntityManager.create(Notification, {
+              store_id: storeId,
+              user_id: existingUser.user_id,
+              type: NotificationType.STORE_INVITATION,
+              title: `Lời mời tham gia ${store.name}`,
+              message: `Bạn đã được mời tham gia ${store.name} với vai trò ${role.name}. Nhấn để xem chi tiết.`,
+              action_url: actionUrl,
+            });
+
+            await transactionalEntityManager.save(notification);
+          } catch (error) {
+            console.error('Failed to create invitation notification:', error);
+          }
+        }
+
+        return saved;
+      },
+    );
 
     const invitationResponse: InviteStaffResponseDto = {
       message: 'Gửi lời mời thành công',
@@ -236,10 +272,14 @@ export class StoresService {
         token,
     };
 
-    await this.mailService.sendInvitationEmail(
-      invitationResponse,
-      inviteStaffDto.full_name,
-    );
+    try {
+      await this.mailService.sendInvitationEmail(
+        invitationResponse,
+        inviteStaffDto.full_name,
+      );
+    } catch (error) {
+      console.error('Failed to send invitation email:', error);
+    }
 
     return invitationResponse;
   }
@@ -277,8 +317,16 @@ export class StoresService {
       throw new NotFoundException('Không tìm thấy cửa hàng');
     }
 
+    // Track if notification_cron was updated
+    const wasNotificationCronUpdated = updateData.notification_cron !== undefined;
+
     Object.assign(store, updateData);
     const updatedStore = (await this.storeRepository.save(store)) as Store;
+
+    // Register the notification job if cron was updated
+    if (wasNotificationCronUpdated && updatedStore.notification_cron) {
+      this.notificationScheduler.registerStoreJob(storeId, updatedStore.notification_cron);
+    }
 
     return {
       message: 'Cập nhật cửa hàng thành công',

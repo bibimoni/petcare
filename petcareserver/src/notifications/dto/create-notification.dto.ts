@@ -16,7 +16,7 @@ export class CreateNotificationDto {
   })
   @IsOptional()
   @IsNumber()
-  product_id: number;
+  product_id?: number;
 
   @ApiProperty({
     example: NotificationType.LOW_STOCK,
@@ -44,7 +44,8 @@ export class CreateNotificationDto {
     description: 'Name of the product associated with the notification',
   })
   @IsString()
-  product_name: string;
+  @IsOptional()
+  product_name?: string;
 
   @ApiProperty({
     example: 'https://example.com/product/1',
@@ -53,4 +54,12 @@ export class CreateNotificationDto {
   @IsString()
   @IsOptional()
   action_url?: string;
+
+  @ApiProperty({
+    example: 1,
+    description: 'ID of the user for user-specific notifications',
+  })
+  @IsNumber()
+  @IsOptional()
+  user_id?: number;
 }
