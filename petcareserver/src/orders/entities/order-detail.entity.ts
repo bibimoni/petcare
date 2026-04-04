@@ -29,7 +29,7 @@ export class OrderDetail {
   @JoinColumn({ name: 'order_id' })
   order: Order;
 
-  @Column({ name: 'item_type', type: 'simple-enum', enum: ItemType })
+  @Column({ name: 'item_type', type: 'enum', enum: ItemType })
   item_type: ItemType;
 
   @Column({ name: 'product_id', nullable: true })
