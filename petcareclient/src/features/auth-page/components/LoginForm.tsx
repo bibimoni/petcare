@@ -49,7 +49,7 @@ export default function LoginForm() {
         localStorage.setItem("user", JSON.stringify(user));
         toast.success("Đăng nhập thành công");
         if (user.role == null) {
-          navigate("/invitations");
+          navigate("/create-store");
         } else {
           navigate("/dashboard");
         }

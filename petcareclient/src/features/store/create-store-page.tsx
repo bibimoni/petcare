@@ -152,14 +152,14 @@ export default function CreateStorePage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full overflow-hidden">
+    <div className="flex h-screen w-full overflow-hidden">
       <Sidebar userInfo={sidebarUser} />
 
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="min-h-0 flex-1 bg-surface-light dark:bg-surface-dark px-4 py-5 md:px-6 md:py-6">
-          <div className="mx-auto w-full max-w-3xl">
+          <div className="mx-auto flex h-full w-full max-w-3xl flex-col">
             {/* Header Section */}
-            <div className="text-center mb-10">
+            <div className="mb-6 shrink-0 text-center">
               <div className="w-16 h-16 bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
                 <Store className="h-8 w-8" />
               </div>
@@ -172,8 +172,11 @@ export default function CreateStorePage() {
             </div>
 
             {/* Form Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-              <form onSubmit={handleSubmit} className="p-8 md:p-10">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <form
+                onSubmit={handleSubmit}
+                className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6 md:p-8"
+              >
                 <div className="space-y-8">
                   {/* --- Thông tin cơ bản --- */}
                   <div>

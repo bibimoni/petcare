@@ -30,6 +30,12 @@ interface SidebarProps {
   userInfo?: SidebarUserInfo | Promise<SidebarUserInfo>;
 }
 
+const isPromiseLikeUserInfo = (
+  value: SidebarUserInfo | Promise<SidebarUserInfo> | undefined,
+): value is Promise<SidebarUserInfo> => {
+  return !!value && typeof value === "object" && "then" in value;
+};
+
 const STAFF_NAV_ITEMS: NavItem[] = [
   {
     id: "dashboard",
@@ -96,8 +102,9 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
     const loadUserInfo = async () => {
       setIsLoadingUserInfo(true);
 
-      if (userInfo) {
-        const resolved = await Promise.resolve(userInfo);
+      // Promise userInfo can be stale across sessions, so always refetch profile.
+      if (userInfo && !isPromiseLikeUserInfo(userInfo)) {
+        const resolved = userInfo;
 
         if (isMounted) {
           setResolvedUserInfo(resolved);
@@ -121,6 +128,27 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
       isMounted = false;
     };
   }, [userInfo]);
+
+  const roleName = resolvedUserInfo.role?.name?.toUpperCase();
+  const isAdmin = roleName === "ADMIN";
+  const isStaff = roleName === "STAFF";
+  const isLimited = !isAdmin && !isStaff;
+  const navItems = isAdmin
+    ? DEFAULT_NAV_ITEMS
+    : isStaff
+      ? STAFF_NAV_ITEMS
+      : LIMITED_NAV_ITEMS;
+
+  useEffect(() => {
+    if (!isLoadingUserInfo && isLimited) {
+      const isDefaultEntryPath =
+        location.pathname === "/" || location.pathname === "/dashboard";
+
+      if (isDefaultEntryPath) {
+        navigate("/create-store", { replace: true });
+      }
+    }
+  }, [isLoadingUserInfo, isLimited, location.pathname, navigate]);
 
   const handleNavigation = (href: string) => {
     navigate(href);
@@ -147,14 +175,6 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
       </aside>
     );
   }
-
-  const roleName = resolvedUserInfo.role?.name?.toUpperCase();
-  const navItems =
-    roleName === "ADMIN"
-      ? DEFAULT_NAV_ITEMS
-      : roleName === "STAFF"
-        ? STAFF_NAV_ITEMS
-        : LIMITED_NAV_ITEMS;
 
   return (
     <aside className="z-20 hidden w-64 flex-col border-r border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-surface-dark lg:flex">
