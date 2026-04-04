@@ -22,6 +22,7 @@ import CustomerProfilePage from "./features/profile/customer";
 import PetProfile from "./features/profile/pets";
 import ProfilePage from "./features/profile/profile";
 import ServicesPage from "./features/service/components/service-page";
+import CreateStorePage from "./features/store/create-store-page";
 
 function PetProfileWrapper() {
   const { id } = useParams();
@@ -57,7 +58,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/inventory/low-stock" element={<LowStockPage />} />
         <Route path="/inventory/expiring-soon" element={<ExpiringSoonPage />} />
-        <Route path="/service" element={<ServicesPage />} />
+        <Route path="/services" element={<ServicesPage />} />
         <Route
           path="/dashboard"
           element={
@@ -71,6 +72,14 @@ createRoot(document.getElementById("root")!).render(
           element={
             <ProtectedRoute>
               <InvitationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-store"
+          element={
+            <ProtectedRoute>
+              <CreateStorePage />
             </ProtectedRoute>
           }
         />
