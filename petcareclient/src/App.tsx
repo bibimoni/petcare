@@ -1,5 +1,5 @@
-import LandingPage from "./features/landing-page/landing-page";
-
-export default function App() {
-  return <LandingPage />;
+function App() {
+  return <></>;
 }
+
+export default App;
