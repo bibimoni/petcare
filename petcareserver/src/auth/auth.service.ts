@@ -99,7 +99,6 @@ export class AuthService {
       throw new ConflictException('Email đã được sử dụng');
     }
 
-    // Check for existing phone (if provided)
     if (registerDto.phone) {
       const existingUserByPhone = await this.userRepository.findOne({
         where: { phone: registerDto.phone },
@@ -124,7 +123,6 @@ export class AuthService {
     try {
       const savedUser = await this.userRepository.save(user);
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password_hash, ...userWithoutPassword } = savedUser;
 
       return {
@@ -132,7 +130,6 @@ export class AuthService {
         user: userWithoutPassword,
       };
     } catch (error) {
-      // Handle database unique constraint violations
       if (error instanceof QueryFailedError) {
         const errorMessage = error.message.toLowerCase();
         
@@ -144,11 +141,9 @@ export class AuthService {
           throw new ConflictException('Số điện thoại đã được sử dụng');
         }
         
-        // Generic unique constraint violation
         throw new ConflictException('Dữ liệu đã tồn tại trong hệ thống');
       }
       
-      // Log unexpected errors for debugging
       console.error('Registration error:', error);
       throw new InternalServerErrorException('Đã xảy ra lỗi khi đăng ký tài khoản');
     }
