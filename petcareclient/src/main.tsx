@@ -18,6 +18,8 @@ import LowStockPage from "./features/inventory/low-stock-page";
 import AcceptInvitationPage from "./features/invitation/accept-invitation-page";
 import InvitationPage from "./features/invitation/invitation-page";
 import PetListPage from "./features/pets/pet-list-page";
+import AllProductsPage from "./features/pos/components/all-products";
+import PosPage from "./features/pos/pos-page";
 import CustomerProfilePage from "./features/profile/customer";
 import PetProfile from "./features/profile/pets";
 import ProfilePage from "./features/profile/profile";
@@ -59,6 +61,22 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/inventory/low-stock" element={<LowStockPage />} />
         <Route path="/inventory/expiring-soon" element={<ExpiringSoonPage />} />
         <Route path="/services" element={<ServicesPage />} />
+        <Route
+          path="/pos"
+          element={
+            <ProtectedRoute>
+              <PosPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pos/all-products"
+          element={
+            <ProtectedRoute>
+              <AllProductsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dashboard"
           element={
