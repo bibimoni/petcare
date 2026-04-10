@@ -22,40 +22,16 @@ import {
   TableHead,
   TableHeader,
 } from "@/components/ui/table";
+import {
+  getProductsForTable,
+  getProductCategories,
+} from "@/features/inventory/api/products.api";
 import api from "@/lib/api";
 
 interface InventoryTableProps {
   categoryId?: string;
   searchTerm?: string;
 }
-
-const normalizeCategories = (payload: unknown): any[] => {
-  if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== "object") return [];
-
-  const responseObject = payload as Record<string, unknown>;
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as any[];
-  }
-
-  return Object.values(responseObject).filter(
-    (item) => !!item && typeof item === "object" && "category_id" in item,
-  ) as any[];
-};
-
-const normalizeProducts = (payload: unknown): any[] => {
-  if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== "object") return [];
-
-  const responseObject = payload as Record<string, unknown>;
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as any[];
-  }
-
-  return Object.values(responseObject).filter(
-    (item) => !!item && typeof item === "object" && "product_id" in item,
-  ) as any[];
-};
 
 export function InventoryTable({
   categoryId = "all",
@@ -77,8 +53,8 @@ export function InventoryTable({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await api.get("/categories?type=PRODUCT");
-        setCategories(normalizeCategories(res));
+        const fetchedCategories = await getProductCategories();
+        setCategories(fetchedCategories as any[]);
       } catch (error) {
         console.error("Lỗi tải danh mục:", error);
       }
@@ -91,23 +67,7 @@ export function InventoryTable({
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        let fetchedData: any[] = [];
-
-        if (categoryId === "all") {
-          const catRes = await api.get("/categories?type=PRODUCT");
-          const cats = normalizeCategories(catRes);
-
-          if (Array.isArray(cats)) {
-            const requests = cats.map((cat: any) =>
-              api.get(`/products/category/${cat.category_id}`),
-            );
-            const responses = await Promise.all(requests);
-            fetchedData = responses.flatMap((res) => normalizeProducts(res));
-          }
-        } else {
-          const res = await api.get(`/products/category/${categoryId}`);
-          fetchedData = normalizeProducts(res);
-        }
+        let fetchedData = (await getProductsForTable(categoryId)) as any[];
 
         if (!Array.isArray(fetchedData)) fetchedData = [];
 
