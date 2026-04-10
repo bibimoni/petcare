@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   Coins,
   Package,
@@ -6,156 +7,75 @@ import {
   ArrowRight,
   AlertTriangle,
 } from "lucide-react";
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import api from "@/lib/api";
-
-const normalizeCategories = (payload: unknown): Record<string, unknown>[] => {
-  if (Array.isArray(payload)) {
-    return payload as Record<string, unknown>[];
-  }
-
-  if (!payload || typeof payload !== "object") {
-    return [];
-  }
-
-  const responseObject = payload as Record<string, unknown>;
-
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as Record<string, unknown>[];
-  }
-
-  return Object.values(responseObject).filter(
-    (item): item is Record<string, unknown> =>
-      !!item && typeof item === "object" && "category_id" in item,
-  );
-};
-
-const normalizeProducts = (payload: unknown): Record<string, unknown>[] => {
-  if (Array.isArray(payload)) {
-    return payload as Record<string, unknown>[];
-  }
-
-  if (!payload || typeof payload !== "object") {
-    return [];
-  }
-
-  const responseObject = payload as Record<string, unknown>;
-
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as Record<string, unknown>[];
-  }
-
-  return Object.values(responseObject).filter(
-    (item): item is Record<string, unknown> =>
-      !!item && typeof item === "object" && "product_id" in item,
-  );
-};
-
-const normalizeAlerts = (payload: unknown): Record<string, unknown>[] => {
-  return normalizeProducts(payload);
-};
+import {
+  getProductAlerts,
+  getProductCategories,
+  getInventoryTotalValue,
+  getProductsByCategoryId,
+} from "@/features/inventory/api/products.api";
 
 type ProductLike = {
-  category_id?: number;
   expiry_date?: string;
   stock_quantity?: number;
   min_stock_level?: number;
-};
-
-type DataValue = {
-  status: number;
-  value?: number;
+  category_id?: number | string;
 };
 
 export function InventoryStats() {
   const navigate = useNavigate();
 
-  // State lưu trữ dữ liệu thống kê
-  const [stats, setStats] = useState({
+  const statsQuery = useQuery({
+    queryKey: ["inventory-stats"],
+    queryFn: async () => {
+      const [alertsData, totalValue, categories] = await Promise.all([
+        getProductAlerts(),
+        getInventoryTotalValue(),
+        getProductCategories(),
+      ]);
+
+      const lowStockCount = alertsData.filter((product) => {
+        const stock = Number(product.stock_quantity || 0);
+        const minStock = Number(product.min_stock_level || 0);
+        return stock < 3 || stock <= minStock;
+      }).length;
+
+      const expiringCount = alertsData.filter((product) => {
+        if (!product.expiry_date) return false;
+        const expDate = new Date(product.expiry_date);
+        const daysLeft =
+          (expDate.getTime() - new Date().getTime()) / (1000 * 3600 * 24);
+        return daysLeft <= 30;
+      }).length;
+
+      const productResponses = await Promise.all(
+        categories.map((category) =>
+          getProductsByCategoryId(category.category_id),
+        ),
+      );
+
+      const totalProducts = productResponses
+        .flat()
+        .reduce((sum, product) => sum + Number(product.stock_quantity || 0), 0);
+
+      return {
+        totalProducts,
+        lowStockCount,
+        expiringCount,
+        totalValue,
+      };
+    },
+    staleTime: 3 * 60 * 1000,
+  });
+
+  const stats = statsQuery.data ?? {
     totalProducts: 0,
     lowStockCount: 0,
     expiringCount: 0,
     totalValue: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setIsLoading(true);
-
-        // 1. Gọi song song 3 API (Thêm API lấy danh mục để đếm sản phẩm)
-        const [alertsRes, valueRes, catRes] = await Promise.all([
-          api.get("/products/alerts"),
-          api.get("/products/total/sum"),
-          api.get("/categories?type=PRODUCT"),
-        ]);
-
-        const alertsData = normalizeAlerts(alertsRes);
-        const valueData = valueRes as DataValue;
-        const categories = normalizeCategories(catRes);
-
-        // 2. Tính Sắp hết hàng
-        const lowStock = alertsData.filter((product) => {
-          const p = product as ProductLike;
-          return (
-            Number(p.stock_quantity || 0) < 3 ||
-            Number(p.stock_quantity || 0) <= Number(p.min_stock_level || 0)
-          );
-        }).length;
-
-        // 3. Tính Sắp hết HSD
-        const expiringSoon = alertsData.filter((product) => {
-          const p = product as ProductLike;
-          if (!p.expiry_date) return false;
-          const expDate = new Date(p.expiry_date);
-          const daysLeft =
-            (expDate.getTime() - new Date().getTime()) / (1000 * 3600 * 24);
-          return daysLeft <= 30;
-        }).length;
-
-        // 4. Logic tính "Tổng sản phẩm" tự động
-        let totalProductCount = 0;
-        if (Array.isArray(categories)) {
-          const productRequests = categories.map((category) => {
-            const cat = category as ProductLike;
-            return api.get(`/products/category/${cat.category_id}`);
-          });
-          const productResponses = await Promise.all(productRequests);
-          const allProducts = productResponses.flatMap((res) =>
-            normalizeProducts(res),
-          );
-
-          // Đếm tổng số lượng CÁC MẶT HÀNG (Ví dụ: 10 mặt hàng)
-          // totalProductCount = allProducts.length;
-
-          // MẸO: Nếu bạn muốn đếm TỔNG SỐ LƯỢNG TỒN KHO (Ví dụ: 5000 gói hạt)
-          // thì hãy comment dòng trên lại và bỏ comment dòng dưới này:
-          totalProductCount = allProducts.reduce(
-            (sum, p) => sum + Number(p.stock_quantity || 0),
-            0,
-          );
-        }
-
-        // 5. Cập nhật State
-        setStats((prev) => ({
-          ...prev,
-          totalProducts: totalProductCount, // <-- Đã được tính toán động
-          lowStockCount: lowStock,
-          expiringCount: expiringSoon,
-          totalValue: Number(valueData.value || 0),
-        }));
-      } catch (error) {
-        console.error("Lỗi khi tải thống kê kho hàng:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
+  };
+  const isLoading = statsQuery.isPending;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">

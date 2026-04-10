@@ -10,6 +10,7 @@ export type CategoryDto = {
 };
 
 export type ProductDto = {
+  sku?: string;
   name?: string;
   status?: string;
   image_url: string;
@@ -24,6 +25,15 @@ export type ProductDto = {
   cost_price?: number | string;
   sell_price?: number | string;
   category_id?: number | string;
+};
+
+type TotalValueResponse = {
+  value?: number | string;
+};
+
+export type InventoryAlertsData = {
+  alerts: ProductDto[];
+  categories: CategoryDto[];
 };
 
 const extractList = <T extends Record<string, unknown>>(
@@ -74,6 +84,29 @@ export const getProductsByCategoryId = async (
   const response = await api.get(`/products/category/${categoryId}`);
   return normalizeProducts(response);
 };
+
+export const getProductAlerts = async (): Promise<ProductDto[]> => {
+  const response = await api.get("/products/alerts");
+  return normalizeProducts(response);
+};
+
+export const getInventoryTotalValue = async (): Promise<number> => {
+  const response = (await api.get("/products/total/sum")) as TotalValueResponse;
+  return Number(response?.value ?? 0);
+};
+
+export const getInventoryAlertsData =
+  async (): Promise<InventoryAlertsData> => {
+    const [alerts, categories] = await Promise.all([
+      getProductAlerts(),
+      getProductCategories(),
+    ]);
+
+    return {
+      alerts,
+      categories,
+    };
+  };
 
 export const getProductsForTable = async (
   categoryId: string,

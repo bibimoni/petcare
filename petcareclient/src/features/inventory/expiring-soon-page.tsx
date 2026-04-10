@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   Clock,
   Search,
@@ -15,10 +16,10 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
-import api from "@/lib/api";
+import { getInventoryAlertsData } from "@/features/inventory/api/products.api";
 
 interface ExpiringAlert {
-  sku: string;
+  sku?: string;
   name: string;
   product_id: number;
   expiry_date: string;
@@ -32,123 +33,78 @@ interface ExpiringAlert {
   level: "severe" | "warning" | "notice" | "normal";
 }
 
-const normalizeCategories = (payload: unknown): any[] => {
-  if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== "object") return [];
-
-  const responseObject = payload as Record<string, unknown>;
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as any[];
-  }
-
-  return Object.values(responseObject).filter(
-    (item) => !!item && typeof item === "object" && "category_id" in item,
-  ) as any[];
-};
-
-const normalizeProducts = (payload: unknown): any[] => {
-  if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== "object") return [];
-
-  const responseObject = payload as Record<string, unknown>;
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as any[];
-  }
-
-  return Object.values(responseObject).filter(
-    (item) => !!item && typeof item === "object" && "product_id" in item,
-  ) as any[];
-};
-
 export default function ExpiringSoonPage() {
   const navigate = useNavigate();
-  const [items, setItems] = useState<ExpiringAlert[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const alertsQuery = useQuery({
+    queryKey: ["inventory-alerts"],
+    queryFn: getInventoryAlertsData,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const categories = alertsQuery.data?.categories ?? [];
+  const isLoading = alertsQuery.isPending;
 
   // States quản lý tìm kiếm & lọc
   const [searchTerm, setSearchTerm] = useState("");
   const [timeFilter, setTimeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  const [stats, setStats] = useState({
-    severeCount: 0,
-    warningCount: 0,
-    totalRiskStock: 0,
-  });
-
   // THÊM STATE PHÂN TRANG
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        // Tải cả sản phẩm hết hạn lẫn danh mục để làm bộ lọc
-        const [alertsRes, catRes] = await Promise.all([
-          api.get("/products/alerts"),
-          api.get("/categories?type=PRODUCT"),
-        ]);
+  const items = useMemo(() => {
+    const now = new Date();
+    const alerts = alertsQuery.data?.alerts ?? [];
 
-        // Cập nhật Categories
-        const catData = normalizeCategories(catRes);
-        setCategories(catData);
+    const formattedData: ExpiringAlert[] = alerts
+      .filter((product) => !!product.expiry_date)
+      .map((product) => {
+        const expiryDate = new Date(String(product.expiry_date));
+        const timeDiff = expiryDate.getTime() - now.getTime();
+        const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
-        // Cập nhật Alerts
-        const safeData = normalizeProducts(alertsRes);
-        const now = new Date();
+        let level: ExpiringAlert["level"] = "normal";
+        if (daysLeft <= 7) level = "severe";
+        else if (daysLeft <= 15) level = "warning";
+        else if (daysLeft <= 30) level = "notice";
 
-        const formattedData: ExpiringAlert[] = safeData
-          .filter((p: any) => p.expiry_date)
-          .map((product: any) => {
-            const expiryDate = new Date(product.expiry_date);
-            const timeDiff = expiryDate.getTime() - now.getTime();
-            const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        return {
+          ...product,
+          name: String(product.name ?? "Sản phẩm"),
+          product_id: Number(product.product_id),
+          category_id: product.category_id
+            ? Number(product.category_id)
+            : undefined,
+          stock_quantity: Number(product.stock_quantity ?? 0),
+          daysLeft,
+          level,
+          expiry_date: String(product.expiry_date),
+          expiryFormatted: expiryDate.toLocaleDateString("vi-VN"),
+          image_url:
+            product.image_url ||
+            "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e",
+          hasDiscount: false,
+        };
+      })
+      .filter((product) => product.daysLeft <= 30)
+      .sort((a, b) => a.daysLeft - b.daysLeft);
 
-            let level: ExpiringAlert["level"] = "normal";
-            if (daysLeft <= 7) level = "severe";
-            else if (daysLeft <= 15) level = "warning";
-            else if (daysLeft <= 30) level = "notice";
+    return formattedData;
+  }, [alertsQuery.data?.alerts]);
 
-            return {
-              ...product,
-              daysLeft,
-              level,
-              expiryFormatted: expiryDate.toLocaleDateString("vi-VN"),
-              image_url:
-                product.image_url ||
-                "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e",
-              hasDiscount: false,
-            };
-          })
-          .filter((p: ExpiringAlert) => p.daysLeft <= 30)
-          .sort(
-            (a: ExpiringAlert, b: ExpiringAlert) => a.daysLeft - b.daysLeft,
-          );
-
-        setItems(formattedData);
-
-        // Tính Stats gốc
-        setStats({
-          severeCount: formattedData.filter((p) => p.daysLeft <= 7).length,
-          warningCount: formattedData.filter(
-            (p) => p.daysLeft > 7 && p.daysLeft <= 30,
-          ).length,
-          totalRiskStock: formattedData.reduce(
-            (acc, curr) => acc + Number(curr.stock_quantity),
-            0,
-          ),
-        });
-      } catch (error) {
-        console.error("Lỗi khi tải dữ liệu:", error);
-      } finally {
-        setIsLoading(false);
-      }
+  const stats = useMemo(() => {
+    return {
+      severeCount: items.filter((product) => product.daysLeft <= 7).length,
+      warningCount: items.filter(
+        (product) => product.daysLeft > 7 && product.daysLeft <= 30,
+      ).length,
+      totalRiskStock: items.reduce(
+        (accumulator, product) => accumulator + Number(product.stock_quantity),
+        0,
+      ),
     };
-
-    fetchData();
-  }, []);
+  }, [items]);
 
   // HÀM LỌC TỰ ĐỘNG
   const filteredItems = useMemo(() => {
@@ -186,7 +142,9 @@ export default function ExpiringSoonPage() {
   // HÀM TRA CỨU TÊN DANH MỤC
   const getCategoryName = (categoryId?: number) => {
     if (!categoryId) return "Khác";
-    const category = categories.find((c) => c.category_id === categoryId);
+    const category = categories.find(
+      (item) => Number(item.category_id) === Number(categoryId),
+    );
     return category ? category.name : "Khác";
   };
 

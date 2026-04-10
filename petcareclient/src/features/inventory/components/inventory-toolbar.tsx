@@ -1,5 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
 import { Search, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -9,7 +9,7 @@ import {
   SelectContent,
   SelectTrigger,
 } from "@/components/ui/select";
-import api from "@/lib/api";
+import { getProductCategories } from "@/features/inventory/api/products.api";
 
 import { AddProductModal } from "./add-product-modal";
 
@@ -19,43 +19,18 @@ interface InventoryToolbarProps {
   onCategoryChange?: (categoryId: string) => void;
 }
 
-const normalizeCategories = (payload: unknown): any[] => {
-  if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== "object") return [];
-
-  const responseObject = payload as Record<string, unknown>;
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as any[];
-  }
-
-  return Object.values(responseObject).filter(
-    (item) => !!item && typeof item === "object" && "category_id" in item,
-  ) as any[];
-};
-
 export function InventoryToolbar({
   onSearch,
   onCategoryChange,
 }: InventoryToolbarProps) {
-  const [categories, setCategories] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const categoriesQuery = useQuery({
+    queryKey: ["inventory-categories"],
+    queryFn: getProductCategories,
+    staleTime: 10 * 60 * 1000,
+  });
 
-  // 2. Gọi API lấy danh sách Danh mục thật từ Backend
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setIsLoading(true);
-        const res = await api.get("/categories?type=PRODUCT");
-        setCategories(normalizeCategories(res));
-      } catch (error) {
-        console.error("Lỗi khi tải danh sách danh mục:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
+  const categories = categoriesQuery.data ?? [];
+  const isLoading = categoriesQuery.isPending;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
