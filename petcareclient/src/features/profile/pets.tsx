@@ -1,9 +1,9 @@
-import { Bell, Pencil, PawPrint, ChevronLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { Bell, Pencil, PawPrint, ChevronLeft } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import EditPetModal from "../pets/components/edit-pet-modal";
 import { getPetProfileData } from "../pets/api/pet-profile.api";
+import EditPetModal from "../pets/components/edit-pet-modal";
 
 function Modal({
   open,
@@ -45,8 +45,8 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
 import { handleApiError } from "@/lib/api";
-import { queryClient } from "@/lib/query-client";
 import { type Customer } from "@/lib/pets";
+import { queryClient } from "@/lib/query-client";
 import { sidebarUser } from "@/lib/user";
 
 interface PetProfileDetail extends Pet {
@@ -192,7 +192,9 @@ export default function PetProfile({ petId }: { petId: number }) {
               pet={pet}
               onUpdated={async () => {
                 await Promise.all([
-                  queryClient.invalidateQueries({ queryKey: ["pet-profile", petId] }),
+                  queryClient.invalidateQueries({
+                    queryKey: ["pet-profile", petId],
+                  }),
                   queryClient.invalidateQueries({ queryKey: ["pets-list"] }),
                 ]);
               }}

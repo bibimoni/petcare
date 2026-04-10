@@ -1,14 +1,14 @@
 import {
   PetService,
   type PetWithHistory,
-  type PetWeightHistory,
   type ServiceHistory,
+  type PetWeightHistory,
 } from "@/lib/pets";
 
 export type PetProfileData = {
   pet: PetWithHistory;
-  weights: PetWeightHistory[];
   services: ServiceHistory[];
+  weights: PetWeightHistory[];
 };
 
 export const getPetProfileData = async (
