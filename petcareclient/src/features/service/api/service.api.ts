@@ -22,6 +22,11 @@ export type ServiceDto = {
   max_weight?: number | string | null;
 };
 
+export type ServicePageData = {
+  services: ServiceDto[];
+  categories: ServiceCategoryDto[];
+};
+
 const extractList = <T extends Record<string, unknown>>(
   payload: unknown,
 ): T[] => {
@@ -86,4 +91,21 @@ export const getServicesForTable = async (
   }
 
   return getServicesByCategoryId(categoryId);
+};
+
+export const getServicePageData = async (): Promise<ServicePageData> => {
+  const categories = await getServiceCategories();
+
+  if (categories.length === 0) {
+    return { categories, services: [] };
+  }
+
+  const serviceResponses = await Promise.all(
+    categories.map((category) => getServicesByCategoryId(category.category_id)),
+  );
+
+  return {
+    categories,
+    services: serviceResponses.flat(),
+  };
 };

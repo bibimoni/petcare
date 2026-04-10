@@ -1,9 +1,11 @@
+import { useQuery } from "@tanstack/react-query";
+import { Pin, PinOff, CircleUser } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Logo } from "@/components/Logo";
-import { Pin, PinOff, CircleUser } from "lucide-react";
+import { queryClient } from "@/lib/query-client";
 import { getSidebarUser } from "@/lib/user";
 
 import { LogoIcon } from "./LogoIcon";
@@ -92,46 +94,23 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
   const location = useLocation();
   const [isPinned, setIsPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [resolvedUserInfo, setResolvedUserInfo] = useState<SidebarUserInfo>({
+
+  const userQuery = useQuery({
+    queryKey: ["sidebar-user"],
+    queryFn: getSidebarUser,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    initialData:
+      userInfo && !isPromiseLikeUserInfo(userInfo) ? userInfo : undefined,
+  });
+
+  const resolvedUserInfo: SidebarUserInfo = userQuery.data ?? {
     email: "",
     phone: "",
     full_name: "",
     role: null,
-  });
-  const [isLoadingUserInfo, setIsLoadingUserInfo] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadUserInfo = async () => {
-      setIsLoadingUserInfo(true);
-
-      // Promise userInfo can be stale across sessions, so always refetch profile.
-      if (userInfo && !isPromiseLikeUserInfo(userInfo)) {
-        const resolved = userInfo;
-
-        if (isMounted) {
-          setResolvedUserInfo(resolved);
-          setIsLoadingUserInfo(false);
-        }
-
-        return;
-      }
-
-      const profile = await getSidebarUser();
-
-      if (isMounted) {
-        setResolvedUserInfo(profile);
-        setIsLoadingUserInfo(false);
-      }
-    };
-
-    void loadUserInfo();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userInfo]);
+  };
+  const isLoadingUserInfo = userQuery.isPending;
 
   const roleName = resolvedUserInfo.role?.name?.toUpperCase();
   const isAdmin = roleName === "ADMIN";
@@ -161,6 +140,7 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("user");
+    queryClient.removeQueries({ queryKey: ["sidebar-user"] });
     toast.success("Đăng xuất thành công");
     navigate("/login");
   };
