@@ -1,67 +1,18 @@
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
 import {
-  type ProductDto,
-  type CategoryDto,
-  getProductsForTable,
-  getProductCategories,
-  getProductsByCategoryId,
-} from "@/features/inventory/api/products.api";
-import {
-  type ServiceDto,
-  getServicesForTable,
-  getServiceCategories,
-  getServicesByCategoryId,
-  type ServiceCategoryDto,
-} from "@/features/service/api/service.api";
+  getPosProducts,
+  getPosServices,
+  type PosService,
+  getPosProductCategories,
+  getPosServiceCategories,
+} from "@/features/pos/api/pos.api";
 import { sidebarUser } from "@/lib/user";
 
-import { formatPrice } from "../utils";
 import { ServiceDetailModal } from "./service-detail-modal";
-
-type ServiceCard = {
-  id: number;
-  name: string;
-  icon: string;
-  price: string;
-  rawPrice: number;
-  iconTone: string;
-  minWeight: number;
-  maxWeight: number;
-  categoryId: number;
-  description: string;
-};
-
-type ProductCard = {
-  id: number;
-  name: string;
-  price: string;
-  stock: number;
-  image: string;
-  description: string;
-};
-
-const productFallbackImages = [
-  "/images/hero-page/pet-food.jpg",
-  "/images/hero-page/pet-accessories.jpg",
-  "/images/hero-page/spa-service.jpg",
-  "/images/hero-page/spa-experience.jpg",
-];
-
-const parseNumber = (value: number | string | null | undefined): number => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-
-  return 0;
-};
 
 const chunkItems = <T,>(items: T[], pageSize: number): T[][] => {
   if (items.length === 0) {
@@ -77,204 +28,42 @@ const chunkItems = <T,>(items: T[], pageSize: number): T[][] => {
   return pages;
 };
 
-const getServiceIconMeta = (serviceName: string) => {
-  const name = serviceName.toLowerCase();
-
-  if (name.includes("tắm") || name.includes("sấy")) {
-    return {
-      icon: "shower",
-      iconTone: "bg-[#e0f2f1] text-[#1b7b79]",
-    };
-  }
-
-  if (name.includes("cắt") || name.includes("tỉa")) {
-    return {
-      icon: "content_cut",
-      iconTone: "bg-[#fde8de] text-[#c36d47]",
-    };
-  }
-
-  if (name.includes("tiêm") || name.includes("khám") || name.includes("y tế")) {
-    return {
-      icon: "medical_services",
-      iconTone: "bg-[#e9f3eb] text-[#2f8a55]",
-    };
-  }
-
-  if (
-    name.includes("trông") ||
-    name.includes("lưu trú") ||
-    name.includes("khách sạn") ||
-    name.includes("ngày")
-  ) {
-    return {
-      icon: "home",
-      iconTone: "bg-[#e9f3eb] text-[#5e8f68]",
-    };
-  }
-
-  return {
-    icon: "pets",
-    iconTone: "bg-[#f3ebe7] text-[#8b6955]",
-  };
-};
-
-const mapServiceDto = (service: ServiceDto): ServiceCard => {
-  const serviceName = String(service.combo_name ?? "Dịch vụ");
-  const iconMeta = getServiceIconMeta(serviceName);
-  const rawPrice = parseNumber(service.price);
-
-  return {
-    icon: iconMeta.icon,
-    id: parseNumber(typeof service.id === "string" ? service.id : service.id),
-    name: serviceName,
-    rawPrice,
-    price: formatPrice(rawPrice),
-    iconTone: iconMeta.iconTone,
-    categoryId: parseNumber(service.category_id),
-    minWeight: parseNumber(service.min_weight),
-    maxWeight: parseNumber(service.max_weight),
-    description:
-      typeof service.description === "string" && service.description.trim()
-        ? service.description
-        : "Tắm, sấy, cắt tỉa, mài móng",
-  };
-};
-
-const mapProductDto = (product: ProductDto, index: number): ProductCard => {
-  const image =
-    typeof product.image_url === "string" && product.image_url.trim()
-      ? product.image_url
-      : productFallbackImages[index % productFallbackImages.length];
-
-  return {
-    id: parseNumber(product.product_id),
-    name: String(product.name ?? "Sản phẩm"),
-    description:
-      typeof product.description === "string" && product.description.trim()
-        ? product.description
-        : "Sản phẩm cho thú cưng",
-    price: formatPrice(product.sell_price),
-    stock: parseNumber(product.stock_quantity),
-    image,
-  };
-};
-
 const AllProductsPage = () => {
   const navigate = useNavigate();
   const ITEMS_PER_PAGE = 5;
 
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [serviceCategories, setServiceCategories] = useState<
-    ServiceCategoryDto[]
-  >([]);
   const [selectedServiceCategory, setSelectedServiceCategory] =
     useState<string>("all");
   const [servicePage, setServicePage] = useState(1);
-  const [services, setServices] = useState<ServiceCard[]>([]);
-  const [isServicesLoading, setIsServicesLoading] = useState(true);
   const [isServiceDetailOpen, setIsServiceDetailOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<ServiceCard | null>(
+  const [selectedService, setSelectedService] = useState<PosService | null>(
     null,
   );
 
-  const [productCategories, setProductCategories] = useState<CategoryDto[]>([]);
   const [selectedProductCategory, setSelectedProductCategory] =
     useState<string>("all");
   const [productPage, setProductPage] = useState(1);
-  const [products, setProducts] = useState<ProductCard[]>([]);
-  const [isProductsLoading, setIsProductsLoading] = useState(true);
+  const { data: serviceCategories = [] } = useQuery({
+    queryKey: ["pos-service-categories"],
+    queryFn: getPosServiceCategories,
+  });
 
-  useEffect(() => {
-    let isMounted = true;
+  const { data: productCategories = [] } = useQuery({
+    queryKey: ["pos-product-categories"],
+    queryFn: getPosProductCategories,
+  });
 
-    const loadCategories = async () => {
-      try {
-        const [fetchedServiceCategories, fetchedProductCategories] =
-          await Promise.all([getServiceCategories(), getProductCategories()]);
+  const { data: services = [], isLoading: isServicesLoading } = useQuery({
+    queryKey: ["pos-services", selectedServiceCategory],
+    queryFn: () => getPosServices(selectedServiceCategory),
+  });
 
-        if (isMounted) {
-          setServiceCategories(fetchedServiceCategories);
-          setProductCategories(fetchedProductCategories);
-        }
-      } catch (error) {
-        console.error("Lỗi tải danh mục:", error);
-      }
-    };
-
-    void loadCategories();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadServices = async () => {
-      setIsServicesLoading(true);
-      try {
-        const fetchedServices =
-          selectedServiceCategory === "all"
-            ? await getServicesForTable("all")
-            : await getServicesByCategoryId(selectedServiceCategory);
-
-        if (isMounted) {
-          setServices(fetchedServices.map(mapServiceDto));
-        }
-      } catch (error) {
-        console.error("Lỗi tải dịch vụ:", error);
-        if (isMounted) {
-          setServices([]);
-        }
-      } finally {
-        if (isMounted) {
-          setIsServicesLoading(false);
-        }
-      }
-    };
-
-    void loadServices();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedServiceCategory]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadProducts = async () => {
-      setIsProductsLoading(true);
-      try {
-        const fetchedProducts =
-          selectedProductCategory === "all"
-            ? await getProductsForTable("all")
-            : await getProductsByCategoryId(selectedProductCategory);
-
-        if (isMounted) {
-          setProducts(fetchedProducts.map(mapProductDto));
-        }
-      } catch (error) {
-        console.error("Lỗi tải sản phẩm:", error);
-        if (isMounted) {
-          setProducts([]);
-        }
-      } finally {
-        if (isMounted) {
-          setIsProductsLoading(false);
-        }
-      }
-    };
-
-    void loadProducts();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedProductCategory]);
+  const { data: products = [], isLoading: isProductsLoading } = useQuery({
+    queryKey: ["pos-products", selectedProductCategory],
+    queryFn: () => getPosProducts(selectedProductCategory),
+  });
 
   const serviceTabs = useMemo(() => {
     const fromApi = serviceCategories.map((category) => ({
@@ -365,7 +154,7 @@ const AllProductsPage = () => {
     }
   }, [productPage, productPages.length]);
 
-  const handleOpenServiceDetail = (service: ServiceCard) => {
+  const handleOpenServiceDetail = (service: PosService) => {
     setSelectedService(service);
     setIsServiceDetailOpen(true);
   };

@@ -1,47 +1,16 @@
-import { toNumber } from "lodash";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import type { ProductDto } from "@/features/inventory/api/products.api";
-import type { ServiceDto } from "@/features/service/api/service.api";
-
 import { Sidebar } from "@/components/Sidebar";
-import { getProductsForTable } from "@/features/inventory/api/products.api";
-import { getServicesForTable } from "@/features/service/api/service.api";
-import { sidebarUser, getSidebarUser, type SidebarUser } from "@/lib/user";
+import {
+  type PosProduct,
+  type PosService,
+  getPosCatalogOverview,
+} from "@/features/pos/api/pos.api";
+import { sidebarUser, getSidebarUser } from "@/lib/user";
 
 import { ServiceDetailModal } from "./components/service-detail-modal";
-import { formatPrice } from "./utils";
-
-const fallbackPosImages = [
-  "/images/hero-page/pet-food.jpg",
-  "/images/hero-page/pet-accessories.jpg",
-  "/images/hero-page/spa-grooming.jpg",
-  "/images/hero-page/spa-service.jpg",
-  "/images/hero-page/spa-experience.jpg",
-];
-
-type PosProduct = {
-  id: number;
-  name: string;
-  price: string;
-  stock: number;
-  image: string;
-  description: string;
-};
-
-type PosService = {
-  id: number;
-  name: string;
-  icon: string;
-  price: string;
-  rawPrice: number;
-  iconTone: string;
-  minWeight: number;
-  maxWeight: number;
-  description: string;
-  categoryName: string;
-};
 
 type PosTransaction = {
   id: string;
@@ -93,114 +62,13 @@ const statusClassMap: Record<PosTransaction["status"], string> = {
   "Đã huỷ": "bg-gray-200 text-gray-600",
 };
 
-const getServiceIconMeta = (serviceName: string) => {
-  const name = serviceName.toLowerCase();
-
-  if (name.includes("tắm") || name.includes("sấy")) {
-    return {
-      icon: "shower",
-      iconTone: "bg-[#e0f2f1] text-[#1b7b79]",
-    };
-  }
-
-  if (name.includes("cắt") || name.includes("tỉa")) {
-    return {
-      icon: "content_cut",
-      iconTone: "bg-[#fde8de] text-[#c36d47]",
-    };
-  }
-
-  if (name.includes("tiêm") || name.includes("khám") || name.includes("y tế")) {
-    return {
-      icon: "medical_services",
-      iconTone: "bg-[#e9f3eb] text-[#2f8a55]",
-    };
-  }
-
-  if (
-    name.includes("trông") ||
-    name.includes("lưu trú") ||
-    name.includes("khách sạn") ||
-    name.includes("ngày")
-  ) {
-    return {
-      icon: "home",
-      iconTone: "bg-[#e9f3eb] text-[#5e8f68]",
-    };
-  }
-
-  return {
-    icon: "pets",
-    iconTone: "bg-[#f3ebe7] text-[#8b6955]",
-  };
-};
-
-const mapServiceToPosService = (
-  service: ServiceDto,
-  index: number,
-): PosService => {
-  const serviceName = String(service.combo_name ?? "Dịch vụ");
-  const iconMeta = getServiceIconMeta(serviceName);
-  const rawPrice = toNumber(service.price);
-
-  return {
-    id: Number(service.id) || index + 1,
-    name: serviceName,
-    icon: iconMeta.icon,
-    price: formatPrice(service.price),
-    rawPrice: Number.isFinite(rawPrice) ? rawPrice : 0,
-    categoryName:
-      typeof service.category_name === "string" && service.category_name.trim()
-        ? service.category_name
-        : "Khác",
-    minWeight: Number.isFinite(toNumber(service.min_weight))
-      ? toNumber(service.min_weight)
-      : 0,
-    maxWeight: Number.isFinite(toNumber(service.max_weight))
-      ? toNumber(service.max_weight)
-      : 0,
-    iconTone: iconMeta.iconTone,
-    description:
-      typeof service.description === "string" && service.description.trim()
-        ? service.description
-        : "Tắm, sấy, cắt tỉa, mài móng",
-  };
-};
-
-const mapInventoryProductToPosProduct = (
-  product: ProductDto,
-  index: number,
-): PosProduct => {
-  const parsedId = toNumber(product.product_id);
-
-  return {
-    id: parsedId ?? index + 1,
-    name: String(product.name ?? "Sản phẩm"),
-    price: formatPrice(product.sell_price),
-    stock: toNumber(product.stock_quantity) ?? 0,
-    image:
-      typeof product.image_url === "string" && product.image_url.trim()
-        ? product.image_url
-        : fallbackPosImages[index % fallbackPosImages.length],
-    description:
-      typeof product.description === "string" && product.description.trim()
-        ? product.description
-        : "Sản phẩm cho thú cưng",
-  };
-};
-
 const PosPage = () => {
   const navigate = useNavigate();
   const ITEMS_PER_PAGE = 5;
-  const [profile, setProfile] = useState<SidebarUser | null>(null);
   const [currentTime, setCurrentTime] = useState(() => new Date());
   const [selectedCatalogTab, setSelectedCatalogTab] = useState<
     "service" | "product"
   >("service");
-  const [services, setServices] = useState<PosService[]>([]);
-  const [hotProducts, setHotProducts] = useState<PosProduct[]>([]);
-  const [isServicesLoading, setIsServicesLoading] = useState(true);
-  const [isProductsLoading, setIsProductsLoading] = useState(true);
   const [servicePage, setServicePage] = useState(1);
   const [productPage, setProductPage] = useState(1);
   const [isServiceDetailOpen, setIsServiceDetailOpen] = useState(false);
@@ -208,23 +76,18 @@ const PosPage = () => {
     null,
   );
 
-  useEffect(() => {
-    let isMounted = true;
+  const { data: profile } = useQuery({
+    queryKey: ["sidebar-user"],
+    queryFn: getSidebarUser,
+  });
 
-    const loadProfile = async () => {
-      const user = await getSidebarUser();
+  const { data: catalogData, isLoading: isCatalogLoading } = useQuery({
+    queryKey: ["pos-catalog-overview"],
+    queryFn: getPosCatalogOverview,
+  });
 
-      if (isMounted) {
-        setProfile(user);
-      }
-    };
-
-    void loadProfile();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const services = catalogData?.services ?? [];
+  const hotProducts = catalogData?.products ?? [];
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -233,61 +96,6 @@ const PosPage = () => {
 
     return () => {
       window.clearInterval(intervalId);
-    };
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadServices = async () => {
-      if (isMounted) {
-        setIsServicesLoading(true);
-      }
-
-      try {
-        const serviceItems = await getServicesForTable("all");
-        const mappedServices = serviceItems.map(mapServiceToPosService);
-
-        if (isMounted) {
-          setServices(mappedServices);
-        }
-      } catch (error) {
-        console.error("Lỗi tải dịch vụ POS:", error);
-      } finally {
-        if (isMounted) {
-          setIsServicesLoading(false);
-        }
-      }
-    };
-
-    const loadHotProducts = async () => {
-      if (isMounted) {
-        setIsProductsLoading(true);
-      }
-
-      try {
-        const inventoryProducts = await getProductsForTable("all");
-        const mappedProducts = inventoryProducts.map(
-          mapInventoryProductToPosProduct,
-        );
-
-        if (isMounted) {
-          setHotProducts(mappedProducts);
-        }
-      } catch (error) {
-        console.error("Lỗi tải sản phẩm POS:", error);
-      } finally {
-        if (isMounted) {
-          setIsProductsLoading(false);
-        }
-      }
-    };
-
-    void loadServices();
-    void loadHotProducts();
-
-    return () => {
-      isMounted = false;
     };
   }, []);
 
@@ -493,8 +301,7 @@ const PosPage = () => {
                 </div>
               </div>
 
-              {(selectedCatalogTab === "service" && isServicesLoading) ||
-              (selectedCatalogTab === "product" && isProductsLoading) ? (
+              {isCatalogLoading ? (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                   {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                     <article
