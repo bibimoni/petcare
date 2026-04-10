@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Bell, Pencil, PawPrint, ChevronLeft } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+import { Sidebar } from "@/components/Sidebar";
+import { type Pet, type Customer, type PetWeightHistory } from "@/lib/pets";
+import { queryClient } from "@/lib/query-client";
+import { sidebarUser } from "@/lib/user";
 
 import { getPetProfileData } from "../pets/api/pet-profile.api";
 import EditPetModal from "../pets/components/edit-pet-modal";
@@ -41,14 +47,6 @@ function Modal({
   );
 }
 
-import { Link, useNavigate } from "react-router-dom";
-
-import { Sidebar } from "@/components/Sidebar";
-import { handleApiError } from "@/lib/api";
-import { type Customer } from "@/lib/pets";
-import { queryClient } from "@/lib/query-client";
-import { sidebarUser } from "@/lib/user";
-
 interface PetProfileDetail extends Pet {
   pet_id?: number;
   avatar_url?: string;
@@ -78,7 +76,10 @@ export default function PetProfile({ petId }: { petId: number }) {
   const loading = petQuery.isPending;
   const pet = (petQuery.data?.pet as PetProfileDetail | undefined) ?? null;
   const services = petQuery.data?.services ?? [];
-  const weights = (petQuery.data?.weights ?? []) as PetWeightWithNotes[];
+  const weights = useMemo(
+    () => (petQuery.data?.weights ?? []) as PetWeightWithNotes[],
+    [petQuery.data?.weights],
+  );
 
   const navigate = useNavigate();
 
