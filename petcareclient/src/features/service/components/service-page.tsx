@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   X,
   Plus,
@@ -20,12 +21,10 @@ import { toast } from "sonner";
 
 import { Sidebar } from "@/components/Sidebar";
 import api from "@/lib/api";
+import { queryClient } from "@/lib/query-client";
 import { sidebarUser } from "@/lib/user";
 
-interface ServiceCategory {
-  name: string;
-  category_id: number;
-}
+import { getServicePageData } from "../api/service.api";
 
 interface PetService {
   id: number;
@@ -43,9 +42,15 @@ interface PetService {
 }
 
 export default function ServicesPage() {
-  const [services, setServices] = useState<PetService[]>([]);
-  const [categories, setCategories] = useState<ServiceCategory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const pageQuery = useQuery({
+    queryKey: ["service-page"],
+    queryFn: getServicePageData,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const services = (pageQuery.data?.services ?? []) as PetService[];
+  const categories = pageQuery.data?.categories ?? [];
+  const isLoading = pageQuery.isPending;
 
   // States quản lý Bộ lọc & Tìm kiếm
   const [searchTerm, setSearchTerm] = useState("");
@@ -83,36 +88,6 @@ export default function ServicesPage() {
   // States Ghi chú quản lý
   const [managementNote, setManagementNote] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
-
-  // 1. FETCH DỮ LIỆU
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const catRes = await api.get("/categories?type=SERVICE");
-      const cats = catRes.data || catRes;
-      const validCats = Array.isArray(cats) ? cats : [];
-      setCategories(validCats);
-
-      if (validCats.length > 0) {
-        const serviceRequests = validCats.map((cat: any) =>
-          api.get(`/services/${cat.category_id}`),
-        );
-        const serviceResponses = await Promise.all(serviceRequests);
-        const allServices = serviceResponses.flatMap((res) => res.data || res);
-        setServices(allServices);
-      } else {
-        setServices([]);
-      }
-    } catch (error) {
-      console.error("Lỗi khi tải dữ liệu dịch vụ:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   // Load ghi chú từ localStorage khi component được mount
   useEffect(() => {
@@ -313,11 +288,14 @@ export default function ServicesPage() {
       }
 
       setIsFormModalOpen(false);
-      fetchData();
-    } catch (error: any) {
+      await queryClient.invalidateQueries({ queryKey: ["service-page"] });
+    } catch (error: unknown) {
       console.error(error);
+      const apiError = error as {
+        response?: { data?: { message?: string } };
+      };
       toast.error(
-        "Lỗi: " + (error.response?.data?.message || "Không xác định"),
+        "Lỗi: " + (apiError.response?.data?.message || "Không xác định"),
       );
     } finally {
       setIsUpdating(false);
@@ -338,12 +316,15 @@ export default function ServicesPage() {
       toast.success("Đã xóa dịch vụ thành công!");
       setIsDeleteModalOpen(false);
       setServiceToDelete(null);
-      fetchData();
-    } catch (error: any) {
+      await queryClient.invalidateQueries({ queryKey: ["service-page"] });
+    } catch (error: unknown) {
       console.error(error);
+      const apiError = error as {
+        response?: { data?: { message?: string } };
+      };
       toast.error(
         "Lỗi khi xóa dịch vụ: " +
-          (error.response?.data?.message || "Không xác định"),
+          (apiError.response?.data?.message || "Không xác định"),
       );
     } finally {
       setIsUpdating(false);
@@ -382,6 +363,7 @@ export default function ServicesPage() {
                   />
                 </div>
                 <button
+                  type="button"
                   onClick={openAddModal}
                   className="bg-orange-600/80 hover:bg-orange-600/90 cursor-pointer text-[#ffffff] px-6 py-2.5 rounded-full font-bold flex items-center gap-2 shadow-lg shadow-[#f7b297]/30 active:scale-95 transition-all"
                 >
@@ -525,12 +507,14 @@ export default function ServicesPage() {
                             <td className="px-6 py-5 text-right">
                               <div className="flex justify-end gap-2">
                                 <button
+                                  type="button"
                                   onClick={() => openEditModal(srv)}
                                   className="p-2 rounded-lg hover:bg-[#f3ebe7] transition-colors text-[#9a624c]"
                                 >
                                   <Edit3 className="h-5 w-5" />
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => confirmDelete(srv)}
                                   className="p-2 rounded-lg hover:bg-red-50 transition-colors text-[#ba1a1a]"
                                 >
@@ -563,6 +547,7 @@ export default function ServicesPage() {
                   </p>
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                       disabled={currentPage === 1}
                       className="h-7 w-7 cursor-pointer rounded-full flex items-center justify-center bg-white border border-[#f3ebe7] text-black hover:bg-orange-600/80/10 transition-colors disabled:opacity-50"
@@ -570,6 +555,7 @@ export default function ServicesPage() {
                       <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
                     <button
+                      type="button"
                       onClick={() =>
                         setCurrentPage((p) => Math.min(p + 1, totalPages))
                       }
@@ -646,6 +632,7 @@ export default function ServicesPage() {
                     {isSavingNote ? "Đang lưu..." : "Đã đồng bộ cục bộ"}
                   </span>
                   <button
+                    type="button"
                     onClick={handleSaveNote}
                     disabled={isSavingNote}
                     className="bg-orange-600/80/20 cursor-pointer text-orange-600/90 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider hover:bg-orange-600/80 hover:text-white transition-all disabled:opacity-50"
@@ -668,6 +655,7 @@ export default function ServicesPage() {
                 {editingId ? "Chỉnh sửa dịch vụ" : "Thêm dịch vụ mới"}
               </h2>
               <button
+                type="button"
                 onClick={() => setIsFormModalOpen(false)}
                 className="text-[#9a624c] hover:text-[#1b110d] transition-colors p-1.5 hover:bg-[#f3ebe7] rounded-full"
               >
@@ -797,7 +785,11 @@ export default function ServicesPage() {
                   <div className="relative">
                     <select
                       value={serviceStatus}
-                      onChange={(e) => setServiceStatus(e.target.value as any)}
+                      onChange={(e) =>
+                        setServiceStatus(
+                          e.target.value as "ACTIVE" | "ARCHIVED",
+                        )
+                      }
                       className="w-full appearance-none bg-[#fcfaf8] border border-[#f3ebe7] rounded-xl focus:ring-2 focus:ring-[#f7b297]/50 text-[#1b110d] font-medium px-4 py-3 pr-10 outline-none"
                     >
                       <option value="ACTIVE">Đang phục vụ</option>
@@ -856,6 +848,7 @@ export default function ServicesPage() {
 
             <div className="flex items-center gap-3 mt-8">
               <button
+                type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
                 disabled={isUpdating}
                 className="flex-1 px-4 py-2.5 cursor-pointer rounded-full text-[#1b110d] font-bold bg-[#fcfaf8] border border-[#f3ebe7] hover:bg-[#f3ebe7] transition-colors"
@@ -863,6 +856,7 @@ export default function ServicesPage() {
                 Hủy bỏ
               </button>
               <button
+                type="button"
                 onClick={executeDelete}
                 disabled={isUpdating}
                 className="flex-1 px-4 py-2.5 cursor-pointer rounded-full text-white font-bold bg-[#ba1a1a] hover:bg-[#93000a] shadow-lg shadow-[#ba1a1a]/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"

@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { Sidebar } from "@/components/Sidebar";
-import { handleApiError } from "@/lib/api";
-import { CustomerService } from "@/lib/customers";
+import { queryClient } from "@/lib/query-client";
 import { sidebarUser } from "@/lib/user";
 
+import { CustomerApi, type CustomerListItem } from "./api/customer-api";
 import AddCustomerModal from "./components/add-customer-modal";
 import Breadcrumb from "./components/break-crump";
 import CustomerHeader from "./components/customer-header";
@@ -15,63 +16,25 @@ import CustomerToolbar from "./components/customer-toolbar";
 import EditCustomerModal from "./components/edit-customer-modal";
 import { Footer } from "./components/footer";
 
-type ApiCustomer = {
-  phone?: string;
-  notes?: string;
-  email?: string;
-  pets?: unknown[];
-  address?: string;
-  fullName?: string;
-  full_name?: string;
-  id?: number | string;
-  [key: string]: unknown;
-  last_visit?: string | null;
-  customer_id?: number | string;
-  total_spend?: string | number;
-};
-
-const normalizeCustomers = (payload: unknown): ApiCustomer[] => {
-  if (Array.isArray(payload)) {
-    return payload as ApiCustomer[];
-  }
-
-  if (!payload || typeof payload !== "object") {
-    return [];
-  }
-
-  const responseObject = payload as Record<string, unknown>;
-
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as ApiCustomer[];
-  }
-
-  const customers = Object.values(responseObject).filter(
-    (item): item is ApiCustomer =>
-      !!item && typeof item === "object" && "customer_id" in item,
-  );
-
-  return customers;
-};
-
 export default function CustomersPage() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("all");
   const [sort, setSort] = useState("desc");
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<ApiCustomer | null>(
-    null,
-  );
-  const [customers, setCustomers] = useState<ApiCustomer[]>([]);
+  const [selectedCustomer, setSelectedCustomer] =
+    useState<CustomerListItem | null>(null);
+  const customersQuery = useQuery({
+    queryKey: ["customers-list"],
+    queryFn: CustomerApi.getCustomers,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const fetchCustomers = async () => {
-    const res = await CustomerService.getAll();
-    setCustomers(normalizeCustomers(res));
-  };
+  const customers = customersQuery.data ?? [];
+  const loading = customersQuery.isPending;
 
-  const handleEditCustomer = (customer: ApiCustomer) => {
+  const handleEditCustomer = (customer: CustomerListItem) => {
     setSelectedCustomer(customer);
     setIsEditModalOpen(true);
   };
@@ -82,22 +45,6 @@ export default function CustomersPage() {
       setSelectedCustomer(null);
     }
   };
-
-  useEffect(() => {
-    const run = async () => {
-      try {
-        setLoading(true);
-        await fetchCustomers();
-      } catch (err) {
-        console.error("Lỗi:", err);
-        handleApiError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void run();
-  }, []);
 
   const limit = 5;
 
@@ -132,14 +79,18 @@ export default function CustomersPage() {
 
       <AddCustomerModal
         open={isAddModalOpen}
-        onCreated={fetchCustomers}
+        onCreated={async () => {
+          await queryClient.invalidateQueries({ queryKey: ["customers-list"] });
+        }}
         onOpenChange={setIsAddModalOpen}
       />
 
       <EditCustomerModal
         open={isEditModalOpen}
         customer={selectedCustomer}
-        onUpdated={fetchCustomers}
+        onUpdated={async () => {
+          await queryClient.invalidateQueries({ queryKey: ["customers-list"] });
+        }}
         onOpenChange={handleEditModalOpenChange}
       />
 

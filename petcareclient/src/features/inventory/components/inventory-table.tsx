@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   X,
   Edit3,
@@ -10,7 +11,7 @@ import {
   AlertTriangle,
   PackageSearch,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ import {
   getProductCategories,
 } from "@/features/inventory/api/products.api";
 import api from "@/lib/api";
+import { queryClient } from "@/lib/query-client";
 
 interface InventoryTableProps {
   categoryId?: string;
@@ -37,11 +39,35 @@ export function InventoryTable({
   categoryId = "all",
   searchTerm = "",
 }: InventoryTableProps) {
-  const [products, setProducts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const categoriesQuery = useQuery({
+    queryKey: ["inventory-categories"],
+    queryFn: getProductCategories,
+    staleTime: 10 * 60 * 1000,
+  });
+  const productsQuery = useQuery({
+    queryKey: ["inventory-products", categoryId],
+    queryFn: () => getProductsForTable(categoryId),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const categories = (categoriesQuery.data ?? []) as any[];
+  const isLoading = productsQuery.isPending;
+  const products = useMemo(() => {
+    let fetchedData = (productsQuery.data ?? []) as any[];
+
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      fetchedData = fetchedData.filter((product: any) =>
+        String(product.name || "")
+          .toLowerCase()
+          .includes(lowerTerm),
+      );
+    }
+
+    return fetchedData;
+  }, [productsQuery.data, searchTerm]);
 
   // --- STATES PHỤ CHO MODAL EDIT ---
-  const [categories, setCategories] = useState<any[]>([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -49,47 +75,8 @@ export function InventoryTable({
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
-  // 1. Fetch danh mục cho Dropdown trong Modal Edit
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const fetchedCategories = await getProductCategories();
-        setCategories(fetchedCategories as any[]);
-      } catch (error) {
-        console.error("Lỗi tải danh mục:", error);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  // 2. Fetch danh sách sản phẩm cho Table
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoading(true);
-      try {
-        let fetchedData = (await getProductsForTable(categoryId)) as any[];
-
-        if (!Array.isArray(fetchedData)) fetchedData = [];
-
-        if (searchTerm) {
-          const lowerTerm = searchTerm.toLowerCase();
-          fetchedData = fetchedData.filter((p: any) =>
-            String(p.name || "")
-              .toLowerCase()
-              .includes(lowerTerm),
-          );
-        }
-
-        setProducts(fetchedData);
-        setCurrentPage(1);
-      } catch (error) {
-        console.error("Lỗi khi tải danh sách sản phẩm:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProducts();
+    setCurrentPage(1);
   }, [categoryId, searchTerm]);
 
   const getStatus = (stock: number, minStock: number) => {
@@ -144,7 +131,11 @@ export function InventoryTable({
       await api.patch(`/products/${editingProduct.product_id}`, payload);
       alert("Cập nhật sản phẩm thành công!");
       setIsEditModalOpen(false);
-      window.location.reload();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["inventory-products"] }),
+        queryClient.invalidateQueries({ queryKey: ["inventory-stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["inventory-alerts"] }),
+      ]);
     } catch (error: any) {
       console.error(error);
       alert(
@@ -164,7 +155,11 @@ export function InventoryTable({
       await api.delete(`/products/${editingProduct.product_id}`);
       alert("Đã xóa sản phẩm!");
       setIsEditModalOpen(false);
-      window.location.reload();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["inventory-products"] }),
+        queryClient.invalidateQueries({ queryKey: ["inventory-stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["inventory-alerts"] }),
+      ]);
     } catch (error: any) {
       alert(
         "Lỗi xóa sản phẩm: " +

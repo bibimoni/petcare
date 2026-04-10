@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   Search,
   Loader2,
@@ -7,14 +8,14 @@ import {
   ChevronRight,
   AlertTriangle,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
-import api from "@/lib/api";
+import { getInventoryAlertsData } from "@/features/inventory/api/products.api";
 
 interface ProductAlert {
-  sku: string;
+  sku?: string;
   name: string;
   product_id: number;
   sell_price: number;
@@ -27,95 +28,54 @@ interface ProductAlert {
   level?: "severe" | "warning";
 }
 
-const normalizeCategories = (payload: unknown): any[] => {
-  if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== "object") return [];
-
-  const responseObject = payload as Record<string, unknown>;
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as any[];
-  }
-
-  return Object.values(responseObject).filter(
-    (item) => !!item && typeof item === "object" && "category_id" in item,
-  ) as any[];
-};
-
-const normalizeProducts = (payload: unknown): any[] => {
-  if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== "object") return [];
-
-  const responseObject = payload as Record<string, unknown>;
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as any[];
-  }
-
-  return Object.values(responseObject).filter(
-    (item) => !!item && typeof item === "object" && "product_id" in item,
-  ) as any[];
-};
-
 export default function LowStockPage() {
   const navigate = useNavigate();
-  const [items, setItems] = useState<ProductAlert[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const alertsQuery = useQuery({
+    queryKey: ["inventory-alerts"],
+    queryFn: getInventoryAlertsData,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const categories = alertsQuery.data?.categories ?? [];
+  const isLoading = alertsQuery.isPending;
 
   // State quản lý tìm kiếm và phân trang
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
-  useEffect(() => {
-    const fetchLowStockProducts = async () => {
-      try {
-        setIsLoading(true);
+  const items = useMemo(() => {
+    const alerts = alertsQuery.data?.alerts ?? [];
 
-        // Gọi song song 2 API: Cảnh báo và Danh mục
-        const [alertsRes, catRes] = await Promise.all([
-          api.get("/products/alerts"),
-          api.get("/categories?type=PRODUCT"),
-        ]);
+    const formattedData = alerts.map((product) => {
+      const stockQuantity = Number(product.stock_quantity ?? 0);
+      const minStockLevel = Number(product.min_stock_level ?? 0);
+      const isSevere = stockQuantity === 0;
 
-        const data = normalizeProducts(alertsRes);
-        const catData = normalizeCategories(catRes);
+      return {
+        ...product,
+        name: String(product.name ?? "Sản phẩm"),
+        product_id: Number(product.product_id),
+        sell_price: Number(product.sell_price ?? 0),
+        category_id: product.category_id
+          ? Number(product.category_id)
+          : undefined,
+        stock_quantity: stockQuantity,
+        min_stock_level: minStockLevel,
+        image_url:
+          product.image_url ||
+          "https://images.unsplash.com/photo-1583337130417-3346a1be7dee",
+        level: isSevere ? "severe" : "warning",
+        categoryColor: "bg-orange-50 text-orange-700 border-orange-100",
+      } as ProductAlert;
+    });
 
-        setCategories(catData);
-
-        // Đảm bảo data là mảng
-        if (Array.isArray(data)) {
-          const formattedData = data.map((product: any) => {
-            const isSevere = product.stock_quantity === 0;
-
-            return {
-              ...product,
-              image_url:
-                product.image_url ||
-                "https://images.unsplash.com/photo-1583337130417-3346a1be7dee",
-              level: isSevere ? "severe" : "warning",
-              categoryColor: "bg-orange-50 text-orange-700 border-orange-100",
-            };
-          });
-
-          const lowStockItems = formattedData.filter(
-            (p: any) =>
-              p.stock_quantity < 3 ||
-              p.stock_quantity <= (p.min_stock_level || 0),
-          );
-
-          setItems(lowStockItems);
-        } else {
-          setItems([]);
-        }
-      } catch (error) {
-        console.error("Lỗi khi tải danh sách sắp hết hàng:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLowStockProducts();
-  }, []);
+    return formattedData.filter(
+      (product) =>
+        product.stock_quantity < 3 ||
+        product.stock_quantity <= (product.min_stock_level || 0),
+    );
+  }, [alertsQuery.data?.alerts]);
 
   // Lọc sản phẩm theo từ khóa tìm kiếm
   const filteredItems = items.filter((item) => {
@@ -136,7 +96,9 @@ export default function LowStockPage() {
   // Hàm tra cứu tên danh mục
   const getCategoryName = (categoryId?: number) => {
     if (!categoryId) return "Khác";
-    const category = categories.find((c) => c.category_id === categoryId);
+    const category = categories.find(
+      (item) => Number(item.category_id) === Number(categoryId),
+    );
     return category ? category.name : "Khác";
   };
 

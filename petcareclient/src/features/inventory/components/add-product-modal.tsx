@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   X,
   Plus,
@@ -7,7 +8,7 @@ import {
   Loader2,
   ChevronDown,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,36 +17,15 @@ import {
   DialogContent,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getProductCategories } from "@/features/inventory/api/products.api";
 import api from "@/lib/api";
+import { queryClient } from "@/lib/query-client";
 
 interface Batch {
   id: string;
   quantity: string;
   expiryDate: string;
 }
-
-const normalizeCategories = (
-  payload: unknown,
-): Array<Record<string, unknown>> => {
-  if (Array.isArray(payload)) {
-    return payload as Array<Record<string, unknown>>;
-  }
-
-  if (!payload || typeof payload !== "object") {
-    return [];
-  }
-
-  const responseObject = payload as Record<string, unknown>;
-
-  if (Array.isArray(responseObject.data)) {
-    return responseObject.data as Array<Record<string, unknown>>;
-  }
-
-  return Object.values(responseObject).filter(
-    (item): item is Record<string, unknown> =>
-      !!item && typeof item === "object" && "category_id" in item,
-  );
-};
 
 const extractCategoryId = (payload: unknown): number | null => {
   if (!payload || typeof payload !== "object") {
@@ -75,9 +55,15 @@ export function AddProductModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Dữ liệu danh mục
-  const [categories, setCategories] = useState<any[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const categoriesQuery = useQuery({
+    queryKey: ["inventory-categories"],
+    queryFn: getProductCategories,
+    enabled: isOpen,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const categories = (categoriesQuery.data ?? []) as any[];
+  const isLoadingCategories = categoriesQuery.isPending;
 
   // Dữ liệu Form
   const [name, setName] = useState("");
@@ -91,24 +77,6 @@ export function AddProductModal() {
   // States phụ phục vụ chức năng "Thêm danh mục khác"
   const [isOtherCategory, setIsOtherCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
-
-  // --- HÀM LẤY DANH MỤC ---
-  useEffect(() => {
-    if (isOpen) {
-      const fetchCategories = async () => {
-        try {
-          setIsLoadingCategories(true);
-          const res = await api.get("/categories?type=PRODUCT");
-          setCategories(normalizeCategories(res));
-        } catch (error) {
-          console.error("Lỗi tải danh mục:", error);
-        } finally {
-          setIsLoadingCategories(false);
-        }
-      };
-      fetchCategories();
-    }
-  }, [isOpen]);
 
   // const addBatch = () => {
   //   setBatches([
@@ -228,8 +196,11 @@ export function AddProductModal() {
       setIsOtherCategory(false);
       setNewCategoryName("");
       setIsOpen(false);
-
-      window.location.reload();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["inventory-products"] }),
+        queryClient.invalidateQueries({ queryKey: ["inventory-stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["inventory-alerts"] }),
+      ]);
     } catch (error: any) {
       console.error("Lỗi khi nhập kho:", error);
 

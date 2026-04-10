@@ -1,5 +1,20 @@
 import axiosClient from "@/lib/api";
 
+export type CustomerListItem = {
+  phone?: string;
+  notes?: string;
+  email?: string;
+  pets?: unknown[];
+  address?: string;
+  fullName?: string;
+  full_name?: string;
+  id?: number | string;
+  [key: string]: unknown;
+  last_visit?: string | null;
+  customer_id?: number | string;
+  total_spend?: string | number;
+};
+
 type CreateCustomerPayload = {
   email: string;
   phone: string;
@@ -17,7 +32,35 @@ type UpdateCustomerPayload = {
   fullName?: string;
 };
 
+const normalizeCustomers = (payload: unknown): CustomerListItem[] => {
+  if (Array.isArray(payload)) {
+    return payload as CustomerListItem[];
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const responseObject = payload as Record<string, unknown>;
+
+  if (Array.isArray(responseObject.data)) {
+    return responseObject.data as CustomerListItem[];
+  }
+
+  const customers = Object.values(responseObject).filter(
+    (item): item is CustomerListItem =>
+      !!item && typeof item === "object" && "customer_id" in item,
+  );
+
+  return customers;
+};
+
 export const CustomerApi = {
+  getCustomers: async () => {
+    const response = await axiosClient.get("/customers");
+    return normalizeCustomers(response.data ?? response);
+  },
+
   createCustomer: async (data: CreateCustomerPayload) => {
     const response = await axiosClient.post("/customers", data);
     return response.data;
