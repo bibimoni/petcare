@@ -3,8 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Logo } from "@/components/Logo";
-import { AvatarBadge } from "@/components/ui/avatar";
+import { Pin, PinOff, CircleUser } from "lucide-react";
 import { getSidebarUser } from "@/lib/user";
+
+import { LogoIcon } from "./LogoIcon";
 
 interface NavItem {
   id: string;
@@ -45,8 +47,8 @@ const STAFF_NAV_ITEMS: NavItem[] = [
   },
   { id: "customers", label: "Khách hàng", icon: "group", href: "/customers" },
   { id: "pets", label: "Thú cưng", icon: "pets", href: "/pets" },
-  { id: "inventory", label: "Kho", icon: "inventory_2", href: "/inventory" },
   { id: "pos", label: "POS", icon: "point_of_sale", href: "/pos" },
+  { id: "inventory", label: "Kho", icon: "inventory_2", href: "/inventory" },
 ];
 
 const DEFAULT_NAV_ITEMS: NavItem[] = [
@@ -88,6 +90,8 @@ const LIMITED_NAV_ITEMS: NavItem[] = [
 export const Sidebar = ({ userInfo }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isPinned, setIsPinned] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [resolvedUserInfo, setResolvedUserInfo] = useState<SidebarUserInfo>({
     email: "",
     phone: "",
@@ -161,11 +165,52 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
     navigate("/login");
   };
 
+  const toggleSidebarPin = () => {
+    setIsPinned((currentValue) => !currentValue);
+  };
+
+  const isExpanded = isPinned || isHovered;
+  const isCollapsed = !isExpanded;
+  const asideWidthClass = isExpanded ? "w-64" : "w-20";
+  const headerPaddingClass = isExpanded ? "px-6" : "px-3";
+  const navPaddingClass = isExpanded ? "px-4" : "px-2";
+  const navItemLayoutClass = isExpanded ? "px-4" : "justify-center px-0";
+  const footerPaddingClass = isExpanded ? "p-4" : "p-3";
+  const toggleButtonClass =
+    "absolute right-0 top-5 z-10 translate-x-1/2 shrink-0 rounded-sm bg-white p-1 text-gray-400 transition-colors hover:bg-gray-50 hover:text-charcoal dark:bg-surface-dark dark:hover:bg-gray-800 dark:hover:text-white";
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
+
+  const pinButtonLabel = isPinned ? "Bỏ ghim sidebar" : "Ghim sidebar";
+
   if (isLoadingUserInfo) {
     return (
-      <aside className="z-20 hidden w-64 flex-col border-r border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-surface-dark lg:flex">
-        <div className="flex h-20 items-center gap-3 px-6">
-          <Logo />
+      <aside
+        className={`relative z-20 hidden ${asideWidthClass} flex-col border-r border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-surface-dark lg:flex`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          aria-label={pinButtonLabel}
+          className={toggleButtonClass}
+          onClick={toggleSidebarPin}
+          type="button"
+        >
+          {isPinned ? (
+            <PinOff className="h-4 w-4" />
+          ) : (
+            <Pin className="h-4 w-4" />
+          )}
+        </button>
+
+        <div className={`flex h-20 items-center ${headerPaddingClass}`}>
+          {isCollapsed ? <LogoIcon /> : <Logo />}
         </div>
         <div className="flex flex-1 items-center justify-center px-4">
           <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
@@ -177,12 +222,31 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
   }
 
   return (
-    <aside className="z-20 hidden w-64 flex-col border-r border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-surface-dark lg:flex">
-      <div className="flex h-20 items-center gap-3 px-6">
-        <Logo />
+    <aside
+      className={`relative z-20 hidden ${asideWidthClass} flex-col border-r border-gray-100 bg-white shadow-sm transition-[width] duration-300 dark:border-gray-800 dark:bg-surface-dark lg:flex`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <button
+        aria-label={pinButtonLabel}
+        className={toggleButtonClass}
+        onClick={toggleSidebarPin}
+        type="button"
+      >
+        {isPinned ? (
+          <PinOff className="h-4 w-4" />
+        ) : (
+          <Pin className="h-4 w-4" />
+        )}
+      </button>
+
+      <div className={`flex h-20 items-center ${headerPaddingClass}`}>
+        {isCollapsed ? <LogoIcon /> : <Logo />}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+      <nav
+        className={`flex-1 overflow-y-auto py-4 space-y-2 ${navPaddingClass}`}
+      >
         {navItems.map((item) => {
           const isActive =
             location.pathname === item.href ||
@@ -193,8 +257,9 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
             <button
               key={item.id}
               onClick={() => handleNavigation(item.href)}
+              title={isCollapsed ? item.label : undefined}
               type="button"
-              className={`w-full group flex items-center gap-3 rounded-xl cursor-pointer px-4 py-3 font-medium transition-all ${
+              className={`group flex w-full items-center gap-3 rounded-xl cursor-pointer py-3 font-medium transition-all ${navItemLayoutClass} ${
                 isActive
                   ? "bg-orange-100 dark:bg-primary/20 font-bold text-orange-800 dark:text-primary shadow-sm"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-charcoal dark:hover:text-gray-200"
@@ -205,43 +270,54 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
               >
                 {item.icon}
               </span>
-              <span>{item.label}</span>
+              {!isCollapsed && <span>{item.label}</span>}
             </button>
           );
         })}
       </nav>
 
-      <div className="border-t border-gray-100 dark:border-gray-800 p-4">
+      <div
+        className={`border-t border-gray-100 dark:border-gray-800 ${footerPaddingClass}`}
+      >
         <button
-          className="w-full group cursor-pointer flex items-center gap-3 rounded-xl px-4 py-3 font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+          className={`group flex w-full cursor-pointer items-center gap-3 rounded-xl py-3 font-medium text-gray-500 transition-all dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 ${navItemLayoutClass}`}
           type="button"
+          title={isCollapsed ? "Cài đặt" : undefined}
         >
           <span className="material-symbols-outlined">settings</span>
-          <span>Cài đặt</span>
+          {!isCollapsed && <span>Cài đặt</span>}
         </button>
 
-        <div className="mt-2 flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3 border border-gray-100 dark:border-gray-700/50">
-          <div className="h-9 w-9 overflow-hidden rounded-full bg-gray-200 shrink-0">
-            <AvatarBadge />
+        <div
+          className={`mt-2 flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-700/50 dark:bg-gray-800/50 ${
+            isCollapsed ? "justify-center" : ""
+          }`}
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full">
+            <CircleUser className="h-6 w-6" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="truncate text-sm font-bold text-charcoal dark:text-white">
-              {resolvedUserInfo.full_name}
-            </p>
-            <p className="truncate text-xs text-gray-500">
-              {resolvedUserInfo.phone}
-            </p>
-          </div>
-          <button
-            className="text-gray-400 hover:text-charcoal cursor-pointer dark:hover:text-white transition-colors"
-            onClick={handleLogout}
-            title="Đăng xuất"
-            type="button"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              logout
-            </span>
-          </button>
+          {!isCollapsed && (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-charcoal dark:text-white">
+                  {resolvedUserInfo.full_name}
+                </p>
+                <p className="truncate text-xs text-gray-500">
+                  {resolvedUserInfo.phone}
+                </p>
+              </div>
+              <button
+                className="cursor-pointer text-gray-400 transition-colors hover:text-charcoal dark:hover:text-white"
+                onClick={handleLogout}
+                title="Đăng xuất"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  logout
+                </span>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </aside>
