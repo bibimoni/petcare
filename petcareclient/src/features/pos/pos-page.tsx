@@ -297,7 +297,7 @@ const PosPage = () => {
       return fullName;
     }
 
-    return "Ban";
+    return "Bạn";
   }, [profile?.full_name]);
 
   const currentShift = useMemo(() => {
@@ -389,12 +389,14 @@ const PosPage = () => {
       <Sidebar userInfo={sidebarUser} />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
-        <header className="sticky top-0 z-10 flex h-20 items-center justify-between gap-4 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-8 backdrop-blur-sm">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-6 backdrop-blur-sm">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#cb8f6a]">
               POS
             </p>
-            <h1 className="text-lg font-bold text-[#2f231d]">Điểm bán hàng</h1>
+            <h1 className="text-base font-bold text-[#2f231d]">
+              Điểm bán hàng
+            </h1>
           </div>
 
           <div className="relative w-full max-w-xl">
@@ -404,14 +406,14 @@ const PosPage = () => {
             <input
               type="text"
               placeholder="Tìm sản phẩm, dịch vụ hoặc khách hàng"
-              className="h-11 w-full rounded-full border border-[#ecdcd1] bg-[#fdfaf8] pl-12 pr-4 text-sm text-[#523c30] outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4]"
+              className="h-10 w-full rounded-full border border-[#ecdcd1] bg-[#fdfaf8] pl-12 pr-4 text-sm text-[#523c30] outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4]"
             />
           </div>
 
           <div className="flex items-center gap-4">
             <button
               type="button"
-              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#ecdcd1] bg-white text-[#7a5f50] transition hover:bg-[#f9f0ea]"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[#ecdcd1] bg-white text-[#7a5f50] transition hover:bg-[#f9f0ea]"
             >
               <span className="material-symbols-outlined">notifications</span>
               <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-red-500" />
@@ -426,31 +428,31 @@ const PosPage = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8">
-          <div className="mx-auto flex w-full max-w-7xl flex-col gap-7">
-            <section className="flex flex-col items-center gap-3 py-2 text-center">
-              <h2 className="text-[38px] font-black leading-tight text-[#2f231d]">
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+            <section className="flex flex-col items-center gap-2 py-1 text-center">
+              <h2 className="text-[32px] font-black leading-tight text-[#2f231d]">
                 Chào, {greetingName}!
               </h2>
-              <p className="text-sm text-[#9f7d67]">
+              <p className="text-xs text-[#9f7d67]">
                 Hệ thống đã sẵn sàng cho ngày làm việc hiệu quả
               </p>
 
               <button
                 type="button"
-                className="group cursor-pointer relative mt-3 flex h-40 w-[300px] flex-col items-center justify-center rounded-[26px] border border-[#b8e5d5] bg-[#a9e4d1] text-[#1f5a4b] shadow-[0_8px_24px_rgba(61,181,148,0.2)] transition hover:-translate-y-0.5"
+                className="group relative mt-2 flex h-32 w-[260px] cursor-pointer flex-col items-center justify-center rounded-[22px] border border-[#b8e5d5] bg-[#a9e4d1] text-[#1f5a4b] shadow-[0_8px_24px_rgba(61,181,148,0.2)] transition hover:-translate-y-0.5"
               >
-                <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#d7f2e8] text-3xl leading-none">
+                <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#d7f2e8] text-2xl leading-none">
                   +
                 </span>
-                <span className="text-2xl font-semibold">Tạo đơn hàng mới</span>
+                <span className="text-xl font-semibold">Tạo đơn hàng mới</span>
                 <span className="absolute right-0 top-0 h-5 w-5 translate-x-1/4 -translate-y-1/4 rounded-full bg-[#2ecf94]" />
               </button>
             </section>
 
             <section className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-3xl font-extrabold text-[#2f231d]">
+                <h3 className="flex items-center gap-2 text-2xl font-extrabold text-[#2f231d]">
                   <span className="material-symbols-outlined text-[#f3ab8d]">
                     storefront
                   </span>
@@ -461,7 +463,7 @@ const PosPage = () => {
                   <button
                     onClick={() => setSelectedCatalogTab("service")}
                     type="button"
-                    className={`rounded-full cursor-pointer px-4 py-2 text-sm font-bold transition ${
+                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${
                       selectedCatalogTab === "service"
                         ? "bg-orange-600/80 text-white"
                         : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
@@ -472,7 +474,7 @@ const PosPage = () => {
                   <button
                     onClick={() => setSelectedCatalogTab("product")}
                     type="button"
-                    className={`rounded-full px-4 py-2 cursor-pointer text-sm font-bold transition ${
+                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${
                       selectedCatalogTab === "product"
                         ? "bg-orange-600/80 text-white"
                         : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
@@ -497,9 +499,9 @@ const PosPage = () => {
                   {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                     <article
                       key={`catalog-skeleton-${index}`}
-                      className="overflow-hidden rounded-3xl border border-[#f0e3dc] bg-white p-3"
+                      className="overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3"
                     >
-                      <div className="mb-3 h-40 animate-pulse rounded-2xl bg-[#f3ebe7]" />
+                      <div className="mb-3 h-32 animate-pulse rounded-2xl bg-[#f3ebe7]" />
                       <div className="h-4 w-4/5 animate-pulse rounded bg-[#f3ebe7]" />
                       <div className="mt-2 h-3 w-3/5 animate-pulse rounded bg-[#f3ebe7]" />
                       <div className="mt-4 flex items-center justify-between">
@@ -510,7 +512,7 @@ const PosPage = () => {
                   ))}
                 </div>
               ) : activeLength === 0 ? (
-                <div className="rounded-3xl border border-[#eaded6] bg-white p-10 text-center">
+                <div className="rounded-2xl border border-[#eaded6] bg-white p-10 text-center">
                   <p className="text-lg font-semibold text-[#3b2d25]">
                     Chưa có dữ liệu cho tab này
                   </p>
@@ -533,19 +535,19 @@ const PosPage = () => {
                               {serviceItems.map((service, itemIndex) => (
                                 <article
                                   key={`${service.id}-${pageIndex}-${itemIndex}`}
-                                  className="group overflow-hidden rounded-3xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
+                                  className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
                                 >
-                                  <div className="mb-3 rounded-2xl bg-[#f7f3f1] p-4">
+                                  <div className="mb-3 rounded-2xl bg-[#f7f3f1] p-3">
                                     <div className="flex items-center gap-3">
                                       <div
-                                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${service.iconTone}`}
+                                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${service.iconTone}`}
                                       >
                                         <span className="material-symbols-outlined text-[20px]">
                                           {service.icon}
                                         </span>
                                       </div>
 
-                                      <h4 className="min-w-0 flex-1 text-lg font-black leading-tight text-[#2f231d]">
+                                      <h4 className="min-w-0 flex-1 text-base font-black leading-tight text-[#2f231d]">
                                         {service.name}
                                       </h4>
                                     </div>
@@ -556,13 +558,13 @@ const PosPage = () => {
                                   </p>
 
                                   <div className="mt-3 flex items-center justify-between">
-                                    <p className="text-lg font-extrabold text-orange-600/80">
+                                    <p className="text-base font-extrabold text-orange-600/80">
                                       {service.price}
                                     </p>
 
                                     <div className="flex items-center gap-2">
                                       <button
-                                        className="rounded-full cursor-pointer border border-[#eaded6] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#8d6955] transition hover:bg-[#f8f1ec]"
+                                        className="cursor-pointer rounded-full border border-[#eaded6] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#8d6955] transition hover:bg-[#f8f1ec]"
                                         onClick={() =>
                                           handleOpenServiceDetail(service)
                                         }
@@ -573,7 +575,7 @@ const PosPage = () => {
 
                                       <button
                                         type="button"
-                                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-xl text-[#9f7f6b] transition hover:bg-[#efe5df]"
+                                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
                                       >
                                         +
                                       </button>
@@ -591,7 +593,7 @@ const PosPage = () => {
                               {productItems.map((product, itemIndex) => (
                                 <article
                                   key={`${product.id}-${pageIndex}-${itemIndex}`}
-                                  className="group overflow-hidden rounded-3xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
+                                  className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
                                 >
                                   <div className="relative mb-3 overflow-hidden rounded-2xl bg-[#f7f3f1]">
                                     <span className="absolute right-2 top-2 rounded-full bg-white px-2 py-0.5 text-sm font-bold text-[#4f3d33]">
@@ -599,12 +601,12 @@ const PosPage = () => {
                                     </span>
                                     <img
                                       alt={product.name}
-                                      className="h-40 w-full object-cover"
+                                      className="h-32 w-full object-cover"
                                       src={product.image}
                                     />
                                   </div>
 
-                                  <h4 className="line-clamp-2 min-h-10 text-xl font-black leading-tight text-[#2f231d]">
+                                  <h4 className="line-clamp-2 min-h-10 text-lg font-black leading-tight text-[#2f231d]">
                                     {product.name}
                                   </h4>
                                   <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
@@ -612,12 +614,12 @@ const PosPage = () => {
                                   </p>
 
                                   <div className="mt-3 flex items-center justify-between">
-                                    <p className="text-lg font-extrabold text-orange-600/80">
+                                    <p className="text-base font-extrabold text-orange-600/80">
                                       {product.price}
                                     </p>
                                     <button
                                       type="button"
-                                      className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f7f3f1] text-xl text-[#9f7f6b] transition hover:bg-[#efe5df]"
+                                      className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
                                     >
                                       +
                                     </button>
@@ -676,8 +678,8 @@ const PosPage = () => {
             </section>
 
             <section className="overflow-hidden rounded-3xl border border-[#eaded6] bg-white shadow-[0_8px_20px_rgba(108,71,42,0.08)]">
-              <div className="flex items-center justify-between border-b border-[#f0e3dc] px-6 py-4">
-                <h3 className="flex items-center gap-2 text-2xl font-extrabold text-[#2f231d]">
+              <div className="flex items-center justify-between border-b border-[#f0e3dc] px-5 py-3">
+                <h3 className="flex items-center gap-2 text-xl font-extrabold text-[#2f231d]">
                   <span className="material-symbols-outlined text-[#967867]">
                     history
                   </span>
@@ -694,7 +696,7 @@ const PosPage = () => {
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left">
                   <thead>
-                    <tr className="border-b border-[#f2e7df] bg-[#fffaf7] text-sm uppercase tracking-wide text-[#bf8b6b]">
+                    <tr className="border-b border-[#f2e7df] bg-[#fffaf7] text-xs uppercase tracking-wide text-[#bf8b6b]">
                       <th className="px-6 py-3 font-semibold">Ma don</th>
                       <th className="px-6 py-3 font-semibold">Khach hang</th>
                       <th className="px-6 py-3 font-semibold">
@@ -709,7 +711,7 @@ const PosPage = () => {
                     {recentTransactions.map((transaction) => (
                       <tr
                         key={transaction.id}
-                        className="border-b border-[#f7ece6] text-sm text-[#5b4438]"
+                        className="border-b border-[#f7ece6] text-xs text-[#5b4438]"
                       >
                         <td className="px-6 py-4 font-bold text-[#2d2018]">
                           {transaction.id}
