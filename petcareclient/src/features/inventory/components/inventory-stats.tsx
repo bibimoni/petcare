@@ -16,13 +16,6 @@ import {
   getProductsByCategoryId,
 } from "@/features/inventory/api/products.api";
 
-type ProductLike = {
-  expiry_date?: string;
-  stock_quantity?: number;
-  min_stock_level?: number;
-  category_id?: number | string;
-};
-
 export function InventoryStats() {
   const navigate = useNavigate();
 
