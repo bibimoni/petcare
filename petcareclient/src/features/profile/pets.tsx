@@ -1,7 +1,10 @@
 import { Bell, Pencil, PawPrint, ChevronLeft } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 
 import EditPetModal from "../pets/components/edit-pet-modal";
+import { getPetProfileData } from "../pets/api/pet-profile.api";
+
 function Modal({
   open,
   title,
@@ -42,13 +45,8 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
 import { handleApiError } from "@/lib/api";
-import {
-  type Pet,
-  PetService,
-  type Customer,
-  type ServiceHistory,
-  type PetWeightHistory,
-} from "@/lib/pets";
+import { queryClient } from "@/lib/query-client";
+import { type Customer } from "@/lib/pets";
 import { sidebarUser } from "@/lib/user";
 
 interface PetProfileDetail extends Pet {
@@ -70,46 +68,19 @@ export default function PetProfile({ petId }: { petId: number }) {
     null,
   );
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [pet, setPet] = useState<PetProfileDetail | null>(null);
-  const [services, setServices] = useState<ServiceHistory[]>([]);
-  const [weights, setWeights] = useState<PetWeightWithNotes[]>([]);
+  const petQuery = useQuery({
+    queryKey: ["pet-profile", petId],
+    queryFn: () => getPetProfileData(petId),
+    enabled: Number.isFinite(petId),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const loading = petQuery.isPending;
+  const pet = (petQuery.data?.pet as PetProfileDetail | undefined) ?? null;
+  const services = petQuery.data?.services ?? [];
+  const weights = (petQuery.data?.weights ?? []) as PetWeightWithNotes[];
 
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!petId || Number.isNaN(Number(petId))) {
-      return;
-    }
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-
-        const [petData, weightData, serviceData] = await Promise.all([
-          PetService.getPetDetails(petId),
-          PetService.getPetWeightHistory(petId, 20),
-          PetService.getPetServiceHistory(petId),
-        ]);
-
-        setPet(petData as PetProfileDetail);
-        setWeights(
-          [...(weightData as PetWeightWithNotes[])].sort(
-            (a, b) =>
-              new Date(b.recorded_date).getTime() -
-              new Date(a.recorded_date).getTime(),
-          ),
-        );
-        setServices(serviceData);
-      } catch (error) {
-        handleApiError(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void fetchData();
-  }, [petId]);
 
   const owner = pet?.customer;
   const ownerId = owner?.customer_id;
@@ -219,9 +190,12 @@ export default function PetProfile({ petId }: { petId: number }) {
               open={editModalOpen}
               onClose={() => setEditModalOpen(false)}
               pet={pet}
-              onUpdated={(updatedPet) =>
-                setPet((prev) => (prev ? { ...prev, ...updatedPet } : prev))
-              }
+              onUpdated={async () => {
+                await Promise.all([
+                  queryClient.invalidateQueries({ queryKey: ["pet-profile", petId] }),
+                  queryClient.invalidateQueries({ queryKey: ["pets-list"] }),
+                ]);
+              }}
             />
           </div>
         </header>
