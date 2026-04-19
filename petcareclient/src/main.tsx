@@ -20,6 +20,7 @@ import AcceptInvitationPage from "./features/invitation/accept-invitation-page";
 import InvitationPage from "./features/invitation/invitation-page";
 import PetListPage from "./features/pets/pet-list-page";
 import AllProductsPage from "./features/pos/components/all-products";
+import PosHistoryPage from "./features/pos/history-page";
 import PosPage from "./features/pos/pos-page";
 import CustomerProfilePage from "./features/profile/customer";
 import PetProfile from "./features/profile/pets";
@@ -80,6 +81,14 @@ createRoot(document.getElementById("root")!).render(
             element={
               <ProtectedRoute>
                 <AllProductsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pos/history"
+            element={
+              <ProtectedRoute>
+                <PosHistoryPage />
               </ProtectedRoute>
             }
           />
