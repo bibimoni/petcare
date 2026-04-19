@@ -166,17 +166,6 @@ const AllProductsPage = () => {
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
         <header className="sticky top-0 z-10 flex h-20 items-center justify-between gap-4 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-8 backdrop-blur-sm">
           <div className="flex items-center gap-5">
-            <button
-              className="flex cursor-pointer items-center gap-1 text-sm font-semibold uppercase tracking-wide text-[#9b745b] transition hover:text-[#6f4c3a]"
-              onClick={() => navigate("/pos")}
-              type="button"
-            >
-              <span className="material-symbols-outlined text-base">
-                chevron_left
-              </span>
-              Quay lại
-            </button>
-
             <div className="text-left">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#cb8f6a]">
                 POS
@@ -219,6 +208,17 @@ const AllProductsPage = () => {
         </header>
 
         <div className="flex-1 overflow-y-auto p-8">
+          {/* Back button */}
+          <button
+            onClick={() => navigate("/pos")}
+            className="mb-6 flex w-fit cursor-pointer items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#a07f6b] transition hover:text-[#7f5d47]"
+          >
+            <span className="material-symbols-outlined text-[16px]">
+              arrow_back
+            </span>
+            QUAY LẠI
+          </button>
+
           <section className="mb-10 border-b border-[#eaded6] pb-8">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h3 className="flex items-center gap-2 text-3xl font-extrabold text-[#2f231d]">
@@ -234,11 +234,10 @@ const AllProductsPage = () => {
 
                   return (
                     <button
-                      className={`rounded-2xl border cursor-pointer px-4 py-2 text-sm font-semibold transition ${
-                        isActive
-                          ? "border-[#2d1f16] bg-[#1f140f] text-white"
-                          : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
-                      }`}
+                      className={`rounded-2xl border cursor-pointer px-4 py-2 text-sm font-semibold transition ${isActive
+                        ? "border-[#2d1f16] bg-[#1f140f] text-white"
+                        : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
+                        }`}
                       key={tab.id}
                       onClick={() => setSelectedServiceCategory(tab.id)}
                       type="button"
@@ -389,11 +388,10 @@ const AllProductsPage = () => {
 
                   return (
                     <button
-                      className={`rounded-2xl border px-4 py-2 text-sm font-semibold transition ${
-                        isActive
-                          ? "border-[#2d1f16] bg-[#1f140f] text-white"
-                          : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
-                      }`}
+                      className={`rounded-2xl cursor-pointer border px-4 py-2 text-sm font-semibold transition ${isActive
+                        ? "border-[#2d1f16] bg-[#1f140f] text-white"
+                        : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
+                        }`}
                       key={tab.id}
                       onClick={() => setSelectedProductCategory(tab.id)}
                       type="button"
@@ -529,13 +527,13 @@ const AllProductsPage = () => {
           service={
             selectedService
               ? {
-                  name: selectedService.name,
-                  description: selectedService.description,
-                  minWeight: selectedService.minWeight,
-                  price: selectedService.rawPrice,
-                  categoryName: selectedServiceCategoryName,
-                  maxWeight: selectedService.maxWeight,
-                }
+                name: selectedService.name,
+                description: selectedService.description,
+                minWeight: selectedService.minWeight,
+                price: selectedService.rawPrice,
+                categoryName: selectedServiceCategoryName,
+                maxWeight: selectedService.maxWeight,
+              }
               : null
           }
         />

@@ -12,59 +12,12 @@ import { sidebarUser, getSidebarUser } from "@/lib/user";
 
 import { ServiceDetailModal } from "./components/service-detail-modal";
 
-type PosTransaction = {
-  id: string;
-  time: string;
-  total: string;
-  service: string;
-  customer: string;
-  status: "Hoàn thành" | "Chờ thanh toán" | "Đã huỷ";
-};
-
-const recentTransactions: PosTransaction[] = [
-  {
-    id: "#POS-0922",
-    time: "10:45",
-    total: "637.200d",
-    service: "Goi Spa Cat Tia (Full), Pate Whiskas",
-    status: "Hoàn thành",
-    customer: "Nguyen Van A",
-  },
-  {
-    id: "#POS-0921",
-    time: "09:30",
-    total: "120.000d",
-    service: "Sua tam SOS Trang",
-    status: "Hoàn thành",
-    customer: "Tran Thi Hoa",
-  },
-  {
-    id: "#POS-0920",
-    time: "09:15",
-    total: "350.000d",
-    service: "Thuc an hat Royal Canin",
-    status: "Chờ thanh toán",
-    customer: "Khach le",
-  },
-  {
-    id: "#POS-0919",
-    time: "08:45",
-    total: "110.000d",
-    service: "Do choi Xuong Gai, Cat ve sinh",
-    status: "Đã huỷ",
-    customer: "Le Van Tung",
-  },
-];
-
-const statusClassMap: Record<PosTransaction["status"], string> = {
-  "Hoàn thành": "bg-emerald-100 text-emerald-700",
-  "Chờ thanh toán": "bg-amber-100 text-amber-700",
-  "Đã huỷ": "bg-gray-200 text-gray-600",
-};
+import { historyTransactions } from "./mock-data";
 
 const PosPage = () => {
   const navigate = useNavigate();
   const ITEMS_PER_PAGE = 5;
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentTime, setCurrentTime] = useState(() => new Date());
   const [selectedCatalogTab, setSelectedCatalogTab] = useState<
     "service" | "product"
@@ -131,40 +84,83 @@ const PosPage = () => {
     };
   }, [currentTime]);
 
+  const filteredServices = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return services;
+    }
+    const keyword = searchTerm.toLowerCase();
+    return services.filter(
+      (item) =>
+        item.name.toLowerCase().includes(keyword) ||
+        item.description.toLowerCase().includes(keyword),
+    );
+  }, [searchTerm, services]);
+
+  const filteredProducts = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return hotProducts;
+    }
+    const keyword = searchTerm.toLowerCase();
+    return hotProducts.filter(
+      (item) =>
+        item.name.toLowerCase().includes(keyword) ||
+        item.description.toLowerCase().includes(keyword),
+    );
+  }, [searchTerm, hotProducts]);
+
+  const filteredTransactions = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return historyTransactions;
+    }
+    const keyword = searchTerm.toLowerCase();
+    return historyTransactions.filter(
+      (tx) =>
+        tx.id.toLowerCase().includes(keyword) ||
+        tx.customerPhone.toLowerCase().includes(keyword) ||
+        tx.customerName.toLowerCase().includes(keyword) ||
+        tx.pet.toLowerCase().includes(keyword)
+    );
+  }, [searchTerm]);
+
   const servicePages = useMemo(() => {
-    if (services.length === 0) {
+    if (filteredServices.length === 0) {
       return [];
     }
 
     const pages: PosService[][] = [];
 
-    for (let index = 0; index < services.length; index += ITEMS_PER_PAGE) {
-      pages.push(services.slice(index, index + ITEMS_PER_PAGE));
+    for (let index = 0; index < filteredServices.length; index += ITEMS_PER_PAGE) {
+      pages.push(filteredServices.slice(index, index + ITEMS_PER_PAGE));
     }
 
     return pages;
-  }, [services]);
+  }, [filteredServices]);
 
   const productPages = useMemo(() => {
-    if (hotProducts.length === 0) {
+    if (filteredProducts.length === 0) {
       return [];
     }
 
     const pages: PosProduct[][] = [];
 
-    for (let index = 0; index < hotProducts.length; index += ITEMS_PER_PAGE) {
-      pages.push(hotProducts.slice(index, index + ITEMS_PER_PAGE));
+    for (let index = 0; index < filteredProducts.length; index += ITEMS_PER_PAGE) {
+      pages.push(filteredProducts.slice(index, index + ITEMS_PER_PAGE));
     }
 
     return pages;
-  }, [hotProducts]);
+  }, [filteredProducts]);
 
   const activePage =
     selectedCatalogTab === "service" ? servicePage : productPage;
   const activePages =
     selectedCatalogTab === "service" ? servicePages : productPages;
   const activeLength =
-    selectedCatalogTab === "service" ? services.length : hotProducts.length;
+    selectedCatalogTab === "service" ? filteredServices.length : filteredProducts.length;
+
+  useEffect(() => {
+    setServicePage(1);
+    setProductPage(1);
+  }, [searchTerm]);
 
   useEffect(() => {
     if (servicePage > Math.max(servicePages.length, 1)) {
@@ -213,6 +209,8 @@ const PosPage = () => {
             </span>
             <input
               type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Tìm sản phẩm, dịch vụ hoặc khách hàng"
               className="h-10 w-full rounded-full border border-[#ecdcd1] bg-[#fdfaf8] pl-12 pr-4 text-sm text-[#523c30] outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4]"
             />
@@ -271,22 +269,20 @@ const PosPage = () => {
                   <button
                     onClick={() => setSelectedCatalogTab("service")}
                     type="button"
-                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${
-                      selectedCatalogTab === "service"
-                        ? "bg-orange-600/80 text-white"
-                        : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
-                    }`}
+                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${selectedCatalogTab === "service"
+                      ? "bg-orange-600/80 text-white"
+                      : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
+                      }`}
                   >
                     Dịch vụ
                   </button>
                   <button
                     onClick={() => setSelectedCatalogTab("product")}
                     type="button"
-                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${
-                      selectedCatalogTab === "product"
-                        ? "bg-orange-600/80 text-white"
-                        : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
-                    }`}
+                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${selectedCatalogTab === "product"
+                      ? "bg-orange-600/80 text-white"
+                      : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
+                      }`}
                   >
                     Sản phẩm
                   </button>
@@ -335,106 +331,106 @@ const PosPage = () => {
                     >
                       {selectedCatalogTab === "service"
                         ? servicePages.map((serviceItems, pageIndex) => (
-                            <div
-                              key={`service-page-${pageIndex + 1}`}
-                              className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
-                            >
-                              {serviceItems.map((service, itemIndex) => (
-                                <article
-                                  key={`${service.id}-${pageIndex}-${itemIndex}`}
-                                  className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
-                                >
-                                  <div className="mb-3 rounded-2xl bg-[#f7f3f1] p-3">
-                                    <div className="flex items-center gap-3">
-                                      <div
-                                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${service.iconTone}`}
-                                      >
-                                        <span className="material-symbols-outlined text-[20px]">
-                                          {service.icon}
-                                        </span>
-                                      </div>
-
-                                      <h4 className="min-w-0 flex-1 text-base font-black leading-tight text-[#2f231d]">
-                                        {service.name}
-                                      </h4>
+                          <div
+                            key={`service-page-${pageIndex + 1}`}
+                            className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
+                          >
+                            {serviceItems.map((service, itemIndex) => (
+                              <article
+                                key={`${service.id}-${pageIndex}-${itemIndex}`}
+                                className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
+                              >
+                                <div className="mb-3 rounded-2xl bg-[#f7f3f1] p-3">
+                                  <div className="flex items-center gap-3">
+                                    <div
+                                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${service.iconTone}`}
+                                    >
+                                      <span className="material-symbols-outlined text-[20px]">
+                                        {service.icon}
+                                      </span>
                                     </div>
-                                  </div>
 
-                                  <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
-                                    {service.description}
+                                    <h4 className="min-w-0 flex-1 text-base font-black leading-tight text-[#2f231d]">
+                                      {service.name}
+                                    </h4>
+                                  </div>
+                                </div>
+
+                                <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
+                                  {service.description}
+                                </p>
+
+                                <div className="mt-3 flex items-center justify-between">
+                                  <p className="text-base font-extrabold text-orange-600/80">
+                                    {service.price}
                                   </p>
 
-                                  <div className="mt-3 flex items-center justify-between">
-                                    <p className="text-base font-extrabold text-orange-600/80">
-                                      {service.price}
-                                    </p>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      className="cursor-pointer rounded-full border border-[#eaded6] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#8d6955] transition hover:bg-[#f8f1ec]"
+                                      onClick={() =>
+                                        handleOpenServiceDetail(service)
+                                      }
+                                      type="button"
+                                    >
+                                      Chi tiết
+                                    </button>
 
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        className="cursor-pointer rounded-full border border-[#eaded6] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#8d6955] transition hover:bg-[#f8f1ec]"
-                                        onClick={() =>
-                                          handleOpenServiceDetail(service)
-                                        }
-                                        type="button"
-                                      >
-                                        Chi tiết
-                                      </button>
-
-                                      <button
-                                        type="button"
-                                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
-                                      >
-                                        +
-                                      </button>
-                                    </div>
-                                  </div>
-                                </article>
-                              ))}
-                            </div>
-                          ))
-                        : productPages.map((productItems, pageIndex) => (
-                            <div
-                              key={`product-page-${pageIndex + 1}`}
-                              className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
-                            >
-                              {productItems.map((product, itemIndex) => (
-                                <article
-                                  key={`${product.id}-${pageIndex}-${itemIndex}`}
-                                  className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
-                                >
-                                  <div className="relative mb-3 overflow-hidden rounded-2xl bg-[#f7f3f1]">
-                                    <span className="absolute right-2 top-2 rounded-full bg-white px-2 py-0.5 text-sm font-bold text-[#4f3d33]">
-                                      Kho: {product.stock}
-                                    </span>
-                                    <img
-                                      alt={product.name}
-                                      className="h-32 w-full object-cover"
-                                      src={product.image}
-                                    />
-                                  </div>
-
-                                  <h4 className="line-clamp-2 min-h-10 text-lg font-black leading-tight text-[#2f231d]">
-                                    {product.name}
-                                  </h4>
-                                  <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
-                                    {product.description}
-                                  </p>
-
-                                  <div className="mt-3 flex items-center justify-between">
-                                    <p className="text-base font-extrabold text-orange-600/80">
-                                      {product.price}
-                                    </p>
                                     <button
                                       type="button"
-                                      className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
+                                      className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
                                     >
                                       +
                                     </button>
                                   </div>
-                                </article>
-                              ))}
-                            </div>
-                          ))}
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        ))
+                        : productPages.map((productItems, pageIndex) => (
+                          <div
+                            key={`product-page-${pageIndex + 1}`}
+                            className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
+                          >
+                            {productItems.map((product, itemIndex) => (
+                              <article
+                                key={`${product.id}-${pageIndex}-${itemIndex}`}
+                                className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
+                              >
+                                <div className="relative mb-3 overflow-hidden rounded-2xl bg-[#f7f3f1]">
+                                  <span className="absolute right-2 top-2 rounded-full bg-white px-2 py-0.5 text-sm font-bold text-[#4f3d33]">
+                                    Kho: {product.stock}
+                                  </span>
+                                  <img
+                                    alt={product.name}
+                                    className="h-32 w-full object-cover"
+                                    src={product.image}
+                                  />
+                                </div>
+
+                                <h4 className="line-clamp-2 min-h-10 text-lg font-black leading-tight text-[#2f231d]">
+                                  {product.name}
+                                </h4>
+                                <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
+                                  {product.description}
+                                </p>
+
+                                <div className="mt-3 flex items-center justify-between">
+                                  <p className="text-base font-extrabold text-orange-600/80">
+                                    {product.price}
+                                  </p>
+                                  <button
+                                    type="button"
+                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        ))}
                     </div>
                   </div>
 
@@ -493,6 +489,7 @@ const PosPage = () => {
                   Giao dịch gần đây
                 </h3>
                 <button
+                  onClick={() => navigate("/pos/history")}
                   type="button"
                   className="text-sm cursor-pointer font-semibold text-orange-600/80 transition hover:text-[#9f6e4a]"
                 >
@@ -504,18 +501,18 @@ const PosPage = () => {
                 <table className="min-w-full text-left">
                   <thead>
                     <tr className="border-b border-[#f2e7df] bg-[#fffaf7] text-xs uppercase tracking-wide text-[#bf8b6b]">
-                      <th className="px-6 py-3 font-semibold">Ma don</th>
-                      <th className="px-6 py-3 font-semibold">Khach hang</th>
+                      <th className="px-6 py-3 font-semibold">Mã đơn</th>
+                      <th className="px-6 py-3 font-semibold">Khách hàng</th>
                       <th className="px-6 py-3 font-semibold">
                         Dịch vụ/ Sản phẩm
                       </th>
-                      <th className="px-6 py-3 font-semibold">Tong tien</th>
-                      <th className="px-6 py-3 font-semibold">Trang thai</th>
-                      <th className="px-6 py-3 font-semibold">Thoi gian</th>
+                      <th className="px-6 py-3 font-semibold">Tổng tiền</th>
+                      <th className="px-6 py-3 font-semibold">Trạng thái</th>
+                      <th className="px-6 py-3 font-semibold">Thời gian</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {recentTransactions.map((transaction) => (
+                    {filteredTransactions.slice(0, 4).map((transaction) => (
                       <tr
                         key={transaction.id}
                         className="border-b border-[#f7ece6] text-xs text-[#5b4438]"
@@ -523,19 +520,18 @@ const PosPage = () => {
                         <td className="px-6 py-4 font-bold text-[#2d2018]">
                           {transaction.id}
                         </td>
-                        <td className="px-6 py-4">{transaction.customer}</td>
+                        <td className="px-6 py-4">{transaction.customerName}</td>
                         <td className="max-w-[300px] truncate px-6 py-4 text-[#9f755d]">
-                          {transaction.service}
+                          {transaction.pet}
                         </td>
                         <td className="px-6 py-4 font-semibold text-[#2d2018]">
                           {transaction.total}
                         </td>
                         <td className="px-6 py-4">
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClassMap[transaction.status]}`}
-                          >
+                          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#e6f7f1] px-2.5 py-1 text-[10px] font-bold text-[#1f8c6e]">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#1f8c6e]"></span>
                             {transaction.status}
-                          </span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-[#a07f6b]">
                           {transaction.time}
@@ -560,13 +556,13 @@ const PosPage = () => {
           service={
             selectedService
               ? {
-                  name: selectedService.name,
-                  minWeight: selectedService.minWeight,
-                  description: selectedService.description,
-                  price: selectedService.rawPrice,
-                  categoryName: selectedService.categoryName,
-                  maxWeight: selectedService.maxWeight,
-                }
+                name: selectedService.name,
+                minWeight: selectedService.minWeight,
+                description: selectedService.description,
+                price: selectedService.rawPrice,
+                categoryName: selectedService.categoryName,
+                maxWeight: selectedService.maxWeight,
+              }
               : null
           }
         />
