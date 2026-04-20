@@ -1,44 +1,42 @@
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
 import {
-  CheckCircle,
   X as Close,
-  User as Person,
+  CheckCircle,
   Dog as Pets,
+  ShoppingBag,
+  User as Person,
   AlertTriangle as Warning,
   Banknote as CurrencyExchange,
-  ShoppingBag,
-  Printer as Print,
 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
-// --- ĐỊNH NGHĨA KIỂU DỮ LIỆU ---
 interface OrderDetail {
   id: number;
+  price: number;
+  quantity: number;
   product_name?: string;
   service_name?: string;
-  quantity: number;
-  price: number;
 }
 
 interface Order {
   id: number;
   code: string;
-  status: "COMPLETED" | "CANCELLED" | "PENDING";
-  customer_name: string;
-  customer_phone: string;
-  customer_address?: string;
   pet_name?: string;
   pet_breed?: string;
   pet_weight?: string;
   pet_gender?: string;
   total_amount: number;
+  customer_name: string;
+  customer_phone: string;
   details: OrderDetail[];
+  customer_address?: string;
+  status: "COMPLETED" | "CANCELLED" | "PENDING";
 }
 
 interface OrderDetailModalProps {
-  orderId: number | null;
   isOpen: boolean;
   onClose: () => void;
+  orderId: number | null;
   onStatusChange: () => void;
 }
 
@@ -82,7 +80,7 @@ export const OrderDetailModal = ({
   const [isCanceling, setIsCanceling] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
 
-  // Tải chi tiết đơn hàng 
+  // Tải chi tiết đơn hàng
   useEffect(() => {
     if (!isOpen) return;
 
@@ -98,7 +96,7 @@ export const OrderDetailModal = ({
     fetchOrder();
   }, [orderId, isOpen]);
 
-  // Xử lý hủy đơn 
+  // Xử lý hủy đơn
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
       toast.error("Vui lòng nhập lý do hủy đơn");
@@ -423,13 +421,9 @@ export const OrderDetailModal = ({
 
           {/* Footer Modal */}
           <div className="px-8 py-5 bg-white border-t border-[#f3ebe7] flex justify-between items-center shrink-0 h-20">
-            <button className="text-[#9a624c] hover:text-[#1b110d] text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-2">
-              <Print className="w-5 h-5" />
-              In hóa đơn
-            </button>
             <button
               onClick={onClose}
-              className="bg-[#fcf9f8] border border-[#f3ebe7] text-[#1b110d] hover:bg-gray-100 hover:border-gray-300 font-semibold py-2.5 px-8 rounded-xl transition-all shadow-sm"
+              className="bg-[#fcf9f8] cursor-pointer border border-[#f3ebe7] text-[#1b110d] hover:bg-gray-100 hover:border-gray-300 font-semibold py-2.5 px-8 rounded-xl transition-all shadow-sm"
             >
               Đóng
             </button>

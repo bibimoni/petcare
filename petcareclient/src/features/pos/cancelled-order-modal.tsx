@@ -1,43 +1,42 @@
-import { useState, useEffect } from "react";
 import {
-  X as Close,
-  Receipt,
   Clock,
-  User as Person,
+  Receipt,
+  X as Close,
   AlertCircle,
-  Pets,
+  Dog as Pets,
   ShoppingBag,
+  User as Person,
 } from "lucide-react";
+import { useState, useEffect } from "react";
 
-// --- ĐỊNH NGHĨA KIỂU DỮ LIỆU ---
 interface OrderDetail {
   id: number;
+  price: number;
+  quantity: number;
   product_name: string;
   category_name?: string;
-  quantity: number;
-  price: number;
 }
 
 interface Order {
   id: number;
   code: string;
-  status: "CANCELLED";
+  pet_name?: string;
   created_at: string;
+  status: "CANCELLED";
   cashier_name: string;
+  total_amount: number;
   cancel_reason: string;
   customer_name: string;
+  details: OrderDetail[];
   customer_phone?: string;
   customer_group?: string;
   customer_address?: string;
-  pet_name?: string;
-  total_amount: number;
-  details: OrderDetail[];
 }
 
 interface CancelledOrderModalProps {
-  orderId: number | null;
   isOpen: boolean;
   onClose: () => void;
+  orderId: number | null;
 }
 
 // Mock

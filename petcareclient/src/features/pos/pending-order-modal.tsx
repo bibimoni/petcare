@@ -1,48 +1,48 @@
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
 import {
+  Ban,
   Clock,
-  X as Close,
   Phone,
   MapPin,
+  Package,
+  X as Close,
   Dog as Pets,
   ShoppingBag,
-  Package,
-  Ban,
   CheckCircle2,
 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 // --- ĐỊNH NGHĨA KIỂU DỮ LIỆU ---
 interface OrderDetail {
   id: number;
-  product_name?: string;
   code?: string;
-  quantity: number;
   price: number;
+  quantity: number;
+  product_name?: string;
 }
 
 interface Order {
   id: number;
   code: string;
-  status: "PENDING" | "COMPLETED" | "CANCELLED";
-  customer_name: string;
-  customer_type: string;
-  customer_phone?: string;
-  customer_address?: string;
+  pet_age?: string;
   pet_name?: string;
   pet_type?: string;
   pet_breed?: string;
   pet_weight?: string;
   pet_gender?: string;
-  pet_age?: string;
   total_amount: number;
+  customer_name: string;
+  customer_type: string;
   details: OrderDetail[];
+  customer_phone?: string;
+  customer_address?: string;
+  status: "PENDING" | "COMPLETED" | "CANCELLED";
 }
 
 interface PendingOrderModalProps {
-  orderId: number | null;
   isOpen: boolean;
   onClose: () => void;
+  orderId: number | null;
   onStatusChange: () => void;
 }
 

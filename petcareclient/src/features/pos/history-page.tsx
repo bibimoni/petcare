@@ -1,10 +1,13 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { sidebarUser } from "@/lib/user";
 import { Sidebar } from "@/components/Sidebar";
+import { sidebarUser } from "@/lib/user";
 
-import { historyTransactions } from "./mock-data";
+import { CancelledOrderModal } from "./cancelled-order-modal";
+import { OrderDetailModal } from "./completed-order-modal";
+import { historyTransactions, type HistoryTransaction } from "./mock-data";
+import { PendingOrderModal } from "./pending-order-modal";
 
 const PosHistoryPage = () => {
   const navigate = useNavigate();
@@ -12,6 +15,9 @@ const PosHistoryPage = () => {
   const [toDate, setToDate] = useState("10/31/2023");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentTime, setCurrentTime] = useState(() => new Date());
+
+  // State quản lý việc mở modal giao dịch
+  const [selectedTx, setSelectedTx] = useState<HistoryTransaction | null>(null);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -47,13 +53,13 @@ const PosHistoryPage = () => {
   }, [currentTime]);
 
   const handleExportExcel = () => {
-    // Determine which data to export based on search term
     const dataToExport = searchTerm.trim()
-      ? historyTransactions.filter((tx) =>
-        tx.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tx.customerPhone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tx.customerName.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      ? historyTransactions.filter(
+          (tx) =>
+            tx.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            tx.customerPhone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            tx.customerName.toLowerCase().includes(searchTerm.toLowerCase()),
+        )
       : historyTransactions;
 
     const headers = [
@@ -83,7 +89,6 @@ const PosHistoryPage = () => {
       ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
     ].join("\n");
 
-    // Add BOM so Excel reads UTF-8 correctly
     const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
     const blob = new Blob([bom, csvContent], {
       type: "text/csv;charset=utf-8;",
@@ -169,7 +174,8 @@ const PosHistoryPage = () => {
                   Lịch sử hóa đơn đã thanh toán
                 </h1>
                 <p className="mt-1 text-sm text-[#9f7d67]">
-                  Quản lý và tra cứu tất cả các giao dịch đã hoàn tất tại cửa hàng.
+                  Quản lý và tra cứu tất cả các giao dịch đã hoàn tất tại cửa
+                  hàng.
                 </p>
               </div>
 
@@ -325,14 +331,21 @@ const PosHistoryPage = () => {
                   {historyTransactions
                     .filter(
                       (tx) =>
-                        tx.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        tx.customerPhone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        tx.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+                        tx.id
+                          .toLowerCase()
+                          .includes(searchTerm.toLowerCase()) ||
+                        tx.customerPhone
+                          .toLowerCase()
+                          .includes(searchTerm.toLowerCase()) ||
+                        tx.customerName
+                          .toLowerCase()
+                          .includes(searchTerm.toLowerCase()),
                     )
                     .map((tx) => (
                       <tr
                         key={tx.id}
-                        className="border-b border-[#f9f5f3] last:border-0 hover:bg-[#fcfafa]"
+                        onClick={() => setSelectedTx(tx)}
+                        className="cursor-pointer border-b border-[#f9f5f3] last:border-0 hover:bg-[#fcfafa] transition-colors"
                       >
                         <td className="py-4 pr-4 font-black text-[#2f231d]">
                           {tx.id}
@@ -368,17 +381,25 @@ const PosHistoryPage = () => {
                           <p className="text-xs text-[#a07f6b]">{tx.time}</p>
                         </td>
                         <td className="p-4">
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#e6f7f1] px-2.5 py-1 text-[10px] font-bold text-[#1f8c6e]">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#1f8c6e]"></span>
-                            {tx.status}
-                          </div>
-                        </td>
-                        <td className="py-4 pl-4 text-right">
-                          <button className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[#a07f6b] transition hover:bg-[#f5ebe5] hover:text-[#2f231d]">
-                            <span className="material-symbols-outlined text-[18px]">
-                              visibility
-                            </span>
-                          </button>
+                          {/* Map status qua Badge */}
+                          {tx.status === "COMPLETED" && (
+                            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#e6f7f1] px-2.5 py-1 text-[10px] font-bold text-[#1f8c6e]">
+                              <span className="h-1.5 w-1.5 rounded-full bg-[#1f8c6e]"></span>
+                              Đã thanh toán
+                            </div>
+                          )}
+                          {tx.status === "PENDING" && (
+                            <div className="inline-flex items-center gap-1.5 rounded-full bg-yellow-50 border border-yellow-100 px-2.5 py-1 text-[10px] font-bold text-yellow-600">
+                              <span className="h-1.5 w-1.5 rounded-full bg-yellow-500"></span>
+                              Chờ thanh toán
+                            </div>
+                          )}
+                          {tx.status === "CANCELLED" && (
+                            <div className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-100 px-2.5 py-1 text-[10px] font-bold text-red-600">
+                              <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                              Đã hủy
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -389,14 +410,20 @@ const PosHistoryPage = () => {
             {/* Pagination */}
             <div className="flex items-center justify-between border-t border-[#f0e6df] p-4">
               <p className="text-xs text-[#a07f6b]">
-                Hiển thị 1 - {
+                Hiển thị 1 -{" "}
+                {
                   historyTransactions.filter(
                     (tx) =>
                       tx.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      tx.customerPhone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      tx.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+                      tx.customerPhone
+                        .toLowerCase()
+                        .includes(searchTerm.toLowerCase()) ||
+                      tx.customerName
+                        .toLowerCase()
+                        .includes(searchTerm.toLowerCase()),
                   ).length
-                } của {historyTransactions.length} hóa đơn
+                }{" "}
+                của {historyTransactions.length} hóa đơn
               </p>
               <div className="flex items-center gap-1 text-sm font-bold">
                 <button className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5]">
@@ -428,6 +455,27 @@ const PosHistoryPage = () => {
             </div>
           </div>
         </div>
+
+        {/* --- KHU VỰC CHỨA CÁC MODALS TRẠNG THÁI --- */}
+        <OrderDetailModal
+          isOpen={selectedTx?.status === "COMPLETED"}
+          orderId={selectedTx?.numericId || null}
+          onClose={() => setSelectedTx(null)}
+          onStatusChange={() => {}}
+        />
+
+        <PendingOrderModal
+          isOpen={selectedTx?.status === "PENDING"}
+          orderId={selectedTx?.numericId || null}
+          onClose={() => setSelectedTx(null)}
+          onStatusChange={() => {}}
+        />
+
+        <CancelledOrderModal
+          isOpen={selectedTx?.status === "CANCELLED"}
+          orderId={selectedTx?.numericId || null}
+          onClose={() => setSelectedTx(null)}
+        />
       </main>
     </div>
   );

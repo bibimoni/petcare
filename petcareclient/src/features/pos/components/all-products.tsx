@@ -234,10 +234,11 @@ const AllProductsPage = () => {
 
                   return (
                     <button
-                      className={`rounded-2xl border cursor-pointer px-4 py-2 text-sm font-semibold transition ${isActive
-                        ? "border-[#2d1f16] bg-[#1f140f] text-white"
-                        : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
-                        }`}
+                      className={`rounded-2xl border cursor-pointer px-4 py-2 text-sm font-semibold transition ${
+                        isActive
+                          ? "border-[#2d1f16] bg-[#1f140f] text-white"
+                          : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
+                      }`}
                       key={tab.id}
                       onClick={() => setSelectedServiceCategory(tab.id)}
                       type="button"
@@ -388,10 +389,11 @@ const AllProductsPage = () => {
 
                   return (
                     <button
-                      className={`rounded-2xl cursor-pointer border px-4 py-2 text-sm font-semibold transition ${isActive
-                        ? "border-[#2d1f16] bg-[#1f140f] text-white"
-                        : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
-                        }`}
+                      className={`rounded-2xl cursor-pointer border px-4 py-2 text-sm font-semibold transition ${
+                        isActive
+                          ? "border-[#2d1f16] bg-[#1f140f] text-white"
+                          : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
+                      }`}
                       key={tab.id}
                       onClick={() => setSelectedProductCategory(tab.id)}
                       type="button"
@@ -527,13 +529,13 @@ const AllProductsPage = () => {
           service={
             selectedService
               ? {
-                name: selectedService.name,
-                description: selectedService.description,
-                minWeight: selectedService.minWeight,
-                price: selectedService.rawPrice,
-                categoryName: selectedServiceCategoryName,
-                maxWeight: selectedService.maxWeight,
-              }
+                  name: selectedService.name,
+                  description: selectedService.description,
+                  minWeight: selectedService.minWeight,
+                  price: selectedService.rawPrice,
+                  categoryName: selectedServiceCategoryName,
+                  maxWeight: selectedService.maxWeight,
+                }
               : null
           }
         />
