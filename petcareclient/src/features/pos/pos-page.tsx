@@ -10,9 +10,11 @@ import {
 } from "@/features/pos/api/pos.api";
 import { sidebarUser, getSidebarUser } from "@/lib/user";
 
+import { CancelledOrderModal } from "./cancelled-order-modal";
+import { OrderDetailModal } from "./completed-order-modal";
 import { ServiceDetailModal } from "./components/service-detail-modal";
-
-import { historyTransactions } from "./mock-data";
+import { historyTransactions, type HistoryTransaction } from "./mock-data";
+import { PendingOrderModal } from "./pending-order-modal";
 
 const PosPage = () => {
   const navigate = useNavigate();
@@ -41,6 +43,7 @@ const PosPage = () => {
 
   const services = catalogData?.services ?? [];
   const hotProducts = catalogData?.products ?? [];
+  const [selectedTx, setSelectedTx] = useState<HistoryTransaction | null>(null);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -118,7 +121,7 @@ const PosPage = () => {
         tx.id.toLowerCase().includes(keyword) ||
         tx.customerPhone.toLowerCase().includes(keyword) ||
         tx.customerName.toLowerCase().includes(keyword) ||
-        tx.pet.toLowerCase().includes(keyword)
+        tx.pet.toLowerCase().includes(keyword),
     );
   }, [searchTerm]);
 
@@ -129,7 +132,11 @@ const PosPage = () => {
 
     const pages: PosService[][] = [];
 
-    for (let index = 0; index < filteredServices.length; index += ITEMS_PER_PAGE) {
+    for (
+      let index = 0;
+      index < filteredServices.length;
+      index += ITEMS_PER_PAGE
+    ) {
       pages.push(filteredServices.slice(index, index + ITEMS_PER_PAGE));
     }
 
@@ -143,7 +150,11 @@ const PosPage = () => {
 
     const pages: PosProduct[][] = [];
 
-    for (let index = 0; index < filteredProducts.length; index += ITEMS_PER_PAGE) {
+    for (
+      let index = 0;
+      index < filteredProducts.length;
+      index += ITEMS_PER_PAGE
+    ) {
       pages.push(filteredProducts.slice(index, index + ITEMS_PER_PAGE));
     }
 
@@ -155,7 +166,9 @@ const PosPage = () => {
   const activePages =
     selectedCatalogTab === "service" ? servicePages : productPages;
   const activeLength =
-    selectedCatalogTab === "service" ? filteredServices.length : filteredProducts.length;
+    selectedCatalogTab === "service"
+      ? filteredServices.length
+      : filteredProducts.length;
 
   useEffect(() => {
     setServicePage(1);
@@ -269,20 +282,22 @@ const PosPage = () => {
                   <button
                     onClick={() => setSelectedCatalogTab("service")}
                     type="button"
-                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${selectedCatalogTab === "service"
-                      ? "bg-orange-600/80 text-white"
-                      : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
-                      }`}
+                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${
+                      selectedCatalogTab === "service"
+                        ? "bg-orange-600/80 text-white"
+                        : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
+                    }`}
                   >
                     Dịch vụ
                   </button>
                   <button
                     onClick={() => setSelectedCatalogTab("product")}
                     type="button"
-                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${selectedCatalogTab === "product"
-                      ? "bg-orange-600/80 text-white"
-                      : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
-                      }`}
+                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${
+                      selectedCatalogTab === "product"
+                        ? "bg-orange-600/80 text-white"
+                        : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
+                    }`}
                   >
                     Sản phẩm
                   </button>
@@ -331,106 +346,106 @@ const PosPage = () => {
                     >
                       {selectedCatalogTab === "service"
                         ? servicePages.map((serviceItems, pageIndex) => (
-                          <div
-                            key={`service-page-${pageIndex + 1}`}
-                            className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
-                          >
-                            {serviceItems.map((service, itemIndex) => (
-                              <article
-                                key={`${service.id}-${pageIndex}-${itemIndex}`}
-                                className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
-                              >
-                                <div className="mb-3 rounded-2xl bg-[#f7f3f1] p-3">
-                                  <div className="flex items-center gap-3">
-                                    <div
-                                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${service.iconTone}`}
-                                    >
-                                      <span className="material-symbols-outlined text-[20px]">
-                                        {service.icon}
-                                      </span>
+                            <div
+                              key={`service-page-${pageIndex + 1}`}
+                              className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
+                            >
+                              {serviceItems.map((service, itemIndex) => (
+                                <article
+                                  key={`${service.id}-${pageIndex}-${itemIndex}`}
+                                  className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
+                                >
+                                  <div className="mb-3 rounded-2xl bg-[#f7f3f1] p-3">
+                                    <div className="flex items-center gap-3">
+                                      <div
+                                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${service.iconTone}`}
+                                      >
+                                        <span className="material-symbols-outlined text-[20px]">
+                                          {service.icon}
+                                        </span>
+                                      </div>
+
+                                      <h4 className="min-w-0 flex-1 text-base font-black leading-tight text-[#2f231d]">
+                                        {service.name}
+                                      </h4>
                                     </div>
-
-                                    <h4 className="min-w-0 flex-1 text-base font-black leading-tight text-[#2f231d]">
-                                      {service.name}
-                                    </h4>
                                   </div>
-                                </div>
 
-                                <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
-                                  {service.description}
-                                </p>
-
-                                <div className="mt-3 flex items-center justify-between">
-                                  <p className="text-base font-extrabold text-orange-600/80">
-                                    {service.price}
+                                  <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
+                                    {service.description}
                                   </p>
 
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      className="cursor-pointer rounded-full border border-[#eaded6] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#8d6955] transition hover:bg-[#f8f1ec]"
-                                      onClick={() =>
-                                        handleOpenServiceDetail(service)
-                                      }
-                                      type="button"
-                                    >
-                                      Chi tiết
-                                    </button>
+                                  <div className="mt-3 flex items-center justify-between">
+                                    <p className="text-base font-extrabold text-orange-600/80">
+                                      {service.price}
+                                    </p>
 
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        className="cursor-pointer rounded-full border border-[#eaded6] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#8d6955] transition hover:bg-[#f8f1ec]"
+                                        onClick={() =>
+                                          handleOpenServiceDetail(service)
+                                        }
+                                        type="button"
+                                      >
+                                        Chi tiết
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </div>
+                                </article>
+                              ))}
+                            </div>
+                          ))
+                        : productPages.map((productItems, pageIndex) => (
+                            <div
+                              key={`product-page-${pageIndex + 1}`}
+                              className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
+                            >
+                              {productItems.map((product, itemIndex) => (
+                                <article
+                                  key={`${product.id}-${pageIndex}-${itemIndex}`}
+                                  className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
+                                >
+                                  <div className="relative mb-3 overflow-hidden rounded-2xl bg-[#f7f3f1]">
+                                    <span className="absolute right-2 top-2 rounded-full bg-white px-2 py-0.5 text-sm font-bold text-[#4f3d33]">
+                                      Kho: {product.stock}
+                                    </span>
+                                    <img
+                                      alt={product.name}
+                                      className="h-32 w-full object-cover"
+                                      src={product.image}
+                                    />
+                                  </div>
+
+                                  <h4 className="line-clamp-2 min-h-10 text-lg font-black leading-tight text-[#2f231d]">
+                                    {product.name}
+                                  </h4>
+                                  <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
+                                    {product.description}
+                                  </p>
+
+                                  <div className="mt-3 flex items-center justify-between">
+                                    <p className="text-base font-extrabold text-orange-600/80">
+                                      {product.price}
+                                    </p>
                                     <button
                                       type="button"
-                                      className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
+                                      className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
                                     >
                                       +
                                     </button>
                                   </div>
-                                </div>
-                              </article>
-                            ))}
-                          </div>
-                        ))
-                        : productPages.map((productItems, pageIndex) => (
-                          <div
-                            key={`product-page-${pageIndex + 1}`}
-                            className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
-                          >
-                            {productItems.map((product, itemIndex) => (
-                              <article
-                                key={`${product.id}-${pageIndex}-${itemIndex}`}
-                                className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
-                              >
-                                <div className="relative mb-3 overflow-hidden rounded-2xl bg-[#f7f3f1]">
-                                  <span className="absolute right-2 top-2 rounded-full bg-white px-2 py-0.5 text-sm font-bold text-[#4f3d33]">
-                                    Kho: {product.stock}
-                                  </span>
-                                  <img
-                                    alt={product.name}
-                                    className="h-32 w-full object-cover"
-                                    src={product.image}
-                                  />
-                                </div>
-
-                                <h4 className="line-clamp-2 min-h-10 text-lg font-black leading-tight text-[#2f231d]">
-                                  {product.name}
-                                </h4>
-                                <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
-                                  {product.description}
-                                </p>
-
-                                <div className="mt-3 flex items-center justify-between">
-                                  <p className="text-base font-extrabold text-orange-600/80">
-                                    {product.price}
-                                  </p>
-                                  <button
-                                    type="button"
-                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </article>
-                            ))}
-                          </div>
-                        ))}
+                                </article>
+                              ))}
+                            </div>
+                          ))}
                     </div>
                   </div>
 
@@ -515,12 +530,15 @@ const PosPage = () => {
                     {filteredTransactions.slice(0, 4).map((transaction) => (
                       <tr
                         key={transaction.id}
-                        className="border-b border-[#f7ece6] text-xs text-[#5b4438]"
+                        onClick={() => setSelectedTx(transaction)}
+                        className="cursor-pointer border-b border-[#f7ece6] text-xs text-[#5b4438] hover:bg-[#fcfafa] transition-colors"
                       >
                         <td className="px-6 py-4 font-bold text-[#2d2018]">
                           {transaction.id}
                         </td>
-                        <td className="px-6 py-4">{transaction.customerName}</td>
+                        <td className="px-6 py-4">
+                          {transaction.customerName}
+                        </td>
                         <td className="max-w-[300px] truncate px-6 py-4 text-[#9f755d]">
                           {transaction.pet}
                         </td>
@@ -528,10 +546,25 @@ const PosPage = () => {
                           {transaction.total}
                         </td>
                         <td className="px-6 py-4">
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#e6f7f1] px-2.5 py-1 text-[10px] font-bold text-[#1f8c6e]">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#1f8c6e]"></span>
-                            {transaction.status}
-                          </div>
+                          {/* Map status qua Badge */}
+                          {transaction.status === "COMPLETED" && (
+                            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#e6f7f1] px-2.5 py-1 text-[10px] font-bold text-[#1f8c6e]">
+                              <span className="h-1.5 w-1.5 rounded-full bg-[#1f8c6e]"></span>
+                              Đã thanh toán
+                            </div>
+                          )}
+                          {transaction.status === "PENDING" && (
+                            <div className="inline-flex items-center gap-1.5 rounded-full bg-yellow-50 border border-yellow-100 px-2.5 py-1 text-[10px] font-bold text-yellow-600">
+                              <span className="h-1.5 w-1.5 rounded-full bg-yellow-500"></span>
+                              Chờ thanh toán
+                            </div>
+                          )}
+                          {transaction.status === "CANCELLED" && (
+                            <div className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-100 px-2.5 py-1 text-[10px] font-bold text-red-600">
+                              <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                              Đã hủy
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-[#a07f6b]">
                           {transaction.time}
@@ -556,15 +589,36 @@ const PosPage = () => {
           service={
             selectedService
               ? {
-                name: selectedService.name,
-                minWeight: selectedService.minWeight,
-                description: selectedService.description,
-                price: selectedService.rawPrice,
-                categoryName: selectedService.categoryName,
-                maxWeight: selectedService.maxWeight,
-              }
+                  name: selectedService.name,
+                  minWeight: selectedService.minWeight,
+                  description: selectedService.description,
+                  price: selectedService.rawPrice,
+                  categoryName: selectedService.categoryName,
+                  maxWeight: selectedService.maxWeight,
+                }
               : null
           }
+        />
+
+        {/* --- KHU VỰC CHỨA CÁC MODALS TRẠNG THÁI --- */}
+        <OrderDetailModal
+          isOpen={selectedTx?.status === "COMPLETED"}
+          orderId={selectedTx?.numericId || null}
+          onClose={() => setSelectedTx(null)}
+          onStatusChange={() => {}}
+        />
+
+        <PendingOrderModal
+          isOpen={selectedTx?.status === "PENDING"}
+          orderId={selectedTx?.numericId || null}
+          onClose={() => setSelectedTx(null)}
+          onStatusChange={() => {}}
+        />
+
+        <CancelledOrderModal
+          isOpen={selectedTx?.status === "CANCELLED"}
+          orderId={selectedTx?.numericId || null}
+          onClose={() => setSelectedTx(null)}
         />
       </main>
     </div>
