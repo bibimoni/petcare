@@ -26,8 +26,9 @@ export async function getSidebarUser(): Promise<SidebarUser> {
     const profile = response.data?.data ?? response.data ?? response;
 
     const normalizedRole = (() => {
-      if (profile?.role && typeof profile.role === "object") {
+      if (profile?.role) {
         const role = profile.role as Record<string, unknown>;
+        console.log("🚀 ~ getSidebarUser ~ role:", role)
         return {
           description: String(role.description ?? ""),
           id: String(role.id ?? ""),
