@@ -95,13 +95,15 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
   const [isPinned, setIsPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
+  const isValidInitialData =
+    userInfo && !isPromiseLikeUserInfo(userInfo) && userInfo.role !== null;
+
   const userQuery = useQuery({
     queryKey: ["sidebar-user"],
     queryFn: getSidebarUser,
-    // staleTime: 15 * 60 * 1000,
-    // gcTime: 60 * 60 * 1000,
-    initialData:
-      userInfo && !isPromiseLikeUserInfo(userInfo) ? userInfo : undefined,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    initialData: isValidInitialData ? userInfo : undefined,
   });
 
   const resolvedUserInfo: SidebarUserInfo = userQuery.data ?? {
@@ -113,8 +115,8 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
   const isLoadingUserInfo = userQuery.isPending;
 
   const roleName = resolvedUserInfo.role?.name?.toUpperCase();
-  console.log("🚀 ~ Sidebar ~ resolvedUserInfo:", resolvedUserInfo)
-  console.log("🚀 ~ Sidebar ~ roleName:", roleName)
+  console.log("🚀 ~ Sidebar ~ resolvedUserInfo:", resolvedUserInfo);
+  console.log("🚀 ~ Sidebar ~ roleName:", roleName);
   const isAdmin = roleName === "ADMIN";
   const isStaff = roleName === "STAFF";
   const isLimited = !isAdmin && !isStaff;

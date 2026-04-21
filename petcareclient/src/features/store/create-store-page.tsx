@@ -16,6 +16,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { CountryDropdown } from "@/components/ui/country-dropdown";
 import api from "@/lib/api";
 import { sidebarUser } from "@/lib/user";
+import { queryClient } from "@/lib/query-client";
 
 export default function CreateStorePage() {
   const navigate = useNavigate();
@@ -117,6 +118,8 @@ export default function CreateStorePage() {
         }
         localStorage.setItem("user", JSON.stringify(currentUser));
       }
+
+      queryClient.invalidateQueries({ queryKey: ["sidebar-user"] });
 
       toast.success("Khởi tạo cửa hàng thành công!");
       clearLogoImage();
