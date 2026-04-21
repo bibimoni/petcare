@@ -22,7 +22,7 @@ export function InventoryStats() {
   const statsQuery = useQuery({
     queryKey: ["inventory-stats"],
     queryFn: async () => {
-      const [alertsData, totalValue, categories] = await Promise.all([
+      const [alertsData, value, categories] = await Promise.all([
         getProductAlerts(),
         getInventoryTotalValue(),
         getProductCategories(),
@@ -56,7 +56,7 @@ export function InventoryStats() {
         totalProducts,
         lowStockCount,
         expiringCount,
-        totalValue,
+        value,
       };
     },
     staleTime: 3 * 60 * 1000,
@@ -66,7 +66,7 @@ export function InventoryStats() {
     totalProducts: 0,
     lowStockCount: 0,
     expiringCount: 0,
-    totalValue: 0,
+    value: 0,
   };
   const isLoading = statsQuery.isPending;
 
@@ -159,7 +159,7 @@ export function InventoryStats() {
                 <Loader2 className="animate-spin h-8 w-8 mt-1" />
               ) : (
                 <>
-                  {stats.totalValue.toLocaleString("vi-VN")}
+                  {stats.value.toLocaleString("vi-VN")}
                   <span className="text-lg text-text-secondary font-normal ml-1">
                     đ
                   </span>

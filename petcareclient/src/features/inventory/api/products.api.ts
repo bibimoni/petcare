@@ -28,7 +28,7 @@ export type ProductDto = {
 };
 
 type TotalValueResponse = {
-  value?: number | string;
+  data: { value?: number | string };
 };
 
 export type InventoryAlertsData = {
@@ -90,9 +90,9 @@ export const getProductAlerts = async (): Promise<ProductDto[]> => {
   return normalizeProducts(response);
 };
 
-export const getInventoryTotalValue = async (): Promise<number> => {
+export const getInventoryTotalValue = async () => {
   const response = (await api.get("/products/total/sum")) as TotalValueResponse;
-  return Number(response?.value ?? 0);
+  return Number(response?.data?.value ?? 0);
 };
 
 export const getInventoryAlertsData =
