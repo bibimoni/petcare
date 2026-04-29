@@ -68,9 +68,6 @@ export class ServicesService {
 
   async deleteService(storeId: number, serviceId: number): Promise<void> {
     const service = await this.findByService(storeId, serviceId);
-    if (!service) {
-      throw new BadRequestException('Service not found');
-    }
     await this.serviceRepository.delete({
       id: service.id,
       store_id: service.store_id,
