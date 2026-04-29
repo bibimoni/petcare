@@ -374,13 +374,28 @@ export class OrdersService {
 
     try {
       // Lock payment row để ngăn concurrent confirm xử lý đồng thời
-      const lockedPayment = await queryRunner.manager
-        .createQueryBuilder(Payment, 'payment')
-        .setLock('pessimistic_write')
-        .where('payment.stripe_payment_intent_id = :id', {
-          id: paymentIntentId,
-        })
-        .getOne();
+      // Fallback to non-locking query if driver doesn't support (e.g. SQLite in tests)
+      let lockedPayment: Payment | null;
+      try {
+        lockedPayment = await queryRunner.manager
+          .createQueryBuilder(Payment, 'payment')
+          .setLock('pessimistic_write')
+          .where('payment.stripe_payment_intent_id = :id', {
+            id: paymentIntentId,
+          })
+          .getOne();
+      } catch (lockError: any) {
+        if (lockError.name === 'LockNotSupportedOnGivenDriverError') {
+          lockedPayment = await queryRunner.manager
+            .createQueryBuilder(Payment, 'payment')
+            .where('payment.stripe_payment_intent_id = :id', {
+              id: paymentIntentId,
+            })
+            .getOne();
+        } else {
+          throw lockError;
+        }
+      }
 
       if (!lockedPayment) {
         throw new NotFoundException(
