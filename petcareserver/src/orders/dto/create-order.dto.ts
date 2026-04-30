@@ -10,21 +10,35 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ItemType } from '../entities/order-detail.entity';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateOrderItemDto {
+  @ApiProperty({ description: 'ID of the item being ordered' })
   @Type(() => Number)
   @IsNumber()
   @IsPositive()
   item_id: number;
 
+  @ApiProperty({
+    description: 'Type of the item being ordered',
+    enum: ItemType,
+  })
   @IsEnum(ItemType)
   item_type: ItemType;
 
+  @ApiProperty({
+    description: 'Quantity of the item being ordered',
+    example: 1,
+  })
   @Type(() => Number)
   @IsNumber()
   @IsPositive()
   quantity: number;
 
+  @ApiProperty({
+    description: 'ID of the pet associated with the item',
+    example: 1,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
@@ -33,18 +47,30 @@ export class CreateOrderItemDto {
 }
 
 export class CreateOrderDto {
+  @ApiProperty({
+    description: 'ID of the customer placing the order',
+    example: 1,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @IsPositive()
   customer_id?: number;
 
+  @ApiProperty({
+    description: 'List of items being ordered',
+    type: [CreateOrderItemDto],
+  })
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => CreateOrderItemDto)
   items: CreateOrderItemDto[];
 
+  @ApiProperty({
+    description: 'Additional notes for the order',
+    example: 'Please deliver to the back door',
+  })
   @IsOptional()
   @IsString()
   note?: string;

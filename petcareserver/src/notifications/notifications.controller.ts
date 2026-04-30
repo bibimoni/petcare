@@ -20,6 +20,7 @@ import {
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -123,6 +124,7 @@ export class NotificationsController {
     status: 200,
     description: 'Notifications marked as read successfully',
   })
+  @ApiBody({ type: MarkMultipleAsReadDto })
   async markMultipleAsRead(
     @CurrentUser() user: any,
     @Body() body: MarkMultipleAsReadDto,

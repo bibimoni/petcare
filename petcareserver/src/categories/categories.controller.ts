@@ -19,6 +19,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -76,8 +77,9 @@ export class CategoriesController {
     status: 400,
     description: 'Invalid category type',
   })
+  @ApiQuery({ name: 'categoryType', required: false, enum: CategoryType })
   async filterCategoriesByType(
-    @Query('type') type: CategoryType,
+    @Query('categoryType') type: CategoryType,
     @CurrentUser() user: any,
   ) {
     return this.categoriesService.filterByType(user.store_id, type);
