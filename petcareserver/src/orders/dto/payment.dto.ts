@@ -12,11 +12,6 @@ export class CreatePaymentIntentDto {
   @IsNumber()
   @IsPositive()
   order_id: number;
-
-  // @Type(() => Number)
-  // @IsNumber()
-  // @IsPositive()
-  // amount: number;
 }
 
 export class ConfirmPaymentDto {

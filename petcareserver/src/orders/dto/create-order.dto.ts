@@ -9,8 +9,8 @@ import {
   IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ItemType } from '../entities/order-detail.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import { CategoryType } from 'src/common';
 
 export class CreateOrderItemDto {
   @ApiProperty({ description: 'ID of the item being ordered' })
@@ -21,10 +21,10 @@ export class CreateOrderItemDto {
 
   @ApiProperty({
     description: 'Type of the item being ordered',
-    enum: ItemType,
+    enum: CategoryType,
   })
-  @IsEnum(ItemType)
-  item_type: ItemType;
+  @IsEnum(CategoryType)
+  item_type: CategoryType;
 
   @ApiProperty({
     description: 'Quantity of the item being ordered',

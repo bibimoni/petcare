@@ -8,15 +8,16 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, DeepPartial } from 'typeorm';
 import { Order } from './entities/order.entity';
-import { OrderDetail, ItemType } from './entities/order-detail.entity';
-import {
-  Payment,
-  PaymentMethod,
-  PaymentStatus,
-} from './entities/payment.entity';
+import { OrderDetail } from './entities/order-detail.entity';
+import { Payment } from './entities/payment.entity';
 import { CreateOrderDto } from './dto';
 import { StripeService } from './stripe.service';
-import { OrderStatus } from '../common/enum';
+import {
+  CategoryType,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from '../common/enum';
 import { Product } from '../categories/entities/product.entity';
 import { Service as PetCareService } from '../categories/entities/service.entity';
 
@@ -48,7 +49,7 @@ export class OrdersService {
     const { customer_id, items, note } = createOrderDto;
 
     type DetailPayload = {
-      item_type: ItemType;
+      item_type: CategoryType;
       product_id?: number;
       service_id?: number;
       pet_id?: number;
@@ -62,7 +63,7 @@ export class OrdersService {
     const detailPayloads: DetailPayload[] = [];
 
     for (const item of items) {
-      if (item.item_type === ItemType.PRODUCT) {
+      if (item.item_type === CategoryType.PRODUCT) {
         const product = await this.productsRepository.findOne({
           where: { product_id: item.item_id, store_id: storeId },
         });
@@ -83,7 +84,7 @@ export class OrdersService {
         const costPrice = Number(product.cost_price) || 0;
 
         detailPayloads.push({
-          item_type: ItemType.PRODUCT,
+          item_type: CategoryType.PRODUCT,
           product_id: item.item_id,
           quantity: item.quantity,
           unit_price: unitPrice,
@@ -93,7 +94,7 @@ export class OrdersService {
         });
 
         totalAmount += unitPrice * item.quantity;
-      } else if (item.item_type === ItemType.SERVICE) {
+      } else if (item.item_type === CategoryType.SERVICE) {
         const service = await this.servicesRepository.findOne({
           where: { id: item.item_id, store_id: storeId },
         });
@@ -107,7 +108,7 @@ export class OrdersService {
         const unitPrice = Number(service.price);
 
         detailPayloads.push({
-          item_type: ItemType.SERVICE,
+          item_type: CategoryType.SERVICE,
           service_id: item.item_id,
           quantity: item.quantity,
           unit_price: unitPrice,
@@ -150,7 +151,7 @@ export class OrdersService {
           order_id: savedOrder.order_id,
         });
 
-        if (payload.item_type === ItemType.PRODUCT) {
+        if (payload.item_type === CategoryType.PRODUCT) {
           const updateResult = await queryRunner.manager
             .createQueryBuilder()
             .update(Product)
@@ -499,7 +500,7 @@ export class OrdersService {
     try {
       // Hoàn trả tồn kho atomic
       for (const detail of orderDetails) {
-        if (detail.item_type === ItemType.PRODUCT && detail.product_id) {
+        if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
           await queryRunner.manager
             .createQueryBuilder()
             .update(Product)
@@ -686,9 +687,7 @@ export class OrdersService {
     }
 
     if (order.status !== OrderStatus.PAID) {
-      throw new BadRequestException(
-        'Only paid orders can be refunded',
-      );
+      throw new BadRequestException('Only paid orders can be refunded');
     }
 
     const payment = await this.paymentsRepository.findOne({
@@ -696,9 +695,7 @@ export class OrdersService {
     });
 
     if (!payment) {
-      throw new NotFoundException(
-        'No completed payment found for this order',
-      );
+      throw new NotFoundException('No completed payment found for this order');
     }
 
     if (!payment.stripe_charge_id) {
@@ -729,7 +726,7 @@ export class OrdersService {
       });
 
       for (const detail of orderDetails) {
-        if (detail.item_type === ItemType.PRODUCT && detail.product_id) {
+        if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
           await queryRunner.manager
             .createQueryBuilder()
             .update(Product)

@@ -9,18 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { Order } from './order.entity';
-
-export enum PaymentStatus {
-  PENDING = 'PENDING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED',
-}
-
-export enum PaymentMethod {
-  STRIPE = 'STRIPE',
-  CASH = 'CASH',
-}
+import { PaymentMethod, PaymentStatus } from 'src/common/enum';
 
 @Entity('payments')
 export class Payment {
