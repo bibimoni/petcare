@@ -50,10 +50,6 @@ export class Payment {
   @Column({ type: 'varchar', nullable: true })
   stripe_client_secret: string;
 
-  // FIX 5 & 6: Đổi kiểu từ `string` sang `string | null` cho các cột nullable.
-  // Lỗi TS2322: orders.service.ts gán `charge_id: string | null` và
-  // `receiptUrl: string | null` vào 2 field này nhưng TypeScript thấy type là `string`.
-  // DB đã khai báo nullable: true → TypeScript type phải phản ánh đúng thực tế.
   @Column({ type: 'varchar', nullable: true })
   stripe_charge_id: string | null;
 

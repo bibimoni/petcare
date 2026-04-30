@@ -68,10 +68,6 @@ export class OrdersController {
   @ApiQuery({ name: 'status', required: false, enum: OrderStatus })
   async getAllOrders(
     @CurrentUser() user: any,
-    // REMAINING BUG 1 FIX: @Query params luôn là string từ HTTP request.
-    // Dùng DefaultValuePipe để set default trước, ParseIntPipe để parse sau.
-    // Nếu không có pipe: `page` = "1" (string) → arithmetic vẫn hoạt động nhờ
-    // JS coercion, nhưng `?page=abc` → NaN → skip(NaN) → TypeORM error/full scan.
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('status') status?: OrderStatus,

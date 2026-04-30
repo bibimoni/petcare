@@ -8,10 +8,6 @@ import Stripe from 'stripe';
 
 @Injectable()
 export class StripeService {
-  // FIX 1: Dùng InstanceType<typeof Stripe> thay vì Stripe trực tiếp.
-  // Lỗi "Cannot use namespace 'Stripe' as a type" xảy ra khi tsconfig thiếu
-  // esModuleInterop hoặc Stripe SDK version mới export khác chuẩn.
-  // InstanceType<typeof Stripe> luôn hoạt động đúng trong mọi trường hợp.
   private stripe: InstanceType<typeof Stripe>;
 
   constructor(private configService: ConfigService) {
@@ -20,16 +16,10 @@ export class StripeService {
       throw new Error('STRIPE_SECRET_KEY is not configured');
     }
     this.stripe = new Stripe(stripeKey, {
-      // FIX 2: Cập nhật apiVersion cho khớp với Stripe SDK đang cài.
-      // Lỗi TS2322 vì SDK mới enforce literal type chính xác.
-      // Giá trị '2026-04-22.dahlia' là version mà SDK hiện tại yêu cầu.
       apiVersion: '2026-04-22.dahlia',
     });
   }
 
-  /**
-   * Create a payment intent for order
-   */
   async createPaymentIntent(
     orderId: number,
     amount: number,
@@ -65,18 +55,12 @@ export class StripeService {
       };
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
-        // FIX 3: Bỏ cast thừa "as Stripe.errors.StripeError".
-        // Lỗi TS2749: StripeError là class (value), không thể dùng trực tiếp làm type.
-        // Sau khi kiểm tra instanceof, TypeScript đã tự narrow type → dùng error.message thẳng.
         throw new BadRequestException(`Stripe error: ${error.message}`);
       }
       throw error;
     }
   }
 
-  /**
-   * Retrieve payment intent details
-   */
   async retrievePaymentIntent(paymentIntentId: string) {
     try {
       return await this.stripe.paymentIntents.retrieve(paymentIntentId);
@@ -90,10 +74,6 @@ export class StripeService {
     }
   }
 
-  /**
-   * Confirm payment intent
-   * Retrieve và kiểm tra status — client đã confirm phía frontend bằng Stripe SDK
-   */
   async confirmPaymentIntent(paymentIntentId: string): Promise<
     | {
         success: true;
@@ -153,10 +133,6 @@ export class StripeService {
     }
   }
 
-  /**
-   * Cancel a payment intent on Stripe
-   * Chỉ gọi được khi intent chưa ở trạng thái terminal (succeeded/canceled)
-   */
   async cancelPaymentIntent(paymentIntentId: string): Promise<void> {
     try {
       const intent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
@@ -175,9 +151,6 @@ export class StripeService {
     }
   }
 
-  /**
-   * Refund a charge
-   */
   async refundCharge(chargeId: string, amount?: number): Promise<any> {
     try {
       // Bỏ type annotation Stripe.Refund*Params vì tên type thay đổi tuỳ SDK version.
@@ -194,9 +167,6 @@ export class StripeService {
     }
   }
 
-  /**
-   * Get charge details (bao gồm receipt_url)
-   */
   async getChargeDetails(chargeId: string) {
     try {
       return await this.stripe.charges.retrieve(chargeId);

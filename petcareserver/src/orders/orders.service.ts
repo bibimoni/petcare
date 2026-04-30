@@ -38,9 +38,6 @@ export class OrdersService {
     private dataSource: DataSource,
   ) {}
 
-  // ─────────────────────────────────────────────────────────
-  // CREATE ORDER
-  // ─────────────────────────────────────────────────────────
   async createOrder(
     createOrderDto: CreateOrderDto,
     storeId: number,
@@ -128,11 +125,6 @@ export class OrdersService {
     await queryRunner.startTransaction();
 
     try {
-      // FIX 7: Lỗi TS2769 "No overload matches this call" xảy ra vì TypeScript
-      // không resolve đúng overload của EntityManager.create() khi truyền object literal
-      // trực tiếp. Giải pháp: khai báo biến với type DeepPartial<Order> rõ ràng
-      // rồi truyền vào — TypeScript match overload 1 (single object) thay vì
-      // nhầm overload 2 (array).
       const orderData: DeepPartial<Order> = {
         store_id: storeId,
         user_id: userId,
@@ -201,9 +193,6 @@ export class OrdersService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────
-  // CREATE PAYMENT INTENT
-  // ─────────────────────────────────────────────────────────
   async createPaymentIntent(
     orderId: number,
     storeId: number,
@@ -280,9 +269,6 @@ export class OrdersService {
     return paymentIntentData;
   }
 
-  // ─────────────────────────────────────────────────────────
-  // CONFIRM PAYMENT
-  // ─────────────────────────────────────────────────────────
   async confirmPayment(
     paymentIntentId: string,
     orderId: number,
@@ -417,8 +403,6 @@ export class OrdersService {
       }
 
       lockedPayment.status = PaymentStatus.COMPLETED;
-      // FIX 8 & 9: Dùng ?? null để handle string | null.
-      // payment.entity.ts đã đổi type sang `string | null` nên gán trực tiếp được.
       lockedPayment.stripe_charge_id = paymentResult.charge_id ?? null;
       lockedPayment.stripe_receipt_url = receiptUrl ?? null;
       await queryRunner.manager.save(Payment, lockedPayment);
@@ -449,9 +433,6 @@ export class OrdersService {
     };
   }
 
-  // ─────────────────────────────────────────────────────────
-  // CANCEL ORDER
-  // ─────────────────────────────────────────────────────────
   async cancelOrder(
     orderId: number,
     storeId: number,
@@ -556,9 +537,6 @@ export class OrdersService {
     return order;
   }
 
-  // ─────────────────────────────────────────────────────────
-  // GET ORDER HISTORY
-  // ─────────────────────────────────────────────────────────
   async getOrderHistory(
     storeId: number,
     status?: OrderStatus,
@@ -601,9 +579,6 @@ export class OrdersService {
     };
   }
 
-  // ─────────────────────────────────────────────────────────
-  // GET SINGLE ORDER
-  // ─────────────────────────────────────────────────────────
   async getOrder(orderId: number, storeId: number): Promise<Order> {
     const order = await this.ordersRepository.findOne({
       where: { order_id: orderId },
@@ -630,9 +605,6 @@ export class OrdersService {
     return order;
   }
 
-  // ─────────────────────────────────────────────────────────
-  // GET PAYMENT DETAILS
-  // ─────────────────────────────────────────────────────────
   async getPaymentDetails(orderId: number, storeId: number): Promise<Payment> {
     const order = await this.ordersRepository.findOne({
       where: { order_id: orderId },
@@ -660,9 +632,6 @@ export class OrdersService {
     return payment;
   }
 
-  // ─────────────────────────────────────────────────────────
-  // REFUND ORDER
-  // ─────────────────────────────────────────────────────────
   async refundOrder(
     orderId: number,
     storeId: number,
