@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f7fb;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        width: 350px;
+      }
+
+      h2 {
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #card-element {
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        background: #635bff;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      button:hover {
+        background: #4b44d1;
+      }
+
+      button:disabled {
+        background: #aaa;
+        cursor: not-allowed;
+      }
+
+      .success {
+        color: green;
+        text-align: center;
+        margin-top: 10px;
+      }
+
+      .error {
+        color: red;
+        text-align: center;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h2>💳 Payment</h2>
+
+      <div id="card-element"></div>
+
+      <button id="pay">Pay 80,000 VND</button>
+
+      <div id="message"></div>
+    </div>
+
+    <script>
+      const stripe = Stripe('Publishable key');
+      const elements = stripe.elements();
+
+      const card = elements.create('card', {
+        hidePostalCode: true,
+        style: {
+          base: {
+            fontSize: '16px',
+            color: '#333',
+          },
+        },
+      });
+
+      card.mount('#card-element');
+
+      const btn = document.getElementById('pay');
+      const message = document.getElementById('message');
+
+      btn.onclick = async () => {
+        btn.disabled = true;
+        message.innerHTML = '';
+
+        const result = await stripe.confirmCardPayment('client_secret', {
+          payment_method: { card: card },
+        });
+
+        if (result.error) {
+          message.innerHTML = `<div class="error">${result.error.message}</div>`;
+          btn.disabled = false;
+        } else if (result.paymentIntent.status === 'succeeded') {
+          message.innerHTML = `<div class="success">✅ Payment successful!</div>`;
+        }
+      };
+    </script>
+  </body>
+</html>
