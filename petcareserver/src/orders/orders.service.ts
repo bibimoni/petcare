@@ -268,10 +268,6 @@ export class OrdersService {
     return paymentIntentData;
   }
 
-  // ─────────────────────────────────────────────────────────
-  // GET PAYMENT STATUS (replaces old confirmPayment)
-  // Client polls this to check if webhook has processed payment
-  // ─────────────────────────────────────────────────────────
   async getPaymentStatus(
     orderId: number,
     storeId: number,
@@ -310,9 +306,6 @@ export class OrdersService {
     };
   }
 
-  // ─────────────────────────────────────────────────────────
-  // WEBHOOK: payment_intent.succeeded
-  // ─────────────────────────────────────────────────────────
   async handlePaymentIntentSucceeded(
     paymentIntentId: string,
     chargeId: string | null,
@@ -404,9 +397,6 @@ export class OrdersService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────
-  // WEBHOOK: payment_intent.payment_failed
-  // ─────────────────────────────────────────────────────────
   async handlePaymentIntentFailed(
     paymentIntentId: string,
     errorMessage: string,
@@ -435,9 +425,6 @@ export class OrdersService {
     await this.paymentsRepository.save(payment);
   }
 
-  // ─────────────────────────────────────────────────────────
-  // WEBHOOK: charge.refunded
-  // ─────────────────────────────────────────────────────────
   async handleChargeRefunded(paymentIntentId: string): Promise<void> {
     const payment = await this.paymentsRepository.findOne({
       where: { stripe_payment_intent_id: paymentIntentId },

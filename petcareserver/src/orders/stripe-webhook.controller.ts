@@ -8,7 +8,12 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiExcludeEndpoint,
+} from '@nestjs/swagger';
 import { StripeService } from './stripe.service';
 import { OrdersService } from './orders.service';
 
@@ -36,11 +41,7 @@ export class StripeWebhookController {
       throw new BadRequestException('Missing stripe-signature header');
     }
 
-    // In production, rawBody is set by NestFactory.create({rawBody: true})
-    // In test, fallback to stringified body — constructWebhookEvent is mocked anyway
     const rawBody = req.rawBody ?? Buffer.from(JSON.stringify(req.body));
-
-    // Verify signature + parse event
     const event = this.stripeService.constructWebhookEvent(rawBody, signature);
 
     this.logger.log(`Received Stripe event: ${event.type} (${event.id})`);
@@ -52,7 +53,7 @@ export class StripeWebhookController {
           paymentIntent.id,
           typeof paymentIntent.latest_charge === 'string'
             ? paymentIntent.latest_charge
-            : paymentIntent.latest_charge?.id ?? null,
+            : (paymentIntent.latest_charge?.id ?? null),
           paymentIntent.amount / 100,
         );
         break;
