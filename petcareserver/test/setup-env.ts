@@ -13,3 +13,4 @@ process.env.JWT_SECRET = 'test_jwt_secret_key';
 process.env.JWT_EXPIRES_IN = '1d';
 process.env.STRIPE_SECRET_KEY = 'sk_test_fake_key_for_testing';
 process.env.STRIPE_PUBLIC_KEY = 'pk_test_fake_key_for_testing';
+process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_fake_key_for_testing';

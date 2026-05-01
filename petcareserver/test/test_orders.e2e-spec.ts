@@ -2,14 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from '../src/orders/orders.controller';
 import { OrdersService } from '../src/orders/orders.service';
 import { OrderStatus } from '../src/common/enum';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-// ── Mock OrdersService ──
 const mockOrdersService = {
   createOrder: jest.fn(),
   createPaymentIntent: jest.fn(),
-  confirmPayment: jest.fn(),
+  getPaymentStatus: jest.fn(),
   cancelOrder: jest.fn(),
   refundOrder: jest.fn(),
   getOrderHistory: jest.fn(),
@@ -17,7 +20,17 @@ const mockOrdersService = {
   getPaymentDetails: jest.fn(),
 };
 
-const TEST_USER = { user_id: 1, store_id: 10, permissions: ['order.create', 'order.view', 'order.edit', 'order.cancel', 'order.refund'] };
+const TEST_USER = {
+  user_id: 1,
+  store_id: 10,
+  permissions: [
+    'order.create',
+    'order.view',
+    'order.edit',
+    'order.cancel',
+    'order.refund',
+  ],
+};
 
 describe('OrdersController', () => {
   let controller: OrdersController;
@@ -45,7 +58,11 @@ describe('OrdersController', () => {
     };
 
     it('should create order successfully', async () => {
-      const expected = { order_id: 1, status: OrderStatus.PENDING, total_amount: 51 };
+      const expected = {
+        order_id: 1,
+        status: OrderStatus.PENDING,
+        total_amount: 51,
+      };
       mockOrdersService.createOrder.mockResolvedValue(expected);
 
       const result = await controller.createOrder(dto, TEST_USER);
@@ -58,21 +75,29 @@ describe('OrdersController', () => {
       mockOrdersService.createOrder.mockRejectedValue(
         new NotFoundException('Product 999 not found in this store'),
       );
-      await expect(controller.createOrder(dto, TEST_USER)).rejects.toThrow(NotFoundException);
+      await expect(controller.createOrder(dto, TEST_USER)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should propagate BadRequestException for insufficient stock', async () => {
       mockOrdersService.createOrder.mockRejectedValue(
-        new BadRequestException('Insufficient stock for product "Dog Food". Available: 5'),
+        new BadRequestException(
+          'Insufficient stock for product "Dog Food". Available: 5',
+        ),
       );
-      await expect(controller.createOrder(dto, TEST_USER)).rejects.toThrow(BadRequestException);
+      await expect(controller.createOrder(dto, TEST_USER)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should handle empty items', async () => {
       mockOrdersService.createOrder.mockRejectedValue(
         new BadRequestException('items should not be empty'),
       );
-      await expect(controller.createOrder({ items: [] } as any, TEST_USER)).rejects.toThrow(BadRequestException);
+      await expect(
+        controller.createOrder({ items: [] } as any, TEST_USER),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -81,31 +106,63 @@ describe('OrdersController', () => {
   // ═══════════════════════════════════════════════
   describe('getAllOrders', () => {
     it('should return paginated orders', async () => {
-      const expected = { data: [{ order_id: 1 }], total: 1, page: 1, limit: 10, pages: 1 };
+      const expected = {
+        data: [{ order_id: 1 }],
+        total: 1,
+        page: 1,
+        limit: 10,
+        pages: 1,
+      };
       mockOrdersService.getOrderHistory.mockResolvedValue(expected);
 
       const result = await controller.getAllOrders(TEST_USER, 1, 10);
 
       expect(result).toEqual(expected);
-      expect(mockOrdersService.getOrderHistory).toHaveBeenCalledWith(10, undefined, 1, 10);
+      expect(mockOrdersService.getOrderHistory).toHaveBeenCalledWith(
+        10,
+        undefined,
+        1,
+        10,
+      );
     });
 
     it('should filter by status', async () => {
       const expected = { data: [], total: 0, page: 1, limit: 10, pages: 0 };
       mockOrdersService.getOrderHistory.mockResolvedValue(expected);
 
-      const result = await controller.getAllOrders(TEST_USER, 1, 10, OrderStatus.PAID);
+      const result = await controller.getAllOrders(
+        TEST_USER,
+        1,
+        10,
+        OrderStatus.PAID,
+      );
 
-      expect(mockOrdersService.getOrderHistory).toHaveBeenCalledWith(10, OrderStatus.PAID, 1, 10);
+      expect(mockOrdersService.getOrderHistory).toHaveBeenCalledWith(
+        10,
+        OrderStatus.PAID,
+        1,
+        10,
+      );
       expect(result.data).toHaveLength(0);
     });
 
     it('should use custom pagination', async () => {
-      mockOrdersService.getOrderHistory.mockResolvedValue({ data: [], total: 50, page: 3, limit: 5, pages: 10 });
+      mockOrdersService.getOrderHistory.mockResolvedValue({
+        data: [],
+        total: 50,
+        page: 3,
+        limit: 5,
+        pages: 10,
+      });
 
       await controller.getAllOrders(TEST_USER, 3, 5);
 
-      expect(mockOrdersService.getOrderHistory).toHaveBeenCalledWith(10, undefined, 3, 5);
+      expect(mockOrdersService.getOrderHistory).toHaveBeenCalledWith(
+        10,
+        undefined,
+        3,
+        5,
+      );
     });
   });
 
@@ -115,7 +172,9 @@ describe('OrdersController', () => {
   describe('getOrder', () => {
     it('should return order with details', async () => {
       const expected = {
-        order_id: 1, status: OrderStatus.PENDING, total_amount: 100,
+        order_id: 1,
+        status: OrderStatus.PENDING,
+        total_amount: 100,
         order_details: [{ id: 1, item_type: 'PRODUCT', quantity: 2 }],
       };
       mockOrdersService.getOrder.mockResolvedValue(expected);
@@ -128,15 +187,21 @@ describe('OrdersController', () => {
     });
 
     it('should throw NotFoundException for non-existent order', async () => {
-      mockOrdersService.getOrder.mockRejectedValue(new NotFoundException('Order 999 not found'));
-      await expect(controller.getOrder(999, TEST_USER)).rejects.toThrow(NotFoundException);
+      mockOrdersService.getOrder.mockRejectedValue(
+        new NotFoundException('Order 999 not found'),
+      );
+      await expect(controller.getOrder(999, TEST_USER)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ForbiddenException for wrong store', async () => {
       mockOrdersService.getOrder.mockRejectedValue(
         new ForbiddenException('You do not have permission to view this order'),
       );
-      await expect(controller.getOrder(1, TEST_USER)).rejects.toThrow(ForbiddenException);
+      await expect(controller.getOrder(1, TEST_USER)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -145,93 +210,140 @@ describe('OrdersController', () => {
   // ═══════════════════════════════════════════════
   describe('createPaymentIntent', () => {
     it('should create payment intent successfully', async () => {
-      const expected = { client_secret: 'cs_test_123', payment_intent_id: 'pi_test_123', amount: 51, currency: 'usd' };
+      const expected = {
+        client_secret: 'cs_test_123',
+        payment_intent_id: 'pi_test_123',
+        amount: 51,
+        currency: 'usd',
+      };
       mockOrdersService.createPaymentIntent.mockResolvedValue(expected);
 
-      const result = await controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'usd');
+      const result = await controller.createPaymentIntent(
+        TEST_USER,
+        { order_id: 1 },
+        'usd',
+      );
 
       expect(result.client_secret).toBe('cs_test_123');
       expect(result.payment_intent_id).toBe('pi_test_123');
-      expect(mockOrdersService.createPaymentIntent).toHaveBeenCalledWith(1, 10, 'usd');
+      expect(mockOrdersService.createPaymentIntent).toHaveBeenCalledWith(
+        1,
+        10,
+        'usd',
+      );
     });
 
     it('should reuse existing PENDING intent (idempotent)', async () => {
-      const intent = { client_secret: 'cs_existing', payment_intent_id: 'pi_existing', amount: 51, currency: 'usd' };
+      const intent = {
+        client_secret: 'cs_existing',
+        payment_intent_id: 'pi_existing',
+        amount: 51,
+        currency: 'usd',
+      };
       mockOrdersService.createPaymentIntent.mockResolvedValue(intent);
 
-      const r1 = await controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'usd');
-      const r2 = await controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'usd');
+      const r1 = await controller.createPaymentIntent(
+        TEST_USER,
+        { order_id: 1 },
+        'usd',
+      );
+      const r2 = await controller.createPaymentIntent(
+        TEST_USER,
+        { order_id: 1 },
+        'usd',
+      );
 
       expect(r1.client_secret).toBe(r2.client_secret);
     });
 
     it('should throw NotFoundException for non-existent order', async () => {
-      mockOrdersService.createPaymentIntent.mockRejectedValue(new NotFoundException('Order 999 not found'));
-      await expect(controller.createPaymentIntent(TEST_USER, { order_id: 999 }, 'usd')).rejects.toThrow(NotFoundException);
+      mockOrdersService.createPaymentIntent.mockRejectedValue(
+        new NotFoundException('Order 999 not found'),
+      );
+      await expect(
+        controller.createPaymentIntent(TEST_USER, { order_id: 999 }, 'usd'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException for already paid order', async () => {
-      mockOrdersService.createPaymentIntent.mockRejectedValue(new BadRequestException('Order is already paid'));
-      await expect(controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'usd')).rejects.toThrow('Order is already paid');
+      mockOrdersService.createPaymentIntent.mockRejectedValue(
+        new BadRequestException('Order is already paid'),
+      );
+      await expect(
+        controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'usd'),
+      ).rejects.toThrow('Order is already paid');
     });
 
     it('should throw BadRequestException for cancelled order', async () => {
-      mockOrdersService.createPaymentIntent.mockRejectedValue(new BadRequestException('Cannot pay for a cancelled order'));
-      await expect(controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'usd')).rejects.toThrow('Cannot pay for a cancelled order');
+      mockOrdersService.createPaymentIntent.mockRejectedValue(
+        new BadRequestException('Cannot pay for a cancelled order'),
+      );
+      await expect(
+        controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'usd'),
+      ).rejects.toThrow('Cannot pay for a cancelled order');
     });
 
     it('should throw ForbiddenException for wrong store', async () => {
-      mockOrdersService.createPaymentIntent.mockRejectedValue(new ForbiddenException('You do not have permission'));
-      await expect(controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'usd')).rejects.toThrow(ForbiddenException);
+      mockOrdersService.createPaymentIntent.mockRejectedValue(
+        new ForbiddenException('You do not have permission'),
+      );
+      await expect(
+        controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'usd'),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
   // ═══════════════════════════════════════════════
-  // CONFIRM PAYMENT
+  // GET PAYMENT STATUS (replaces confirmPayment)
   // ═══════════════════════════════════════════════
-  describe('confirmPayment', () => {
-    const dto = { payment_intent_id: 'pi_test_123', order_id: 1 };
+  describe('getPaymentStatus', () => {
+    it('should return payment status', async () => {
+      const expected = {
+        order_id: 1,
+        order_status: 'PENDING',
+        payment_status: 'PENDING',
+        payment_intent_id: 'pi_test',
+        amount: 51,
+      };
+      mockOrdersService.getPaymentStatus.mockResolvedValue(expected);
 
-    it('should confirm payment and update order to PAID', async () => {
-      const expected = { success: true, order_id: 1, status: OrderStatus.PAID, payment_intent_id: 'pi_test_123', amount: 51 };
-      mockOrdersService.confirmPayment.mockResolvedValue(expected);
+      const result = await controller.getPaymentStatus(1, TEST_USER);
 
-      const result = await controller.confirmPayment(dto, TEST_USER);
-
-      expect(result.success).toBe(true);
-      expect(result.status).toBe(OrderStatus.PAID);
-      expect(mockOrdersService.confirmPayment).toHaveBeenCalledWith('pi_test_123', 1, 10);
+      expect(result.order_status).toBe('PENDING');
+      expect(result.payment_status).toBe('PENDING');
+      expect(mockOrdersService.getPaymentStatus).toHaveBeenCalledWith(1, 10);
     });
 
-    it('should be idempotent for already completed payment', async () => {
-      mockOrdersService.confirmPayment.mockResolvedValue({ success: true, order_id: 1, status: OrderStatus.PAID, payment_intent_id: 'pi_test_123', amount: 51 });
+    it('should return PAID status after webhook processed', async () => {
+      mockOrdersService.getPaymentStatus.mockResolvedValue({
+        order_id: 1,
+        order_status: 'PAID',
+        payment_status: 'COMPLETED',
+        payment_intent_id: 'pi_test',
+        amount: 51,
+      });
 
-      const r1 = await controller.confirmPayment(dto, TEST_USER);
-      const r2 = await controller.confirmPayment(dto, TEST_USER);
-
-      expect(r1.success).toBe(true);
-      expect(r2.success).toBe(true);
+      const result = await controller.getPaymentStatus(1, TEST_USER);
+      expect(result.order_status).toBe('PAID');
+      expect(result.payment_status).toBe('COMPLETED');
     });
 
-    it('should throw BadRequestException when Stripe payment not succeeded', async () => {
-      mockOrdersService.confirmPayment.mockRejectedValue(
-        new BadRequestException('Payment not completed. Stripe status: requires_payment_method'),
+    it('should throw NotFoundException for non-existent order', async () => {
+      mockOrdersService.getPaymentStatus.mockRejectedValue(
+        new NotFoundException('Order 999 not found'),
       );
-      await expect(controller.confirmPayment(dto, TEST_USER)).rejects.toThrow(/Payment not completed/);
+      await expect(controller.getPaymentStatus(999, TEST_USER)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
-    it('should throw NotFoundException for wrong payment_intent_id', async () => {
-      mockOrdersService.confirmPayment.mockRejectedValue(
-        new NotFoundException('Payment record not found for intent pi_wrong'),
+    it('should throw ForbiddenException for wrong store', async () => {
+      mockOrdersService.getPaymentStatus.mockRejectedValue(
+        new ForbiddenException('You do not have permission'),
       );
-      await expect(controller.confirmPayment({ ...dto, payment_intent_id: 'pi_wrong' }, TEST_USER)).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw ForbiddenException if intent belongs to different order', async () => {
-      mockOrdersService.confirmPayment.mockRejectedValue(
-        new ForbiddenException('Payment intent does not belong to this order'),
+      await expect(controller.getPaymentStatus(1, TEST_USER)).rejects.toThrow(
+        ForbiddenException,
       );
-      await expect(controller.confirmPayment(dto, TEST_USER)).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -240,36 +352,65 @@ describe('OrdersController', () => {
   // ═══════════════════════════════════════════════
   describe('cancelOrder', () => {
     it('should cancel order successfully', async () => {
-      const expected = { order_id: 1, status: OrderStatus.CANCELLED, cancel_reason: 'Customer request' };
+      const expected = {
+        order_id: 1,
+        status: OrderStatus.CANCELLED,
+        cancel_reason: 'Customer request',
+      };
       mockOrdersService.cancelOrder.mockResolvedValue(expected);
 
-      const result = await controller.cancelOrder(1, 'Customer request', TEST_USER);
+      const result = await controller.cancelOrder(
+        1,
+        'Customer request',
+        TEST_USER,
+      );
 
       expect(result.status).toBe(OrderStatus.CANCELLED);
       expect(result.cancel_reason).toBe('Customer request');
-      expect(mockOrdersService.cancelOrder).toHaveBeenCalledWith(1, 10, 'Customer request', 1);
+      expect(mockOrdersService.cancelOrder).toHaveBeenCalledWith(
+        1,
+        10,
+        'Customer request',
+        1,
+      );
     });
 
     it('should throw BadRequestException for already cancelled order', async () => {
-      mockOrdersService.cancelOrder.mockRejectedValue(new BadRequestException('Order is already cancelled'));
-      await expect(controller.cancelOrder(1, 'reason', TEST_USER)).rejects.toThrow('Order is already cancelled');
+      mockOrdersService.cancelOrder.mockRejectedValue(
+        new BadRequestException('Order is already cancelled'),
+      );
+      await expect(
+        controller.cancelOrder(1, 'reason', TEST_USER),
+      ).rejects.toThrow('Order is already cancelled');
     });
 
     it('should throw BadRequestException for paid order', async () => {
       mockOrdersService.cancelOrder.mockRejectedValue(
-        new BadRequestException('Cannot cancel a paid order. Please request a refund instead.'),
+        new BadRequestException(
+          'Cannot cancel a paid order. Please request a refund instead.',
+        ),
       );
-      await expect(controller.cancelOrder(1, 'reason', TEST_USER)).rejects.toThrow(/Cannot cancel a paid order/);
+      await expect(
+        controller.cancelOrder(1, 'reason', TEST_USER),
+      ).rejects.toThrow(/Cannot cancel a paid order/);
     });
 
     it('should throw ForbiddenException for wrong store', async () => {
-      mockOrdersService.cancelOrder.mockRejectedValue(new ForbiddenException('You do not have permission'));
-      await expect(controller.cancelOrder(1, 'reason', TEST_USER)).rejects.toThrow(ForbiddenException);
+      mockOrdersService.cancelOrder.mockRejectedValue(
+        new ForbiddenException('You do not have permission'),
+      );
+      await expect(
+        controller.cancelOrder(1, 'reason', TEST_USER),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw NotFoundException for non-existent order', async () => {
-      mockOrdersService.cancelOrder.mockRejectedValue(new NotFoundException('Order 999 not found'));
-      await expect(controller.cancelOrder(999, 'reason', TEST_USER)).rejects.toThrow(NotFoundException);
+      mockOrdersService.cancelOrder.mockRejectedValue(
+        new NotFoundException('Order 999 not found'),
+      );
+      await expect(
+        controller.cancelOrder(999, 'reason', TEST_USER),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -278,7 +419,13 @@ describe('OrdersController', () => {
   // ═══════════════════════════════════════════════
   describe('getPaymentDetails', () => {
     it('should return payment details', async () => {
-      const expected = { payment_id: 1, order_id: 1, payment_method: 'STRIPE', status: 'COMPLETED', stripe_payment_intent_id: 'pi_test' };
+      const expected = {
+        payment_id: 1,
+        order_id: 1,
+        payment_method: 'STRIPE',
+        status: 'COMPLETED',
+        stripe_payment_intent_id: 'pi_test',
+      };
       mockOrdersService.getPaymentDetails.mockResolvedValue(expected);
 
       const result = await controller.getPaymentDetails(1, TEST_USER);
@@ -289,13 +436,21 @@ describe('OrdersController', () => {
     });
 
     it('should throw NotFoundException when no payment exists', async () => {
-      mockOrdersService.getPaymentDetails.mockRejectedValue(new NotFoundException('Payment not found for this order'));
-      await expect(controller.getPaymentDetails(1, TEST_USER)).rejects.toThrow('Payment not found for this order');
+      mockOrdersService.getPaymentDetails.mockRejectedValue(
+        new NotFoundException('Payment not found for this order'),
+      );
+      await expect(controller.getPaymentDetails(1, TEST_USER)).rejects.toThrow(
+        'Payment not found for this order',
+      );
     });
 
     it('should throw NotFoundException for non-existent order', async () => {
-      mockOrdersService.getPaymentDetails.mockRejectedValue(new NotFoundException('Order 999 not found'));
-      await expect(controller.getPaymentDetails(999, TEST_USER)).rejects.toThrow(NotFoundException);
+      mockOrdersService.getPaymentDetails.mockRejectedValue(
+        new NotFoundException('Order 999 not found'),
+      );
+      await expect(
+        controller.getPaymentDetails(999, TEST_USER),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -304,7 +459,12 @@ describe('OrdersController', () => {
   // ═══════════════════════════════════════════════
   describe('refundOrder', () => {
     it('should refund a paid order successfully', async () => {
-      const expected = { success: true, order_id: 1, refund_amount: 76.5, status: 'REFUNDED' };
+      const expected = {
+        success: true,
+        order_id: 1,
+        refund_amount: 76.5,
+        status: 'REFUNDED',
+      };
       mockOrdersService.refundOrder.mockResolvedValue(expected);
 
       const result = await controller.refundOrder(1, TEST_USER);
@@ -316,23 +476,39 @@ describe('OrdersController', () => {
     });
 
     it('should throw BadRequestException for non-paid order', async () => {
-      mockOrdersService.refundOrder.mockRejectedValue(new BadRequestException('Only paid orders can be refunded'));
-      await expect(controller.refundOrder(1, TEST_USER)).rejects.toThrow('Only paid orders can be refunded');
+      mockOrdersService.refundOrder.mockRejectedValue(
+        new BadRequestException('Only paid orders can be refunded'),
+      );
+      await expect(controller.refundOrder(1, TEST_USER)).rejects.toThrow(
+        'Only paid orders can be refunded',
+      );
     });
 
     it('should throw NotFoundException for missing payment', async () => {
-      mockOrdersService.refundOrder.mockRejectedValue(new NotFoundException('No completed payment found'));
-      await expect(controller.refundOrder(1, TEST_USER)).rejects.toThrow(NotFoundException);
+      mockOrdersService.refundOrder.mockRejectedValue(
+        new NotFoundException('No completed payment found'),
+      );
+      await expect(controller.refundOrder(1, TEST_USER)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException when no Stripe charge', async () => {
-      mockOrdersService.refundOrder.mockRejectedValue(new BadRequestException('No Stripe charge found'));
-      await expect(controller.refundOrder(1, TEST_USER)).rejects.toThrow('No Stripe charge found');
+      mockOrdersService.refundOrder.mockRejectedValue(
+        new BadRequestException('No Stripe charge found'),
+      );
+      await expect(controller.refundOrder(1, TEST_USER)).rejects.toThrow(
+        'No Stripe charge found',
+      );
     });
 
     it('should throw ForbiddenException for wrong store', async () => {
-      mockOrdersService.refundOrder.mockRejectedValue(new ForbiddenException('You do not have permission'));
-      await expect(controller.refundOrder(1, TEST_USER)).rejects.toThrow(ForbiddenException);
+      mockOrdersService.refundOrder.mockRejectedValue(
+        new ForbiddenException('You do not have permission'),
+      );
+      await expect(controller.refundOrder(1, TEST_USER)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });

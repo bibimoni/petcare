@@ -76,6 +76,7 @@ export const TEST_CONFIG = {
   NODE_ENV: 'test',
   STRIPE_SECRET_KEY: 'sk_test_fake_key_for_testing',
   STRIPE_PUBLIC_KEY: 'pk_test_fake_key_for_testing',
+  STRIPE_WEBHOOK_SECRET: 'whsec_test_fake_key_for_testing',
 };
 
 export const getTypeOrmTestConfig = () => ({

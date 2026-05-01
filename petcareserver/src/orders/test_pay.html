@@ -2,7 +2,9 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <title>Stripe Payment</title>
     <script src="https://js.stripe.com/v3/"></script>
+
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -18,12 +20,12 @@
         padding: 30px;
         border-radius: 12px;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        width: 350px;
+        width: 360px;
       }
 
       h2 {
-        margin-bottom: 20px;
         text-align: center;
+        margin-bottom: 20px;
       }
 
       #card-element {
@@ -42,55 +44,44 @@
         color: white;
         font-size: 16px;
         cursor: pointer;
-        transition: 0.2s;
-      }
-
-      button:hover {
-        background: #4b44d1;
       }
 
       button:disabled {
         background: #aaa;
-        cursor: not-allowed;
+      }
+
+      .message {
+        text-align: center;
+        margin-top: 15px;
       }
 
       .success {
         color: green;
-        text-align: center;
-        margin-top: 10px;
       }
 
       .error {
         color: red;
-        text-align: center;
-        margin-top: 10px;
       }
     </style>
   </head>
 
   <body>
     <div class="container">
-      <h2>💳 Payment</h2>
+      <h2>💳 Thanh toán</h2>
 
       <div id="card-element"></div>
 
-      <button id="pay">Pay 80,000 VND</button>
+      <button id="pay">Thanh toán</button>
 
-      <div id="message"></div>
+      <div id="message" class="message"></div>
     </div>
 
     <script>
-      const stripe = Stripe('Publishable key');
+      const stripe = Stripe('pk_test_YOUR_PUBLISHABLE_KEY'); // key
       const elements = stripe.elements();
 
       const card = elements.create('card', {
         hidePostalCode: true,
-        style: {
-          base: {
-            fontSize: '16px',
-            color: '#333',
-          },
-        },
       });
 
       card.mount('#card-element');
@@ -100,17 +91,49 @@
 
       btn.onclick = async () => {
         btn.disabled = true;
+        btn.innerText = 'Đang xử lý...';
         message.innerHTML = '';
 
-        const result = await stripe.confirmCardPayment('client_secret', {
-          payment_method: { card: card },
-        });
+        try {
+          const orderId = 1; // TODO: dynamic
 
-        if (result.error) {
-          message.innerHTML = `<div class="error">${result.error.message}</div>`;
+          const res = await fetch(
+            'http://localhost:8080/v1/orders/payment/intent',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer <JWT_TOKEN>',
+              },
+              body: JSON.stringify({ order_id: orderId }),
+            },
+          );
+
+          if (!res.ok) throw new Error('API error');
+
+          const { client_secret } = await res.json();
+
+          const result = await stripe.confirmCardPayment(client_secret, {
+            payment_method: { card },
+          });
+
+          if (result.error) {
+            message.innerHTML = `<div class="error">${result.error.message}</div>`;
+            btn.disabled = false;
+            btn.innerText = 'Thanh toán';
+          } else if (result.paymentIntent.status === 'succeeded') {
+            message.innerHTML = `<div class="success">✅ Thành công!</div>`;
+
+            setTimeout(() => {
+              window.location.href = `/success?order_id=${orderId}`;
+            }, 1500);
+          } else if (result.paymentIntent.status === 'processing') {
+            message.innerHTML = '⏳ Đang xử lý...';
+          }
+        } catch (err) {
+          message.innerHTML = `<div class="error">Server error</div>`;
           btn.disabled = false;
-        } else if (result.paymentIntent.status === 'succeeded') {
-          message.innerHTML = `<div class="success">✅ Payment successful!</div>`;
+          btn.innerText = 'Thanh toán';
         }
       };
     </script>
