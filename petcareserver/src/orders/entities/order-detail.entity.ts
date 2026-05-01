@@ -9,7 +9,7 @@ import { Order } from './order.entity';
 import { Product } from '../../categories/entities/product.entity';
 import { Service } from '../../categories/entities/service.entity';
 import { Pet } from '../../pets/entities/pet.entity';
-import { CategoryType } from 'src/common';
+import { CategoryType } from '../../common/enum';
 
 @Entity('order_details')
 export class OrderDetail {

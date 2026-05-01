@@ -269,15 +269,18 @@ export class OrdersService {
     return paymentIntentData;
   }
 
-  async confirmPayment(
-    paymentIntentId: string,
+  // ─────────────────────────────────────────────────────────
+  // GET PAYMENT STATUS (replaces old confirmPayment)
+  // Client polls this to check if webhook has processed payment
+  // ─────────────────────────────────────────────────────────
+  async getPaymentStatus(
     orderId: number,
     storeId: number,
   ): Promise<{
-    success: boolean;
     order_id: number;
-    status: OrderStatus;
-    payment_intent_id: string;
+    order_status: string;
+    payment_status: string | null;
+    payment_intent_id: string | null;
     amount: number;
   }> {
     const order = await this.ordersRepository.findOne({
@@ -290,147 +293,200 @@ export class OrdersService {
 
     if (order.store_id !== storeId) {
       throw new ForbiddenException(
-        'You do not have permission to confirm payment for this order',
+        'You do not have permission to view this order',
       );
     }
 
-    if (order.status === OrderStatus.PAID) {
-      throw new BadRequestException('Order is already paid');
-    }
+    const payment = await this.paymentsRepository.findOne({
+      where: { order_id: orderId },
+      order: { created_at: 'DESC' },
+    });
 
+    return {
+      order_id: orderId,
+      order_status: order.status,
+      payment_status: payment?.status ?? null,
+      payment_intent_id: payment?.stripe_payment_intent_id ?? null,
+      amount: Number(order.total_amount),
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // WEBHOOK: payment_intent.succeeded
+  // ─────────────────────────────────────────────────────────
+  async handlePaymentIntentSucceeded(
+    paymentIntentId: string,
+    chargeId: string | null,
+    amount: number,
+  ): Promise<void> {
     const payment = await this.paymentsRepository.findOne({
       where: { stripe_payment_intent_id: paymentIntentId },
     });
 
     if (!payment) {
-      throw new NotFoundException(
-        `Payment record not found for intent ${paymentIntentId}`,
+      console.warn(
+        `[WEBHOOK] Payment record not found for intent ${paymentIntentId} — ignoring`,
       );
+      return;
     }
 
-    if (payment.order_id !== orderId) {
-      throw new ForbiddenException(
-        'Payment intent does not belong to this order',
-      );
-    }
-
-    // Idempotency: đã COMPLETED thì trả kết quả luôn, không gọi Stripe lại
+    // Idempotency: already processed
     if (payment.status === PaymentStatus.COMPLETED) {
-      return {
-        success: true,
-        order_id: orderId,
-        status: order.status,
-        payment_intent_id: paymentIntentId,
-        amount: Number(order.total_amount),
-      };
+      return;
     }
 
-    // ── Xác minh với Stripe ──
-    const paymentResult =
-      await this.stripeService.confirmPaymentIntent(paymentIntentId);
-
-    if (!paymentResult.success) {
-      payment.status = PaymentStatus.FAILED;
-      payment.error_message = `Payment status: ${paymentResult.status}`;
-      await this.paymentsRepository.save(payment);
-
-      throw new BadRequestException(
-        `Payment not completed. Stripe status: ${paymentResult.status}`,
-      );
-    }
-
-    // Fetch charge details TRƯỚC khi mở transaction
-    // để không giữ DB connection mở trong khi chờ HTTP call đến Stripe
+    // Fetch receipt URL (best-effort, don't block)
     let receiptUrl: string | null = null;
-    if (paymentResult.charge_id) {
+    if (chargeId) {
       try {
-        const chargeDetails = await this.stripeService.getChargeDetails(
-          paymentResult.charge_id,
-        );
+        const chargeDetails = await this.stripeService.getChargeDetails(chargeId);
         receiptUrl = chargeDetails.receipt_url ?? null;
       } catch (err) {
-        // Không block confirm nếu lấy receipt_url thất bại
         console.error('Failed to fetch charge details:', err);
       }
     }
 
-    // ── Atomic update trong transaction với pessimistic lock ──
+    // Atomic update
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // Lock payment row để ngăn concurrent confirm xử lý đồng thời
-      // Fallback to non-locking query if driver doesn't support (e.g. SQLite in tests)
+      // Pessimistic lock with SQLite fallback
       let lockedPayment: Payment | null;
       try {
         lockedPayment = await queryRunner.manager
           .createQueryBuilder(Payment, 'payment')
           .setLock('pessimistic_write')
-          .where('payment.stripe_payment_intent_id = :id', {
-            id: paymentIntentId,
-          })
+          .where('payment.stripe_payment_intent_id = :id', { id: paymentIntentId })
           .getOne();
       } catch (lockError: any) {
         if (lockError.name === 'LockNotSupportedOnGivenDriverError') {
           lockedPayment = await queryRunner.manager
             .createQueryBuilder(Payment, 'payment')
-            .where('payment.stripe_payment_intent_id = :id', {
-              id: paymentIntentId,
-            })
+            .where('payment.stripe_payment_intent_id = :id', { id: paymentIntentId })
             .getOne();
         } else {
           throw lockError;
         }
       }
 
-      if (!lockedPayment) {
-        throw new NotFoundException(
-          'Payment record disappeared during processing',
-        );
-      }
-
-      // Kiểm tra lại sau khi lock — tránh double-processing
-      if (lockedPayment.status === PaymentStatus.COMPLETED) {
+      if (!lockedPayment || lockedPayment.status === PaymentStatus.COMPLETED) {
         await queryRunner.rollbackTransaction();
-        return {
-          success: true,
-          order_id: orderId,
-          status: order.status,
-          payment_intent_id: paymentIntentId,
-          amount: Number(order.total_amount),
-        };
+        return;
       }
 
       lockedPayment.status = PaymentStatus.COMPLETED;
-      lockedPayment.stripe_charge_id = paymentResult.charge_id ?? null;
+      lockedPayment.stripe_charge_id = chargeId ?? null;
       lockedPayment.stripe_receipt_url = receiptUrl ?? null;
       await queryRunner.manager.save(Payment, lockedPayment);
 
-      order.status = OrderStatus.PAID;
-      await queryRunner.manager.save(Order, order);
+      await queryRunner.manager.update(Order, lockedPayment.order_id, {
+        status: OrderStatus.PAID,
+      });
 
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error(
-        `[CRITICAL] Payment confirmed on Stripe (${paymentIntentId}) but DB update failed:`,
+        `[CRITICAL] Webhook payment_intent.succeeded for ${paymentIntentId} — DB update failed:`,
         error,
       );
       throw new InternalServerErrorException(
-        'Failed to update payment and order status. Payment was charged on Stripe — please contact support.',
+        'Failed to process payment webhook',
       );
     } finally {
       await queryRunner.release();
     }
+  }
 
-    return {
-      success: true,
-      order_id: orderId,
-      status: order.status,
-      payment_intent_id: paymentIntentId,
-      amount: Number(order.total_amount),
-    };
+  // ─────────────────────────────────────────────────────────
+  // WEBHOOK: payment_intent.payment_failed
+  // ─────────────────────────────────────────────────────────
+  async handlePaymentIntentFailed(
+    paymentIntentId: string,
+    errorMessage: string,
+  ): Promise<void> {
+    const payment = await this.paymentsRepository.findOne({
+      where: { stripe_payment_intent_id: paymentIntentId },
+    });
+
+    if (!payment) {
+      console.warn(
+        `[WEBHOOK] Payment record not found for intent ${paymentIntentId} — ignoring`,
+      );
+      return;
+    }
+
+    // Idempotency
+    if (payment.status === PaymentStatus.FAILED || payment.status === PaymentStatus.COMPLETED) {
+      return;
+    }
+
+    payment.status = PaymentStatus.FAILED;
+    payment.error_message = errorMessage;
+    await this.paymentsRepository.save(payment);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // WEBHOOK: charge.refunded
+  // ─────────────────────────────────────────────────────────
+  async handleChargeRefunded(paymentIntentId: string): Promise<void> {
+    const payment = await this.paymentsRepository.findOne({
+      where: { stripe_payment_intent_id: paymentIntentId },
+    });
+
+    if (!payment) {
+      console.warn(
+        `[WEBHOOK] Payment record not found for intent ${paymentIntentId} — ignoring`,
+      );
+      return;
+    }
+
+    if (payment.status === PaymentStatus.REFUNDED) {
+      return;
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      payment.status = PaymentStatus.REFUNDED;
+      await queryRunner.manager.save(Payment, payment);
+
+      await queryRunner.manager.update(Order, payment.order_id, {
+        status: OrderStatus.CANCELLED,
+        cancel_reason: 'Refunded via Stripe',
+      });
+
+      // Restore stock
+      const orderDetails = await this.orderDetailsRepository.find({
+        where: { order_id: payment.order_id },
+      });
+
+      for (const detail of orderDetails) {
+        if (detail.item_type === 'PRODUCT' && detail.product_id) {
+          await queryRunner.manager
+            .createQueryBuilder()
+            .update(Product)
+            .set({ stock_quantity: () => `stock_quantity + ${detail.quantity}` })
+            .where('product_id = :id', { id: detail.product_id })
+            .execute();
+        }
+      }
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error(
+        `[CRITICAL] Webhook charge.refunded for ${paymentIntentId} — DB update failed:`,
+        error,
+      );
+      throw new InternalServerErrorException('Failed to process refund webhook');
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async cancelOrder(

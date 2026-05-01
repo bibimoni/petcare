@@ -6,6 +6,7 @@ import { OrderDetail } from './entities/order-detail.entity';
 import { Payment } from './entities/payment.entity';
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
+import { StripeWebhookController } from './stripe-webhook.controller';
 import { StripeService } from './stripe.service';
 import { Product } from '../categories/entities/product.entity';
 import { Service } from '../categories/entities/service.entity';
@@ -15,7 +16,7 @@ import { Service } from '../categories/entities/service.entity';
     ConfigModule,
     TypeOrmModule.forFeature([Order, OrderDetail, Payment, Product, Service]),
   ],
-  controllers: [OrdersController],
+  controllers: [OrdersController, StripeWebhookController],
   providers: [OrdersService, StripeService],
   exports: [OrdersService, StripeService],
 })

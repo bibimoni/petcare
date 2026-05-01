@@ -16,7 +16,6 @@ import { OrdersService } from './orders.service';
 import {
   CreateOrderDto,
   CreatePaymentIntentDto,
-  ConfirmPaymentDto,
 } from './dto';
 import {
   ApiTags,
@@ -98,21 +97,17 @@ export class OrdersController {
     );
   }
 
-  @Post('payment/confirm')
+  @Get(':orderId/payment/status')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions(STORE_PERMISSIONS.ORDER_CREATE)
-  @ApiOperation({ summary: 'Confirm payment and update order status' })
-  @ApiResponse({ status: 200, description: 'Payment confirmed' })
-  @ApiResponse({ status: 400, description: 'Payment failed' })
-  async confirmPayment(
-    @Body() confirmPaymentDto: ConfirmPaymentDto,
+  @RequirePermissions(STORE_PERMISSIONS.ORDER_VIEW)
+  @ApiOperation({ summary: 'Get payment status for an order (client polls after Stripe checkout)' })
+  @ApiResponse({ status: 200, description: 'Payment status' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  async getPaymentStatus(
+    @Param('orderId', ParseIntPipe) orderId: number,
     @CurrentUser() user: any,
   ) {
-    return this.ordersService.confirmPayment(
-      confirmPaymentDto.payment_intent_id,
-      confirmPaymentDto.order_id,
-      user.store_id,
-    );
+    return this.ordersService.getPaymentStatus(orderId, user.store_id);
   }
 
   @Get(':orderId')

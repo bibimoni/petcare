@@ -20,6 +20,25 @@ export class StripeService {
     });
   }
 
+  /**
+   * Verify Stripe webhook signature and construct event.
+   * rawBody must be the raw request buffer (not parsed JSON).
+   */
+  constructWebhookEvent(
+    rawBody: Buffer,
+    signature: string,
+  ): ReturnType<typeof this.stripe.webhooks.constructEvent> {
+    const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
+    if (!webhookSecret) {
+      throw new InternalServerErrorException('STRIPE_WEBHOOK_SECRET is not configured');
+    }
+    try {
+      return this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    } catch (error) {
+      throw new BadRequestException(`Webhook signature verification failed: ${(error as Error).message}`);
+    }
+  }
+
   async createPaymentIntent(
     orderId: number,
     amount: number,
