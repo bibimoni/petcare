@@ -11,6 +11,10 @@ import {
 import { Order } from './order.entity';
 import { PaymentMethod, PaymentStatus } from 'src/common/enum';
 
+@Index('UQ_payments_order_pending', ['order_id'], {
+  unique: true,
+  where: `"status" = 'PENDING'`,
+})
 @Entity('payments')
 export class Payment {
   @PrimaryGeneratedColumn()

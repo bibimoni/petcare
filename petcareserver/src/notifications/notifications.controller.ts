@@ -25,13 +25,12 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { PermissionsGuard } from 'src/common/guards/permissions.guard';
 import { CurrentUser, JwtAuthGuard } from 'src/common';
 import { MarkMultipleAsReadDto } from './dto/mark-tuple-notification.req';
 
 @ApiTags('Notifications')
 @Controller({ path: 'notifications', version: '1' })
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}

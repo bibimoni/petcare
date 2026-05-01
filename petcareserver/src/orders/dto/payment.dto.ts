@@ -1,6 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNumber, IsPositive, IsString, Matches } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+  Matches,
+} from 'class-validator';
+import { Currency } from '../../common/enum';
 
 export class CreatePaymentIntentDto {
   @ApiProperty({
@@ -12,6 +20,15 @@ export class CreatePaymentIntentDto {
   @IsNumber()
   @IsPositive()
   order_id: number;
+
+  @ApiProperty({
+    enum: Currency,
+    required: false,
+    example: Currency.USD,
+  })
+  @IsEnum(Currency)
+  @IsOptional()
+  currency?: Currency;
 }
 
 export class ConfirmPaymentDto {
@@ -19,7 +36,7 @@ export class ConfirmPaymentDto {
     description: 'ID of the payment intent to confirm',
     example: 'pi_1234567890abcdef',
   })
-  @Matches(/^pi_/)
+  @Matches(/^pi_[0-9A-Za-z_]+$/)
   @IsString()
   payment_intent_id: string;
 
@@ -31,30 +48,4 @@ export class ConfirmPaymentDto {
   @IsNumber()
   @IsPositive()
   order_id: number;
-}
-
-export class PaymentIntentResponseDto {
-  @ApiProperty({
-    description: 'The client secret for the payment intent',
-    example: 'pi_1234567890abcdef_secret_1234567890abcdef',
-  })
-  client_secret: string;
-
-  @ApiProperty({
-    description: 'The ID of the payment intent',
-    example: 'pi_1234567890abcdef',
-  })
-  payment_intent_id: string;
-
-  @ApiProperty({
-    description: 'The amount of the payment',
-    example: 1000,
-  })
-  amount: number;
-
-  @ApiProperty({
-    description: 'The currency of the payment',
-    example: 'usd',
-  })
-  currency: string;
 }

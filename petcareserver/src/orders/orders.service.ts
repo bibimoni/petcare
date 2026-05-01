@@ -147,9 +147,8 @@ export class OrdersService {
           const updateResult = await queryRunner.manager
             .createQueryBuilder()
             .update(Product)
-            .set({
-              stock_quantity: () => `stock_quantity - ${payload.quantity}`,
-            })
+            .set({ stock_quantity: () => 'stock_quantity - :qty' })
+            .setParameter('qty', payload.quantity)
             .where(
               'product_id = :id AND store_id = :storeId AND stock_quantity >= :qty',
               { id: payload.product_id, storeId, qty: payload.quantity },
@@ -339,7 +338,8 @@ export class OrdersService {
     let receiptUrl: string | null = null;
     if (chargeId) {
       try {
-        const chargeDetails = await this.stripeService.getChargeDetails(chargeId);
+        const chargeDetails =
+          await this.stripeService.getChargeDetails(chargeId);
         receiptUrl = chargeDetails.receipt_url ?? null;
       } catch (err) {
         console.error('Failed to fetch charge details:', err);
@@ -358,13 +358,17 @@ export class OrdersService {
         lockedPayment = await queryRunner.manager
           .createQueryBuilder(Payment, 'payment')
           .setLock('pessimistic_write')
-          .where('payment.stripe_payment_intent_id = :id', { id: paymentIntentId })
+          .where('payment.stripe_payment_intent_id = :id', {
+            id: paymentIntentId,
+          })
           .getOne();
       } catch (lockError: any) {
         if (lockError.name === 'LockNotSupportedOnGivenDriverError') {
           lockedPayment = await queryRunner.manager
             .createQueryBuilder(Payment, 'payment')
-            .where('payment.stripe_payment_intent_id = :id', { id: paymentIntentId })
+            .where('payment.stripe_payment_intent_id = :id', {
+              id: paymentIntentId,
+            })
             .getOne();
         } else {
           throw lockError;
@@ -419,7 +423,10 @@ export class OrdersService {
     }
 
     // Idempotency
-    if (payment.status === PaymentStatus.FAILED || payment.status === PaymentStatus.COMPLETED) {
+    if (
+      payment.status === PaymentStatus.FAILED ||
+      payment.status === PaymentStatus.COMPLETED
+    ) {
       return;
     }
 
@@ -470,7 +477,8 @@ export class OrdersService {
           await queryRunner.manager
             .createQueryBuilder()
             .update(Product)
-            .set({ stock_quantity: () => `stock_quantity + ${detail.quantity}` })
+            .set({ stock_quantity: () => 'stock_quantity + :qty' })
+            .setParameter('qty', detail.quantity)
             .where('product_id = :id', { id: detail.product_id })
             .execute();
         }
@@ -483,7 +491,9 @@ export class OrdersService {
         `[CRITICAL] Webhook charge.refunded for ${paymentIntentId} — DB update failed:`,
         error,
       );
-      throw new InternalServerErrorException('Failed to process refund webhook');
+      throw new InternalServerErrorException(
+        'Failed to process refund webhook',
+      );
     } finally {
       await queryRunner.release();
     }
@@ -541,9 +551,8 @@ export class OrdersService {
           await queryRunner.manager
             .createQueryBuilder()
             .update(Product)
-            .set({
-              stock_quantity: () => `stock_quantity + ${detail.quantity}`,
-            })
+            .set({ stock_quantity: () => 'stock_quantity + :qty' })
+            .setParameter('qty', detail.quantity)
             .where('product_id = :id AND store_id = :storeId', {
               id: detail.product_id,
               storeId,
@@ -729,9 +738,6 @@ export class OrdersService {
       );
     }
 
-    // Call Stripe refund
-    await this.stripeService.refundCharge(payment.stripe_charge_id);
-
     // Update DB in transaction
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -750,14 +756,16 @@ export class OrdersService {
         where: { order_id: orderId },
       });
 
+      // Call Stripe refund
+      await this.stripeService.refundCharge(payment.stripe_charge_id);
+
       for (const detail of orderDetails) {
         if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
           await queryRunner.manager
             .createQueryBuilder()
             .update(Product)
-            .set({
-              stock_quantity: () => `stock_quantity + ${detail.quantity}`,
-            })
+            .set({ stock_quantity: () => 'stock_quantity + :qty' })
+            .setParameter('qty', detail.quantity)
             .where('product_id = :id AND store_id = :storeId', {
               id: detail.product_id,
               storeId,

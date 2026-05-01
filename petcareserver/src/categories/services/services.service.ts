@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Service } from '../entities/service.entity';
@@ -20,7 +24,7 @@ export class ServicesService {
       },
     });
     if (!service) {
-      throw new BadRequestException('Service not found');
+      throw new NotFoundException('Service not found');
     }
     return service;
   }

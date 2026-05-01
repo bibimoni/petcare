@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer/types/decorators/type.decorator';
 import { IsArray, ArrayNotEmpty, IsInt } from 'class-validator';
 
 export class MarkMultipleAsReadDto {
@@ -9,6 +10,7 @@ export class MarkMultipleAsReadDto {
   })
   @IsArray()
   @ArrayNotEmpty()
+  @Type(() => Number)
   @IsInt({ each: true })
   notificationIds: number[];
 }

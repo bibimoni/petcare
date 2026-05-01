@@ -13,10 +13,7 @@ import {
   DefaultValuePipe,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import {
-  CreateOrderDto,
-  CreatePaymentIntentDto,
-} from './dto';
+import { CreateOrderDto, CreatePaymentIntentDto } from './dto';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -24,7 +21,7 @@ import {
   ApiResponse,
   ApiQuery,
 } from '@nestjs/swagger';
-import { OrderStatus } from '../common/enum';
+import { Currency, OrderStatus } from '../common/enum';
 import {
   CurrentUser,
   JwtAuthGuard,
@@ -88,8 +85,8 @@ export class OrdersController {
   async createPaymentIntent(
     @CurrentUser() user: any,
     @Body() createPaymentIntentDto: CreatePaymentIntentDto,
-    @Query('currency') currency: string = 'usd',
   ) {
+    const currency = createPaymentIntentDto.currency ?? Currency.USD;
     return this.ordersService.createPaymentIntent(
       createPaymentIntentDto.order_id,
       user.store_id,
@@ -100,7 +97,10 @@ export class OrdersController {
   @Get(':orderId/payment/status')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.ORDER_VIEW)
-  @ApiOperation({ summary: 'Get payment status for an order (client polls after Stripe checkout)' })
+  @ApiOperation({
+    summary:
+      'Get payment status for an order (client polls after Stripe checkout)',
+  })
   @ApiResponse({ status: 200, description: 'Payment status' })
   @ApiResponse({ status: 404, description: 'Order not found' })
   async getPaymentStatus(
