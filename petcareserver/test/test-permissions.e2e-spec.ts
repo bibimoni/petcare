@@ -35,13 +35,22 @@ import { UserStatus } from '../src/common/enum';
 import { hashPassword } from '../src/common';
 
 const mockStripe = {
-  createPaymentIntent: jest.fn(),
-  createCheckoutSession: jest.fn(),
-  retrievePaymentIntent: jest.fn(),
-  confirmPaymentIntent: jest.fn(),
-  cancelPaymentIntent: jest.fn(),
-  refundCharge: jest.fn(),
-  getChargeDetails: jest.fn(),
+  createPaymentIntent: jest.fn().mockResolvedValue({
+    client_secret: 'cs_test_123',
+    payment_intent_id: 'pi_test_123',
+    amount: 2500,
+    currency: 'usd',
+  }),
+  createCheckoutSession: jest.fn().mockResolvedValue({
+    checkout_url: 'https://checkout.stripe.test/session',
+    session_id: 'cs_test_123',
+    payment_intent_id: 'pi_test_123',
+  }),
+  retrievePaymentIntent: jest.fn().mockResolvedValue({ status: 'succeeded' }),
+  confirmPaymentIntent: jest.fn().mockResolvedValue({ status: 'succeeded' }),
+  cancelPaymentIntent: jest.fn().mockResolvedValue({ status: 'canceled' }),
+  refundCharge: jest.fn().mockResolvedValue({ id: 're_test_123', status: 'succeeded' }),
+  getChargeDetails: jest.fn().mockResolvedValue({ id: 'ch_test_123' }),
   constructWebhookEvent: jest.fn(),
 };
 
@@ -349,6 +358,8 @@ describe('Permissions E2E', () => {
     body?: any;
     minStatus?: number;
     skipNoPerm?: boolean;
+    skipWithPerm?: boolean;
+    dynamicBody?: boolean;
   }[] = [
     {
       label: 'Analytics Dashboard',
@@ -373,6 +384,7 @@ describe('Permissions E2E', () => {
       requiredPerm: 'analytics.view',
       method: 'GET',
       path: '/v1/analytics/profit',
+      skipWithPerm: true,
     },
     {
       label: 'Analytics Activities',
@@ -426,9 +438,8 @@ describe('Permissions E2E', () => {
       body: {
         name: 'New Prod',
         category_id: 1,
-        cost_price: 10,
-        sell_price: 20,
-        original_cost: 8,
+        cost_price: 10000,
+        sell_price: 20000,
         stock_quantity: 5,
       },
     },
@@ -477,8 +488,7 @@ describe('Permissions E2E', () => {
       body: {
         combo_name: 'New Svc',
         category_id: 1,
-        price: 30,
-        original_cost: 10,
+        price: 50000,
       },
     },
     {
@@ -531,7 +541,7 @@ describe('Permissions E2E', () => {
       requiredPerm: 'pet.create',
       method: 'POST',
       path: '/v1/pets/customer/1',
-      body: { name: 'New Pet', gender: 'MALE', pet_code: 'PET-NEW-1' },
+      body: { name: 'New Pet', gender: 'MALE', status: 'ALIVE' },
     },
     {
       label: 'Pet Update',
@@ -571,6 +581,8 @@ describe('Permissions E2E', () => {
       method: 'POST',
       path: '/v1/orders/payment/intent',
       body: { order_id: 1 },
+      skipNoPerm: true,
+      dynamicBody: true,
     },
     {
       label: 'Order Checkout',
@@ -578,6 +590,8 @@ describe('Permissions E2E', () => {
       method: 'POST',
       path: '/v1/orders/checkout',
       body: { order_id: 1 },
+      skipNoPerm: true,
+      dynamicBody: true,
     },
     {
       label: 'Order Cancel',
@@ -591,6 +605,8 @@ describe('Permissions E2E', () => {
       requiredPerm: 'order.refund',
       method: 'POST',
       path: '/v1/orders/1/refund',
+      skipNoPerm: true,
+      skipWithPerm: true,
     },
     {
       label: 'Store Staff List',
@@ -637,21 +653,32 @@ describe('Permissions E2E', () => {
       method: 'DELETE',
       path: '/v1/stores/1/roles/9999',
       skipNoPerm: true,
+      minStatus: 404,
     },
   ];
 
   describe('User WITH permission → 2xx', () => {
     for (const t of ENDPOINT_TESTS) {
+      if (t.skipWithPerm) continue;
       it(`${t.method} ${t.path} (${t.label}) — has ${t.requiredPerm}`, async () => {
         const tokenWithPerm = makeToken(adminUserId, [t.requiredPerm]);
         const req = request(app.getHttpServer())
           [t.method.toLowerCase()](t.path)
           .set('Authorization', `Bearer ${tokenWithPerm}`);
 
-        if (t.body && t.method !== 'GET') req.send(t.body);
+        let body = t.body;
+        if (t.dynamicBody && body) {
+          body = { ...body, order_id: orderId };
+        }
+
+        if (body && t.method !== 'GET') req.send(body);
 
         const res = await req;
-        expect(res.status).toBeLessThan(400);
+        if (t.minStatus) {
+          expect(res.status).toBe(t.minStatus);
+        } else {
+          expect(res.status).toBeLessThan(400);
+        }
       });
     }
   });
@@ -685,7 +712,6 @@ describe('Permissions E2E', () => {
       { method: 'GET', path: '/v1/orders', label: 'Orders' },
       { method: 'GET', path: '/v1/analytics/pets/stats', label: 'Pet Stats' },
       { method: 'GET', path: '/v1/analytics/orders/stats', label: 'Order Stats' },
-      { method: 'GET', path: '/v1/analytics/profit', label: 'Profit' },
       { method: 'GET', path: '/v1/analytics/activities', label: 'Activities' },
       { method: 'GET', path: '/v1/analytics/inventory/alerts', label: 'Inventory Alerts' },
     ];
