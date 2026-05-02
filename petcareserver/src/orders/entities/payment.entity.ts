@@ -60,6 +60,12 @@ export class Payment {
   @Column({ type: 'text', nullable: true })
   stripe_receipt_url: string | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  stripe_checkout_session_id: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  stripe_checkout_url: string | null;
+
   @Column({ type: 'text', nullable: true })
   error_message: string;
 

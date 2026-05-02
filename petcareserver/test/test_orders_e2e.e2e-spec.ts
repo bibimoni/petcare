@@ -45,6 +45,7 @@ import { Payment } from '../src/orders/entities/payment.entity';
 // ── Mock StripeService ──
 const mockStripeService = {
   createPaymentIntent: jest.fn(),
+  createCheckoutSession: jest.fn(),
   retrievePaymentIntent: jest.fn(),
   confirmPaymentIntent: jest.fn(),
   cancelPaymentIntent: jest.fn(),
@@ -386,6 +387,124 @@ describe('Orders E2E — Webhook Flow', () => {
         .getRepository(Order)
         .findOne({ where: { order_id: order.order_id } });
       expect(dbOrder!.status).toBe(OrderStatus.PAID);
+    });
+  });
+
+  // ═══════════════════════════════════════════════
+  // CHECKOUT SESSION FLOW
+  // ═══════════════════════════════════════════════
+  describe('Checkout Session Flow', () => {
+    // Helper: create checkout session
+    async function createCheckout(orderId: number) {
+      mockStripeService.createCheckoutSession.mockResolvedValue({
+        checkout_url: `https://checkout.stripe.com/pay/cs_test_${orderId}`,
+        session_id: `cs_test_${orderId}`,
+        payment_intent_id: `pi_checkout_${orderId}`,
+      });
+      const res = await request(app.getHttpServer())
+        .post('/v1/orders/checkout')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: orderId })
+        .expect(200);
+      return res.body;
+    }
+
+    it('should create checkout session and return checkout_url', async () => {
+      const order = await createOrder([
+        { item_id: productId, item_type: 'PRODUCT', quantity: 2 },
+      ]);
+
+      const checkout = await createCheckout(order.order_id);
+
+      expect(checkout.checkout_url).toContain('https://checkout.stripe.com');
+      expect(checkout.session_id).toBe(`cs_test_${order.order_id}`);
+      expect(checkout.order_id).toBe(order.order_id);
+      expect(checkout.amount).toBe(50); // 25*2
+    });
+
+    it('should complete full checkout flow: Create → Checkout → checkout.session.completed → payment_intent.succeeded → PAID', async () => {
+      const order = await createOrder([
+        { item_id: productId, item_type: 'PRODUCT', quantity: 1 },
+        { item_id: serviceId, item_type: 'SERVICE', quantity: 1 },
+      ]);
+
+      const checkout = await createCheckout(order.order_id);
+
+      // Stripe sends checkout.session.completed (links session → PI)
+      await sendWebhook('checkout.session.completed', {
+        id: `cs_test_${order.order_id}`,
+        payment_status: 'paid',
+        payment_intent: `pi_checkout_${order.order_id}`,
+      }).expect(200);
+
+      // Then Stripe sends payment_intent.succeeded
+      mockStripeService.getChargeDetails.mockResolvedValue({
+        receipt_url: 'https://stripe.com/receipt/checkout_test',
+      });
+
+      await sendWebhook('payment_intent.succeeded', {
+        id: `pi_checkout_${order.order_id}`,
+        latest_charge: 'ch_checkout_123',
+        amount: 8500,
+      }).expect(200);
+
+      // Verify order is PAID
+      const statusRes = await request(app.getHttpServer())
+        .get(`/v1/orders/${order.order_id}/payment/status`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      expect(statusRes.body.order_status).toBe('PAID');
+      expect(statusRes.body.payment_status).toBe('COMPLETED');
+    });
+
+    it('should reuse existing checkout session (idempotent)', async () => {
+      const order = await createOrder([
+        { item_id: serviceId, item_type: 'SERVICE', quantity: 1 },
+      ]);
+
+      const first = await createCheckout(order.order_id);
+
+      // Second call should return same session
+      const res = await request(app.getHttpServer())
+        .post('/v1/orders/checkout')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: order.order_id })
+        .expect(200);
+
+      expect(res.body.session_id).toBe(first.session_id);
+      // createCheckoutSession should only be called once
+      expect(mockStripeService.createCheckoutSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return 400 for already paid order', async () => {
+      const order = await createOrder([
+        { item_id: productId, item_type: 'PRODUCT', quantity: 1 },
+      ]);
+      await createCheckout(order.order_id);
+
+      // Simulate payment succeeded
+      mockStripeService.getChargeDetails.mockResolvedValue({ receipt_url: null });
+      await sendWebhook('payment_intent.succeeded', {
+        id: `pi_checkout_${order.order_id}`,
+        latest_charge: 'ch_paid',
+        amount: 2500,
+      }).expect(200);
+
+      // Try to checkout again → should fail
+      await request(app.getHttpServer())
+        .post('/v1/orders/checkout')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: order.order_id })
+        .expect(400);
+    });
+
+    it('should return 404 for non-existent order', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/orders/checkout')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: 9999 })
+        .expect(404);
     });
   });
 

@@ -20,6 +20,7 @@ import {
 } from '../common/enum';
 import { Product } from '../categories/entities/product.entity';
 import { Service as PetCareService } from '../categories/entities/service.entity';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class OrdersService {
@@ -35,6 +36,7 @@ export class OrdersService {
     @InjectRepository(PetCareService)
     private servicesRepository: Repository<PetCareService>,
     private stripeService: StripeService,
+    private configService: ConfigService,
     private dataSource: DataSource,
   ) {}
 
@@ -268,6 +270,96 @@ export class OrdersService {
     return paymentIntentData;
   }
 
+  async createCheckoutSession(
+    orderId: number,
+    storeId: number,
+    currency: string = 'usd',
+    successUrl?: string,
+    cancelUrl?: string,
+  ): Promise<{
+    checkout_url: string;
+    session_id: string;
+    order_id: number;
+    amount: number;
+  }> {
+    const order = await this.ordersRepository.findOne({
+      where: { order_id: orderId },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order ${orderId} not found`);
+    }
+
+    if (order.store_id !== storeId) {
+      throw new ForbiddenException(
+        'You do not have permission to pay for this order',
+      );
+    }
+
+    if (order.status === OrderStatus.PAID) {
+      throw new BadRequestException('Order is already paid');
+    }
+
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new BadRequestException('Cannot pay for a cancelled order');
+    }
+
+    // Reuse existing PENDING payment if checkout URL is still valid
+    const existing = await this.paymentsRepository.findOne({
+      where: { order_id: orderId, status: PaymentStatus.PENDING },
+    });
+
+    if (existing?.stripe_checkout_session_id) {
+      // Already has a checkout session → return existing
+      return {
+        checkout_url: existing.stripe_checkout_url ?? '',
+        session_id: existing.stripe_checkout_session_id,
+        order_id: orderId,
+        amount: Number(existing.amount),
+      };
+    }
+
+    // Clean up corrupt payment if exists
+    if (existing) {
+      await this.paymentsRepository.delete({ payment_id: existing.payment_id });
+    }
+
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const finalSuccessUrl =
+      successUrl ||
+      `${frontendUrl}/orders/${orderId}/success?session_id={CHECKOUT_SESSION_ID}`;
+    const finalCancelUrl =
+      cancelUrl || `${frontendUrl}/orders/${orderId}/cancel`;
+
+    const sessionData = await this.stripeService.createCheckoutSession(
+      orderId,
+      Number(order.total_amount),
+      currency,
+      finalSuccessUrl,
+      finalCancelUrl,
+    );
+
+    const payment = this.paymentsRepository.create({
+      order_id: orderId,
+      payment_method: PaymentMethod.STRIPE,
+      amount: order.total_amount,
+      status: PaymentStatus.PENDING,
+      stripe_checkout_session_id: sessionData.session_id,
+      stripe_checkout_url: sessionData.checkout_url,
+      stripe_payment_intent_id: undefined,
+    });
+
+    await this.paymentsRepository.save(payment);
+
+    return {
+      checkout_url: sessionData.checkout_url,
+      session_id: sessionData.session_id,
+      order_id: orderId,
+      amount: Number(order.total_amount),
+    };
+  }
+
   async getPaymentStatus(
     orderId: number,
     storeId: number,
@@ -394,6 +486,28 @@ export class OrdersService {
       );
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  async handleCheckoutCompleted(
+    sessionId: string,
+    paymentIntentId: string,
+  ): Promise<void> {
+    // Find payment by checkout session ID
+    const payment = await this.paymentsRepository.findOne({
+      where: { stripe_checkout_session_id: sessionId },
+    });
+
+    if (!payment) {
+      console.warn(
+        `[WEBHOOK] Payment record not found for checkout session ${sessionId} — ignoring`,
+      );
+      return;
+    }
+
+    if (!payment.stripe_payment_intent_id) {
+      payment.stripe_payment_intent_id = paymentIntentId;
+      await this.paymentsRepository.save(payment);
     }
   }
 

@@ -82,6 +82,23 @@ export class StripeWebhookController {
         break;
       }
 
+      case 'checkout.session.completed': {
+        const session = event.data.object as any;
+        if (session.payment_status === 'paid' && session.payment_intent) {
+          const piId =
+            typeof session.payment_intent === 'string'
+              ? session.payment_intent
+              : session.payment_intent?.id;
+          if (piId) {
+            await this.ordersService.handleCheckoutCompleted(
+              session.id,
+              piId,
+            );
+          }
+        }
+        break;
+      }
+
       default:
         this.logger.log(`Unhandled event type: ${event.type}`);
     }

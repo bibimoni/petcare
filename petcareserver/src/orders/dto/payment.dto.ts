@@ -49,3 +49,42 @@ export class ConfirmPaymentDto {
   @IsPositive()
   order_id: number;
 }
+
+export class CreateCheckoutDto {
+  @ApiProperty({
+    description: 'ID of the order to checkout',
+    example: 1,
+  })
+  @Type(() => Number)
+  @IsNumber()
+  @IsPositive()
+  order_id: number;
+
+  @ApiProperty({
+    enum: Currency,
+    required: false,
+    example: Currency.USD,
+  })
+  @IsEnum(Currency)
+  @IsOptional()
+  currency?: Currency;
+
+  @ApiProperty({
+    description: 'URL to redirect after successful payment',
+    example:
+      'http://localhost:3000/orders/success?session_id={CHECKOUT_SESSION_ID}',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  success_url?: string;
+
+  @ApiProperty({
+    description: 'URL to redirect if payment is cancelled',
+    example: 'http://localhost:3000/orders/cancel',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  cancel_url?: string;
+}

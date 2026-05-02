@@ -13,7 +13,11 @@ import {
   DefaultValuePipe,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { CreateOrderDto, CreatePaymentIntentDto } from './dto';
+import {
+  CreateOrderDto,
+  CreatePaymentIntentDto,
+  CreateCheckoutDto,
+} from './dto';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -91,6 +95,27 @@ export class OrdersController {
       createPaymentIntentDto.order_id,
       user.store_id,
       currency,
+    );
+  }
+
+  @Post('checkout')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.ORDER_CREATE)
+  @ApiOperation({ summary: 'Create Stripe Checkout Session — redirects to Stripe payment page' })
+  @ApiResponse({ status: 200, description: 'Checkout session created, returns checkout_url' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  @ApiResponse({ status: 400, description: 'Order already paid or cancelled' })
+  async createCheckout(
+    @Body() dto: CreateCheckoutDto,
+    @CurrentUser() user: any,
+  ) {
+    const currency = dto.currency ?? Currency.USD;
+    return this.ordersService.createCheckoutSession(
+      dto.order_id,
+      user.store_id,
+      currency,
+      dto.success_url,
+      dto.cancel_url,
     );
   }
 

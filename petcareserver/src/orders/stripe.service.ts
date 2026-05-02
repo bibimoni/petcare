@@ -86,6 +86,69 @@ export class StripeService {
     }
   }
 
+  /**
+   * Create a Stripe Checkout Session — redirects customer to Stripe-hosted payment page.
+   */
+  async createCheckoutSession(
+    orderId: number,
+    amount: number,
+    currency: string = 'usd',
+    successUrl: string,
+    cancelUrl: string,
+  ): Promise<{
+    checkout_url: string;
+    session_id: string;
+    payment_intent_id: string | null;
+  }> {
+    try {
+      const session = await this.stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        mode: 'payment',
+        line_items: [
+          {
+            price_data: {
+              currency: currency.toLowerCase(),
+              product_data: {
+                name: `Order #${orderId}`,
+                description: `Payment for order #${orderId}`,
+              },
+              unit_amount: Math.round(amount * 100),
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          order_id: orderId.toString(),
+        },
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      });
+
+      if (!session.url) {
+        throw new InternalServerErrorException(
+          'Stripe did not return a checkout URL',
+        );
+      }
+
+      // payment_intent may be null initially (set after customer pays)
+      const paymentIntentId =
+        typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : session.payment_intent?.id ?? null;
+
+      return {
+        checkout_url: session.url,
+        session_id: session.id,
+        payment_intent_id: paymentIntentId,
+      };
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeError) {
+        throw new BadRequestException(`Stripe error: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
   async retrievePaymentIntent(paymentIntentId: string) {
     try {
       return await this.stripe.paymentIntents.retrieve(paymentIntentId);
