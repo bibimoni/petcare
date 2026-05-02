@@ -278,6 +278,32 @@ export class StoresController {
     );
   }
 
+  @Delete(':storeId')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions(STORE_PERMISSIONS.STORE_SETTINGS_MANAGE)
+  @ApiOperation({
+    summary: 'Remove store (soft delete)',
+    description:
+      'Allows the last admin to remove a store. Sets store status to SUSPENDED and removes the admin. The admin must be the only remaining member.',
+  })
+  @ApiParam({ name: 'storeId', description: 'Store ID', example: 1 })
+  @ApiResponse({ status: 200, description: 'Store removed successfully' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Not admin or store still has members',
+  })
+  @ApiResponse({ status: 404, description: 'Store not found' })
+  @ApiResponse({ status: 400, description: 'Invalid store ID' })
+  async removeStore(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @CurrentUser() user: any,
+  ) {
+    const admin = isSuperAdmin(user);
+    return this.storesService.removeStore(storeId, user.user_id, admin);
+  }
+
   @Delete(':storeId/staff/me')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
@@ -327,12 +353,7 @@ export class StoresController {
     @CurrentUser() user: any,
   ) {
     const admin = isSuperAdmin(user);
-    return this.storesService.removeStaff(
-      storeId,
-      userId,
-      user.user_id,
-      admin,
-    );
+    return this.storesService.removeStaff(storeId, userId, user.user_id, admin);
   }
 
   @Get('invitations/accept')

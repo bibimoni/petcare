@@ -516,6 +516,59 @@ export class StoresService {
     };
   }
 
+  async removeStore(
+    storeId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
+
+    const store = await this.storeRepository.findOne({
+      where: { id: storeId },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Không tìm thấy cửa hàng');
+    }
+
+    const staffCount = await this.userRepository.count({
+      where: { store_id: storeId },
+    });
+
+    if (staffCount > 1) {
+      throw new ForbiddenException(
+        'Cửa hàng vẫn còn nhân viên. Vui lòng xóa tất cả nhân viên trước khi xóa cửa hàng',
+      );
+    }
+
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+      relations: { role: true },
+    });
+
+    if (!currentUser || currentUser.role?.name !== 'ADMIN') {
+      throw new ForbiddenException('Chỉ quản trị viên mới có thể xóa cửa hàng');
+    }
+
+    await this.userRepository.update(currentUserId, {
+      store_id: null as any,
+      role_id: null as any,
+    });
+
+    await this.storeRepository.update(storeId, {
+      status: StoreStatus.SUSPENDED,
+    });
+
+    return {
+      message: 'Đã xóa cửa hàng thành công',
+      store: {
+        id: store.id,
+        name: store.name,
+        status: StoreStatus.SUSPENDED,
+      },
+    };
+  }
+
   async getAllStores() {
     const stores = await this.storeRepository.find({
       order: { id: 'ASC' },

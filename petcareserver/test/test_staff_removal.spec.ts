@@ -12,12 +12,34 @@ import { Permission } from '../src/permissions/entities/permission.entity';
 import { MailService } from '../src/mail/mail.service';
 import { NotificationsService } from '../src/notifications/notifications.service';
 import { NotificationScheduler } from '../src/notifications/notification.scheduler';
-import { UserStatus } from '../src/common/enum';
+import { UserStatus, StoreStatus } from '../src/common/enum';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 
 describe('StoresService - Staff Removal', () => {
   let service: StoresService;
   let userRepository: jest.Mocked<Repository<User>>;
+  let storeRepository: jest.Mocked<Repository<Store>>;
+
+  const mockStore: Store = {
+    id: 1,
+    name: 'Test Store',
+    status: StoreStatus.ACTIVE,
+    phone: '1234567890',
+    address: 'Test Address',
+    city: 'Test City',
+    state: 'Test State',
+    country: 'Test Country',
+    postal_code: '12345',
+    logo_url: null,
+    notification_cron: null,
+    created_at: new Date(),
+    updated_at: new Date(),
+    users: [],
+    roles: [],
+    notifications: [],
+    invitations: [],
+    categories: [],
+  } as Store;
 
   const mockAdminUser: User = {
     user_id: 1,
@@ -197,6 +219,7 @@ describe('StoresService - Staff Removal', () => {
 
     service = module.get<StoresService>(StoresService);
     userRepository = module.get(getRepositoryToken(User));
+    storeRepository = module.get(getRepositoryToken(Store));
   });
 
   describe('removeStaff', () => {
@@ -387,6 +410,75 @@ describe('StoresService - Staff Removal', () => {
       });
 
       await expect(service.leaveStore(1, 2, true)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+  });
+
+  describe('removeStore', () => {
+    it('should allow the last admin to remove the store', async () => {
+      userRepository.findOne
+        .mockResolvedValueOnce(mockAdminUser)
+        .mockResolvedValueOnce(mockAdminUser);
+      userRepository.count.mockResolvedValue(1);
+      storeRepository.findOne.mockResolvedValue(mockStore);
+      userRepository.update.mockResolvedValue(undefined);
+      storeRepository.update.mockResolvedValue(undefined);
+
+      const result = await service.removeStore(1, 1);
+
+      expect(userRepository.update).toHaveBeenCalledWith(1, {
+        store_id: null as any,
+        role_id: null as any,
+      });
+      expect(storeRepository.update).toHaveBeenCalledWith(1, {
+        status: StoreStatus.SUSPENDED,
+      });
+      expect(result.message).toBe('Đã xóa cửa hàng thành công');
+      expect(result.store.status).toBe(StoreStatus.SUSPENDED);
+    });
+
+    it('should throw ForbiddenException when store still has other members', async () => {
+      userRepository.findOne.mockResolvedValueOnce(mockAdminUser);
+      storeRepository.findOne.mockResolvedValue(mockStore);
+      userRepository.count.mockResolvedValue(3);
+
+      await expect(service.removeStore(1, 1)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('should throw ForbiddenException when caller is not an admin', async () => {
+      userRepository.findOne
+        .mockResolvedValueOnce(mockStaffUser)
+        .mockResolvedValueOnce(mockStaffUser);
+      storeRepository.findOne.mockResolvedValue(mockStore);
+      userRepository.count.mockResolvedValue(1);
+
+      await expect(service.removeStore(1, 2)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('should throw NotFoundException when store not found', async () => {
+      userRepository.findOne.mockResolvedValueOnce({
+        ...mockAdminUser,
+        store_id: 999,
+      });
+      storeRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.removeStore(999, 1)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw ForbiddenException when user is not a store member', async () => {
+      userRepository.findOne.mockResolvedValueOnce({
+        ...mockAdminUser,
+        store_id: 999,
+      });
+
+      await expect(service.removeStore(1, 1)).rejects.toThrow(
         ForbiddenException,
       );
     });
