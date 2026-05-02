@@ -50,5 +50,3 @@ export async function getSidebarUser(): Promise<SidebarUser> {
     return emptySidebarUser;
   }
 }
-
-export const sidebarUser = getSidebarUser();

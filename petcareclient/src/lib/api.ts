@@ -86,6 +86,7 @@ axiosClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    handleApiError(error);
     return Promise.reject(error);
   },
 );

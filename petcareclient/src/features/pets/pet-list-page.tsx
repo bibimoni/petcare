@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Footer } from "@/components/Footer";
 import { Sidebar } from "@/components/Sidebar";
 import { queryClient } from "@/lib/query-client";
-import { sidebarUser } from "@/lib/user";
 
 import { getPetsForList, type PetListItem } from "./api/pets.api";
 import Breadcrumb from "./components/break-crump";
@@ -55,7 +54,7 @@ export default function PetListPage() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto bg-[#faf7f5] p-8">

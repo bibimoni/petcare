@@ -60,7 +60,7 @@ export default function ResetPasswordForm() {
       toast.success("Mật khẩu đã được đặt lại thành công!");
       navigate("/login");
     } catch (_error) {
-      toast.error("Không thể đặt lại mật khẩu. Vui lòng thử lại.");
+      navigate("/forgot-password");
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,7 @@ export default function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="flex flex-col gap-4 w-full max-w-md">
+      <div className="flex flex-col gap-4 w-full">
         <div className="rounded-lg border border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/30 px-4 py-3">
           <p className="text-sm text-red-700 dark:text-red-200">
             Liên kết không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu đặt lại mật
@@ -86,10 +86,7 @@ export default function ResetPasswordForm() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-5 w-full max-w-md"
-    >
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full">
       <div className="rounded-lg border border-[#e7d6cf] dark:border-[#5c4a42] bg-[#fcf9f8] dark:bg-[#3a2e2a] px-4 py-3">
         <p className="text-sm text-[#9a624c] dark:text-[#d4bcae] leading-relaxed">
           Vui lòng nhập mật khẩu mới của bạn. Mật khẩu phải có ít nhất 8 ký tự.

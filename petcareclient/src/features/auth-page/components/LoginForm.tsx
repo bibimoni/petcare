@@ -55,9 +55,7 @@ export default function LoginForm() {
         }
       }
     } catch (_err) {
-      toast.error(
-        "Đăng nhập thất bại. Vui lòng kiểm tra thông tin và thử lại.",
-      );
+      // API error is handled globally
     } finally {
       setLoading(false);
     }

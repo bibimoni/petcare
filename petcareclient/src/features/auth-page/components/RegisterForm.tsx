@@ -75,6 +75,8 @@ export default function RegisterForm() {
       });
       toast.success("Đăng ký thành công");
       navigate("/login");
+    } catch (_error) {
+      // API error is handled globally
     } finally {
       setLoading(false);
     }

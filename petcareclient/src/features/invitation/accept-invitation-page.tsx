@@ -10,7 +10,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import axiosClient from "@/lib/api";
-import { sidebarUser } from "@/lib/user";
 
 type AcceptInvitationResponse = {
   note: string;
@@ -103,7 +102,7 @@ export default function AcceptInvitationPage() {
 
   return (
     <div className="flex min-h-screen bg-[#fdf9f6]">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
       <main className="flex-1">
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-lg rounded-2xl border-none bg-white p-0 shadow-2xl">
