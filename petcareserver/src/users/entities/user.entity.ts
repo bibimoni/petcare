@@ -74,6 +74,9 @@ export class User {
   @Column({ type: Date, nullable: true })
   last_login_at: Date;
 
+  @Column({ type: Date, nullable: true })
+  last_active_at: Date | null;
+
   @Column({ type: 'text', nullable: true })
   avatar_url: string;
 

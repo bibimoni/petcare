@@ -376,6 +376,7 @@ describe('StoresService - Invitation Flow', () => {
           store_id: mockInvitation.store_id,
           role_id: mockInvitation.role_id,
           status: UserStatus.ACTIVE,
+          last_active_at: expect.any(Date),
         },
       );
       expect(invitationRepository.update).toHaveBeenCalledWith(
