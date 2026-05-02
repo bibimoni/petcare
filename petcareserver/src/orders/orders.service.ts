@@ -783,7 +783,7 @@ export class OrdersService {
 
     if (filters?.payment_method) {
       query.andWhere(
-        `order.order_id IN (SELECT p.order_id FROM payment p WHERE p.payment_method = :payMethod)`,
+        `order.order_id IN (SELECT p.order_id FROM payments p WHERE p.payment_method = :payMethod)`,
         { payMethod: filters.payment_method },
       );
     }
