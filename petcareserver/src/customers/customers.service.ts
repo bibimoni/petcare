@@ -34,6 +34,7 @@ export class CustomersService {
     storeId: number,
     dto: CreateCustomerDto,
     performedBy?: number,
+    performedByName?: string,
   ): Promise<Customer> {
     const customer = this.customerRepository.create({
       ...dto,
@@ -48,6 +49,7 @@ export class CustomersService {
         store_id: storeId,
         action: CustomerHistoryAction.CREATED,
         performed_by: performedBy ?? null,
+        performed_by_name: performedByName ?? null,
         old_values: null,
         new_values: {
           full_name: saved.full_name,
@@ -143,6 +145,7 @@ export class CustomersService {
     dto: UpdateCustomerDto,
     storeId: number,
     performedBy?: number,
+    performedByName?: string,
   ): Promise<Customer> {
     const customer = await this.customerRepository.findOne({
       where: { customer_id: id, store_id: storeId },
@@ -179,6 +182,7 @@ export class CustomersService {
       store_id: storeId,
       action: CustomerHistoryAction.UPDATED,
       performed_by: performedBy ?? null,
+      performed_by_name: performedByName ?? null,
       old_values: oldValues,
       new_values: {
         full_name: saved.full_name,
@@ -196,6 +200,7 @@ export class CustomersService {
     id: number,
     storeId: number,
     performedBy?: number,
+    performedByName?: string,
   ): Promise<{ message: string }> {
     const customer = await this.customerRepository.findOne({
       where: { customer_id: id, store_id: storeId },
@@ -210,6 +215,7 @@ export class CustomersService {
       store_id: storeId,
       action: CustomerHistoryAction.DELETED,
       performed_by: performedBy ?? null,
+      performed_by_name: performedByName ?? null,
       old_values: {
         full_name: customer.full_name,
         phone: customer.phone,
@@ -266,21 +272,6 @@ export class CustomersService {
   ): Promise<CustomerHistory[]> {
     return this.customerHistoryRepository.find({
       where: { customer_id: customerId, store_id: storeId },
-      relations: { performer: true },
-      select: {
-        id: true,
-        customer_id: true,
-        action: true,
-        performed_by: true,
-        old_values: true,
-        new_values: true,
-        created_at: true,
-        performer: {
-          user_id: true,
-          full_name: true,
-          email: true,
-        },
-      },
       order: { created_at: 'DESC' },
     });
   }

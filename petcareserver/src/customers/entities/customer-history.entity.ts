@@ -7,7 +7,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Customer } from './customer.entity';
-import { User } from '../../users/entities/user.entity';
 
 export enum CustomerHistoryAction {
   CREATED = 'CREATED',
@@ -33,12 +32,11 @@ export class CustomerHistory {
   @Column({ type: 'simple-enum', enum: CustomerHistoryAction })
   action: CustomerHistoryAction;
 
-  @Column({ name: 'performed_by', nullable: true })
+  @Column({ name: 'performed_by', nullable: true, type: 'integer' })
   performed_by: number | null;
 
-  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'performed_by' })
-  performer: User;
+  @Column({ name: 'performed_by_name', type: 'text', nullable: true })
+  performed_by_name: string | null;
 
   @Column({ type: 'json', nullable: true })
   old_values: Record<string, any> | null;

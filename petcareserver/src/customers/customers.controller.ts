@@ -81,6 +81,7 @@ export class CustomersController {
       user.store_id,
       createCustomerDto,
       user.user_id,
+      user.full_name,
     );
   }
 
@@ -201,7 +202,7 @@ export class CustomersController {
     @Body() dto: UpdateCustomerDto,
     @CurrentUser() user: any,
   ) {
-    return this.customersService.update(customerId, dto, user.store_id, user.user_id);
+    return this.customersService.update(customerId, dto, user.store_id, user.user_id, user.full_name);
   }
 
   @Delete('/:customerId')
@@ -225,7 +226,7 @@ export class CustomersController {
     @Param('customerId', ParseIntPipe) customerId: number,
     @CurrentUser() user: any,
   ) {
-    return this.customersService.deleteCustomer(customerId, user.store_id, user.user_id);
+    return this.customersService.deleteCustomer(customerId, user.store_id, user.user_id, user.full_name);
   }
 
   @Post('pets/:petId/avatar')
