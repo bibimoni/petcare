@@ -16,6 +16,7 @@ import { Category } from '../src/categories/entities/category.entity';
 import { Service } from '../src/categories/entities/service.entity';
 import { Order } from '../src/orders/entities/order.entity';
 import { OrderDetail } from '../src/orders/entities/order-detail.entity';
+import { Payment } from '../src/orders/entities/payment.entity';
 import { Customer } from '../src/customers/entities/customer.entity';
 import { Pet } from '../src/pets/entities/pet.entity';
 import { PetWeightHistory } from '../src/pets/entities/pet-weight-history.entity';
@@ -33,6 +34,7 @@ export const ENTITIES = [
   Service,
   Order,
   OrderDetail,
+  Payment,
   Customer,
   Pet,
   PetWeightHistory,
@@ -51,6 +53,7 @@ export {
   Service,
   Order,
   OrderDetail,
+  Payment,
   Customer,
   Pet,
   PetWeightHistory,
@@ -71,6 +74,9 @@ export const TEST_CONFIG = {
   JWT_SECRET: 'test-secret-key',
   JWT_EXPIRES_IN: '1d',
   NODE_ENV: 'test',
+  STRIPE_SECRET_KEY: 'sk_test_fake_key_for_testing',
+  STRIPE_PUBLIC_KEY: 'pk_test_fake_key_for_testing',
+  STRIPE_WEBHOOK_SECRET: 'whsec_test_fake_key_for_testing',
 };
 
 export const getTypeOrmTestConfig = () => ({
@@ -94,6 +100,7 @@ export interface RepositoryMap {
   Service: Repository<Service>;
   Order: Repository<Order>;
   OrderDetail: Repository<OrderDetail>;
+  Payment: Repository<Payment>;
   Customer: Repository<Customer>;
   Pet: Repository<Pet>;
   PetWeightHistory: Repository<PetWeightHistory>;
@@ -116,6 +123,7 @@ export function getTestRepository<T extends keyof RepositoryMap>(
     Service,
     Order,
     OrderDetail,
+    Payment,
     Customer,
     Pet,
     PetWeightHistory,
@@ -154,6 +162,7 @@ export async function cleanDatabase(module: TestingModule): Promise<void> {
   const repositories = [
     getTestRepository(module, 'Notification'),
     getTestRepository(module, 'Invitation'),
+    getTestRepository(module, 'Payment'),
     getTestRepository(module, 'OrderDetail'),
     getTestRepository(module, 'Order'),
     getTestRepository(module, 'PetWeightHistory'),

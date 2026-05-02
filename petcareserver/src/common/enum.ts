@@ -36,3 +36,20 @@ export enum InvitationStatus {
   DECLINED = 'DECLINED',
   EXPIRED = 'EXPIRED',
 }
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED',
+}
+
+export enum PaymentMethod {
+  STRIPE = 'STRIPE',
+  CASH = 'CASH',
+}
+
+export enum Currency {
+  USD = 'usd',
+  VND = 'vnd',
+}
