@@ -7,26 +7,33 @@ import "./index.css";
 import { Toaster } from "sonner";
 
 import App from "./App";
+import NotFound from "./components/not-found";
 import ProtectedRoute from "./components/ProtectedRoute";
+import RoleRoute from "./components/RoleRoutes";
+import AboutUsPage from "./features/about-us/page";
 import AuthPage from "./features/auth-page/auth-page";
 import ForgotPasswordPage from "./features/auth-page/forgot-password-page";
 import ResetPasswordPage from "./features/auth-page/reset-password-page";
 import CustomersPage from "./features/customer/customer-page";
 import { DashboardPage } from "./features/dashboard";
+import FaqPage from "./features/faq/page";
 import ExpiringSoonPage from "./features/inventory/expiring-soon-page";
 import InventoryPage from "./features/inventory/inventory-page";
 import LowStockPage from "./features/inventory/low-stock-page";
 import AcceptInvitationPage from "./features/invitation/accept-invitation-page";
 import InvitationPage from "./features/invitation/invitation-page";
+import NotAuthenticatedPage from "./features/not-authenticated/page";
 import PetListPage from "./features/pets/pet-list-page";
 import AllProductsPage from "./features/pos/components/all-products";
 import PosHistoryPage from "./features/pos/history-page";
 import PosPage from "./features/pos/pos-page";
+import PrivacyPolicyPage from "./features/privacy-policy/page";
 import CustomerProfilePage from "./features/profile/customer";
 import PetProfile from "./features/profile/pets";
 import ProfilePage from "./features/profile/profile";
 import ServicesPage from "./features/service/components/service-page";
 import CreateStorePage from "./features/store/create-store-page";
+import TermAndServicePage from "./features/term-and-service/page";
 import { queryClient } from "./lib/query-client";
 
 function PetProfileWrapper() {
@@ -53,67 +60,125 @@ createRoot(document.getElementById("root")!).render(
         />
         <Routes>
           <Route path="/" element={<App />} />
+          <Route path="/term-and-service" element={<TermAndServicePage />} />
+          <Route path="/about-us" element={<AboutUsPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/faq" element={<FaqPage />} />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/register" element={<AuthPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/pets" element={<PetListPage />} />
-          <Route path="/pets/:id" element={<PetProfileWrapper />} />
-          <Route path="/customers" element={<CustomersPage />} />
-          <Route path="/customer-profile" element={<CustomerProfilePage />} />
-          <Route path="/inventory" element={<InventoryPage />} />
-          <Route path="/inventory/low-stock" element={<LowStockPage />} />
+          <Route path="/not-authenticated" element={<NotAuthenticatedPage />} />
+          <Route
+            path="/pets"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <PetListPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/pets/:id"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <PetProfileWrapper />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/customers"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <CustomersPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/customer-profile"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <CustomerProfilePage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/inventory"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <InventoryPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/inventory/low-stock"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <LowStockPage />
+              </RoleRoute>
+            }
+          />
           <Route
             path="/inventory/expiring-soon"
-            element={<ExpiringSoonPage />}
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <ExpiringSoonPage />
+              </RoleRoute>
+            }
           />
-          <Route path="/services" element={<ServicesPage />} />
+          <Route
+            path="/services"
+            element={
+              <RoleRoute allowedRoles={["ADMIN"]}>
+                <ServicesPage />
+              </RoleRoute>
+            }
+          />
           <Route
             path="/pos"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <PosPage />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
           <Route
             path="/pos/all-products"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AllProductsPage />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
           <Route
             path="/pos/history"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <PosHistoryPage />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <DashboardPage />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
           <Route
             path="/invitations"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["NULL"]}>
                 <InvitationPage />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
           <Route
             path="/create-store"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["NULL"]}>
                 <CreateStorePage />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
@@ -125,6 +190,7 @@ createRoot(document.getElementById("root")!).render(
               </ProtectedRoute>
             }
           />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

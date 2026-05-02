@@ -15,8 +15,8 @@ import { toast } from "sonner";
 import { Sidebar } from "@/components/Sidebar";
 import { CountryDropdown } from "@/components/ui/country-dropdown";
 import api from "@/lib/api";
-import { sidebarUser } from "@/lib/user";
 import { queryClient } from "@/lib/query-client";
+import { sidebarUser } from "@/lib/user";
 
 export default function CreateStorePage() {
   const navigate = useNavigate();

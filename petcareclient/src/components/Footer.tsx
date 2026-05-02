@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-import { Logo } from "../../../components/Logo";
+import { Logo } from "./Logo";
 
 interface MenuItem {
   title: string;
@@ -27,39 +27,30 @@ interface FooterProps {
   };
 }
 
-const Footer = ({
+export const Footer = ({
   className,
   tagline = "Nền tảng quản lý cửa hàng thú cưng số 1 Việt Nam. Giúp bạn tập trung vào việc chăm sóc, để việc quản lý cho chúng tôi",
   menuItems = [
     {
       title: "Sản phẩm",
-      links: [
-        { text: "Tính năng", url: "#" },
-        { text: "Dùng thử", url: "#" },
-        { text: "Tải ứng dụng", url: "#" },
-      ],
+      links: [{ text: "Tính năng", url: "/#features" }],
     },
     {
       title: "Công ty",
       links: [
-        { text: "Về chúng tôi", url: "#" },
-        { text: "Blog", url: "#" },
-        { text: "Liên hệ", url: "#" },
+        { text: "Về chúng tôi", url: "/about-us" },
+        { text: "Liên hệ", url: "mailto:petcarevn@gmail.com" },
       ],
     },
     {
       title: "Hỗ trợ",
-      links: [
-        { text: "Trung tâm trợ giúp", url: "#" },
-        { text: "Câu hỏi thường gặp", url: "#" },
-        { text: "Điều khoản", url: "#" },
-      ],
+      links: [{ text: "Câu hỏi thường gặp", url: "/faq" }],
     },
   ],
   copyright = "© 2026 PetCare. All rights reserved.",
   bottomLinks = [
-    { text: "Chính sách bảo mật", url: "#" },
-    { text: "Điều khoản sử dụng", url: "#" },
+    { text: "Chính sách bảo mật", url: "/privacy-policy" },
+    { text: "Điều khoản sử dụng", url: "/term-and-service" },
   ],
 }: FooterProps) => {
   return (
@@ -106,5 +97,3 @@ const Footer = ({
     </section>
   );
 };
-
-export { Footer };

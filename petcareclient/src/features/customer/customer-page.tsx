@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { Footer } from "@/components/Footer";
 import { Sidebar } from "@/components/Sidebar";
 import { queryClient } from "@/lib/query-client";
 import { sidebarUser } from "@/lib/user";
@@ -14,7 +15,6 @@ import CustomerTable from "./components/customer-table";
 import CustomerTabs from "./components/customer-tabs";
 import CustomerToolbar from "./components/customer-toolbar";
 import EditCustomerModal from "./components/edit-customer-modal";
-import { Footer } from "./components/footer";
 
 export default function CustomersPage() {
   const [search, setSearch] = useState("");

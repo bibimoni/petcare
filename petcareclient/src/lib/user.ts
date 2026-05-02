@@ -28,7 +28,6 @@ export async function getSidebarUser(): Promise<SidebarUser> {
     const normalizedRole = (() => {
       if (profile?.role) {
         const role = profile.role as Record<string, unknown>;
-        console.log("🚀 ~ getSidebarUser ~ role:", role)
         return {
           description: String(role.description ?? ""),
           id: String(role.id ?? ""),
