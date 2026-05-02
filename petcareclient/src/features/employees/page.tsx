@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Lock, Mail, Search, History } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
 import { sidebarUser, getSidebarUser } from "@/lib/user";
@@ -60,7 +61,12 @@ const EmployeesPage = () => {
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
         <header className="sticky top-0 z-10 flex flex-col gap-4 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-8 py-6 backdrop-blur-sm">
           <div className="flex items-center text-sm font-medium text-[#9f7d67]">
-            <span>Dashboard</span>
+            <Link
+              to="/dashboard"
+              className="hover:text-[#f27a4d] transition cursor-pointer"
+            >
+              Dashboard
+            </Link>
             <span className="material-symbols-outlined mx-1 text-[16px]">
               chevron_right
             </span>
