@@ -8,7 +8,7 @@ import {
   type PosService,
   getPosCatalogOverview,
 } from "@/features/pos/api/pos.api";
-import { sidebarUser, getSidebarUser } from "@/lib/user";
+import { getSidebarUser } from "@/lib/user";
 
 import { CancelledOrderModal } from "./cancelled-order-modal";
 import { OrderDetailModal } from "./completed-order-modal";
@@ -203,7 +203,7 @@ const PosPage = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-6 backdrop-blur-sm">

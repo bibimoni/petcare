@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
-import { sidebarUser } from "@/lib/user";
 
 import { CancelledOrderModal } from "./cancelled-order-modal";
 import { OrderDetailModal } from "./completed-order-modal";
@@ -110,7 +109,7 @@ const PosHistoryPage = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
         {/* Top Header */}

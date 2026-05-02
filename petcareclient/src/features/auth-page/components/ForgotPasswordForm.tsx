@@ -37,17 +37,14 @@ export default function ForgotPasswordForm() {
       toast.success("Liên kết đặt lại mật khẩu đã được gửi.");
       setEmail("");
     } catch (_error) {
-      toast.error("Không thể gửi yêu cầu. Vui lòng thử lại.");
+      // API error is handled globally
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-5 w-full max-w-2xl"
-    >
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full">
       <div className="rounded-lg border border-[#e7d6cf] dark:border-[#5c4a42] bg-[#fcf9f8] dark:bg-[#3a2e2a] px-4 py-3">
         <p className="text-sm text-[#9a624c] dark:text-[#d4bcae] leading-relaxed">
           Nhập email đã đăng ký. Hệ thống sẽ gửi liên kết để bạn đặt lại mật

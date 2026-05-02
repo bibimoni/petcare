@@ -6,7 +6,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/Sidebar";
 import { type Pet, type Customer, type PetWeightHistory } from "@/lib/pets";
 import { queryClient } from "@/lib/query-client";
-import { sidebarUser } from "@/lib/user";
 
 import { getPetProfileData } from "../pets/api/pet-profile.api";
 import EditPetModal from "../pets/components/edit-pet-modal";
@@ -109,7 +108,7 @@ export default function PetProfile({ petId }: { petId: number }) {
   if (loading) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-[#f6f1ee]">
-        <Sidebar userInfo={sidebarUser} />
+        <Sidebar />
         <main className="flex flex-1 items-center justify-center">
           <div className="rounded-2xl border border-orange-100 bg-white px-6 py-5 shadow-sm">
             <p className="text-sm font-medium text-[#9a6a57]">
@@ -124,7 +123,7 @@ export default function PetProfile({ petId }: { petId: number }) {
   if (!pet) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-[#f6f1ee]">
-        <Sidebar userInfo={sidebarUser} />
+        <Sidebar />
         <main className="flex flex-1 items-center justify-center">
           <div className="rounded-2xl border border-orange-100 bg-white px-6 py-5 shadow-sm">
             <p className="text-sm font-medium text-[#9a6a57]">
@@ -145,7 +144,7 @@ export default function PetProfile({ petId }: { petId: number }) {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f6f1ee]">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden">
         <header className="flex items-center justify-between border-b border-[#eddcd3] bg-[#fbf6f3] px-6 py-4">
