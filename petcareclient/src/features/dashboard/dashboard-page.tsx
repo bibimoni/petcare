@@ -12,7 +12,7 @@ import {
   getDashboardActivities,
 } from "./api/dashboard-api";
 import { ActivityFeed } from "./components/activity-feed";
-import { Footer } from "./components/footer";
+import { Footer } from "@/components/Footer";
 import { Header } from "./components/header";
 import { RevenueChart } from "./components/revenue-chart";
 import { StatsGrid } from "./components/stats-grid";
