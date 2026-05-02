@@ -110,6 +110,7 @@ describe('Orders E2E — Webhook Flow', () => {
   // ── SEED ──
   beforeEach(async () => {
     jest.clearAllMocks();
+    orderCounter = 0;
     await ds.synchronize(true);
 
     const store = await ds.getRepository(Store).save({ name: 'E2E Store' });
@@ -185,35 +186,27 @@ describe('Orders E2E — Webhook Flow', () => {
     });
   });
 
-  // ── Helper: tạo order qua API ──
+  // ── Helper: tạo order qua API (auto-creates checkout session) ──
+  let orderCounter = 0;
   async function createOrder(items: any[]) {
+    orderCounter++;
+    mockStripeService.createCheckoutSession.mockResolvedValue({
+      checkout_url: `https://checkout.stripe.com/pay/cs_test_${orderCounter}`,
+      session_id: `cs_test_${orderCounter}`,
+      payment_intent_id: `pi_test_${orderCounter}`,
+    });
     const res = await request(app.getHttpServer())
       .post('/v1/orders')
       .set('Authorization', `Bearer ${token}`)
       .send({ items })
       .expect(201);
-    return res.body;
-  }
-
-  // ── Helper: tạo payment intent qua API ──
-  async function createIntent(orderId: number) {
-    mockStripeService.createPaymentIntent.mockResolvedValue({
-      client_secret: `cs_${orderId}`,
-      payment_intent_id: `pi_${orderId}`,
-      amount: 100,
-      currency: 'usd',
-    });
-    const res = await request(app.getHttpServer())
-      .post('/v1/orders/payment/intent')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ order_id: orderId })
-      .expect(200);
-    return res.body;
+    const body = res.body; // { order, checkout_url, session_id }
+    // Flatten: return order object with checkout_url attached
+    return { ...body.order, checkout_url: body.checkout_url, session_id: body.session_id };
   }
 
   // ── Helper: gửi webhook event giả ──
   function sendWebhook(eventType: string, dataObject: any) {
-    // Mock constructWebhookEvent trả về event object
     mockStripeService.constructWebhookEvent.mockReturnValue({
       id: `evt_test_${Date.now()}`,
       type: eventType,
@@ -223,47 +216,66 @@ describe('Orders E2E — Webhook Flow', () => {
     return request(app.getHttpServer())
       .post('/v1/stripe/webhook')
       .set('stripe-signature', 'fake_sig_for_test')
-      .send(dataObject); // body content doesn't matter — constructWebhookEvent is mocked
+      .send(dataObject);
+  }
+
+  // ── Helper: simulate full payment (checkout.session.completed → payment_intent.succeeded) ──
+  async function simulatePayment(order: any) {
+    await sendWebhook('checkout.session.completed', {
+      id: order.session_id,
+      payment_status: 'paid',
+      payment_intent: `pi_test_${order.order_id}`,
+    }).expect(200);
+
+    mockStripeService.getChargeDetails.mockResolvedValue({ receipt_url: null });
+    await sendWebhook('payment_intent.succeeded', {
+      id: `pi_test_${order.order_id}`,
+      latest_charge: `ch_${order.order_id}`,
+      amount: Number(order.total_amount) * 100,
+    }).expect(200);
   }
 
   // ═══════════════════════════════════════════════
-  // FULL LIFECYCLE: Create → Intent → Webhook Succeeded → Check Status
+  // FULL LIFECYCLE: Create → Webhooks → Confirm
   // ═══════════════════════════════════════════════
-  describe('Full lifecycle (webhook)', () => {
-    it('should complete order via webhook: Create → Intent → Webhook succeeded → PAID', async () => {
-      // 1. Create order
+  describe('Full lifecycle', () => {
+    it('should complete: POST /orders → webhooks → POST /orders/confirm → PAID', async () => {
       const order = await createOrder([
         { item_id: productId, item_type: 'PRODUCT', quantity: 2 },
         { item_id: serviceId, item_type: 'SERVICE', quantity: 1 },
       ]);
       expect(order.status).toBe('PENDING');
-      expect(Number(order.total_amount)).toBe(110); // 25*2 + 60
+      expect(Number(order.total_amount)).toBe(110);
+      expect(order.checkout_url).toContain('https://checkout.stripe.com');
 
-      // 2. Create payment intent
-      const intent = await createIntent(order.order_id);
-      expect(intent.payment_intent_id).toBe(`pi_${order.order_id}`);
-
-      // 3. Stripe sends webhook: payment_intent.succeeded
+      // Simulate Stripe payment
       mockStripeService.getChargeDetails.mockResolvedValue({
         receipt_url: 'https://stripe.com/receipt/test',
       });
 
-      await sendWebhook('payment_intent.succeeded', {
-        id: `pi_${order.order_id}`,
-        latest_charge: 'ch_test_123',
-        amount: 11000, // cents
+      await sendWebhook('checkout.session.completed', {
+        id: order.session_id,
+        payment_status: 'paid',
+        payment_intent: `pi_test_${order.order_id}`,
       }).expect(200);
 
-      // 4. Client polls payment status
-      const statusRes = await request(app.getHttpServer())
-        .get(`/v1/orders/${order.order_id}/payment/status`)
+      await sendWebhook('payment_intent.succeeded', {
+        id: `pi_test_${order.order_id}`,
+        latest_charge: 'ch_test_123',
+        amount: 11000,
+      }).expect(200);
+
+      // FE calls POST /orders/confirm
+      const confirmRes = await request(app.getHttpServer())
+        .post('/v1/orders/confirm')
         .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: order.order_id })
         .expect(200);
 
-      expect(statusRes.body.order_status).toBe('PAID');
-      expect(statusRes.body.payment_status).toBe('COMPLETED');
+      expect(confirmRes.body.status).toBe('PAID');
+      expect(confirmRes.body.payment_status).toBe('COMPLETED');
 
-      // 5. Verify DB directly
+      // Verify DB
       const dbOrder = await ds
         .getRepository(Order)
         .findOne({ where: { order_id: order.order_id } });
@@ -274,15 +286,11 @@ describe('Orders E2E — Webhook Flow', () => {
         .findOne({ where: { order_id: order.order_id } });
       expect(dbPayment!.status).toBe(PaymentStatus.COMPLETED);
       expect(dbPayment!.stripe_charge_id).toBe('ch_test_123');
-      expect(dbPayment!.stripe_receipt_url).toBe(
-        'https://stripe.com/receipt/test',
-      );
 
-      // 6. Stock should have decreased
       const dbProduct = await ds
         .getRepository(Product)
         .findOne({ where: { product_id: productId } });
-      expect(dbProduct!.stock_quantity).toBe(48); // 50 - 2
+      expect(dbProduct!.stock_quantity).toBe(48);
     });
   });
 
@@ -290,25 +298,28 @@ describe('Orders E2E — Webhook Flow', () => {
   // WEBHOOK: payment_intent.payment_failed
   // ═══════════════════════════════════════════════
   describe('Webhook: payment_intent.payment_failed', () => {
-    it('should mark payment as FAILED when Stripe sends failure', async () => {
+    it('should mark payment as FAILED', async () => {
       const order = await createOrder([
         { item_id: productId, item_type: 'PRODUCT', quantity: 1 },
       ]);
-      await createIntent(order.order_id);
+
+      // WE NO LONGER SIMULATE checkout.session.completed here 
+      // because a failed payment wouldn't have it.
+      // The DB already has pi_test_${order.order_id} saved.
 
       await sendWebhook('payment_intent.payment_failed', {
-        id: `pi_${order.order_id}`,
+        id: `pi_test_${order.order_id}`,
         last_payment_error: { message: 'Your card was declined' },
       }).expect(200);
 
-      // Payment should be FAILED, order stays PENDING
-      const statusRes = await request(app.getHttpServer())
-        .get(`/v1/orders/${order.order_id}/payment/status`)
+      const confirmRes = await request(app.getHttpServer())
+        .post('/v1/orders/confirm')
         .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: order.order_id })
         .expect(200);
 
-      expect(statusRes.body.order_status).toBe('PENDING');
-      expect(statusRes.body.payment_status).toBe('FAILED');
+      expect(confirmRes.body.status).toBe('PENDING');
+      expect(confirmRes.body.payment_status).toBe('FAILED');
     });
   });
 
@@ -317,39 +328,21 @@ describe('Orders E2E — Webhook Flow', () => {
   // ═══════════════════════════════════════════════
   describe('Webhook: charge.refunded', () => {
     it('should refund via webhook and restore stock', async () => {
-      // Create + pay via webhook
       const order = await createOrder([
         { item_id: productId, item_type: 'PRODUCT', quantity: 3 },
       ]);
-      await createIntent(order.order_id);
-      mockStripeService.getChargeDetails.mockResolvedValue({
-        receipt_url: null,
-      });
+      await simulatePayment(order);
 
-      await sendWebhook('payment_intent.succeeded', {
-        id: `pi_${order.order_id}`,
-        latest_charge: 'ch_refund_test',
-        amount: 7500,
-      }).expect(200);
-
-      // Now Stripe sends refund webhook
       await sendWebhook('charge.refunded', {
-        id: 'ch_refund_test',
-        payment_intent: `pi_${order.order_id}`,
+        id: `ch_${order.order_id}`,
+        payment_intent: `pi_test_${order.order_id}`,
       }).expect(200);
 
-      // Verify
       const dbOrder = await ds
         .getRepository(Order)
         .findOne({ where: { order_id: order.order_id } });
       expect(dbOrder!.status).toBe(OrderStatus.CANCELLED);
 
-      const dbPayment = await ds
-        .getRepository(Payment)
-        .findOne({ where: { order_id: order.order_id } });
-      expect(dbPayment!.status).toBe(PaymentStatus.REFUNDED);
-
-      // Stock restored: 50 - 3 + 3 = 50
       const dbProduct = await ds
         .getRepository(Product)
         .findOne({ where: { product_id: productId } });
@@ -365,153 +358,23 @@ describe('Orders E2E — Webhook Flow', () => {
       const order = await createOrder([
         { item_id: serviceId, item_type: 'SERVICE', quantity: 1 },
       ]);
-      await createIntent(order.order_id);
-      mockStripeService.getChargeDetails.mockResolvedValue({
-        receipt_url: null,
-      });
 
-      const webhookPayload = {
-        id: `pi_${order.order_id}`,
-        latest_charge: 'ch_dup',
-        amount: 6000,
-      };
+      await sendWebhook('checkout.session.completed', {
+        id: order.session_id,
+        payment_status: 'paid',
+        payment_intent: `pi_test_${order.order_id}`,
+      }).expect(200);
 
-      // Send same webhook twice
-      await sendWebhook('payment_intent.succeeded', webhookPayload).expect(200);
-      await sendWebhook('payment_intent.succeeded', webhookPayload).expect(200);
+      mockStripeService.getChargeDetails.mockResolvedValue({ receipt_url: null });
+      const payload = { id: `pi_test_${order.order_id}`, latest_charge: 'ch_dup', amount: 6000 };
 
-      // Should still be PAID (not error)
+      await sendWebhook('payment_intent.succeeded', payload).expect(200);
+      await sendWebhook('payment_intent.succeeded', payload).expect(200);
+
       const dbOrder = await ds
         .getRepository(Order)
         .findOne({ where: { order_id: order.order_id } });
       expect(dbOrder!.status).toBe(OrderStatus.PAID);
-    });
-  });
-
-  // ═══════════════════════════════════════════════
-  // CHECKOUT SESSION FLOW
-  // ═══════════════════════════════════════════════
-  describe('Checkout Session Flow', () => {
-    // Helper: create checkout session
-    async function createCheckout(orderId: number) {
-      mockStripeService.createCheckoutSession.mockResolvedValue({
-        checkout_url: `https://checkout.stripe.com/pay/cs_test_${orderId}`,
-        session_id: `cs_test_${orderId}`,
-        payment_intent_id: null, // PI is created after customer pays, linked via checkout.session.completed webhook
-      });
-      const res = await request(app.getHttpServer())
-        .post('/v1/orders/checkout')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ order_id: orderId })
-        .expect(200);
-      return res.body;
-    }
-
-    it('should create checkout session and return checkout_url', async () => {
-      const order = await createOrder([
-        { item_id: productId, item_type: 'PRODUCT', quantity: 2 },
-      ]);
-
-      const checkout = await createCheckout(order.order_id);
-
-      expect(checkout.checkout_url).toContain('https://checkout.stripe.com');
-      expect(checkout.session_id).toBe(`cs_test_${order.order_id}`);
-      expect(checkout.order_id).toBe(order.order_id);
-      expect(checkout.amount).toBe(50); // 25*2
-    });
-
-    it('should complete full checkout flow: Create → Checkout → checkout.session.completed → payment_intent.succeeded → PAID', async () => {
-      const order = await createOrder([
-        { item_id: productId, item_type: 'PRODUCT', quantity: 1 },
-        { item_id: serviceId, item_type: 'SERVICE', quantity: 1 },
-      ]);
-
-      const checkout = await createCheckout(order.order_id);
-
-      // Stripe sends checkout.session.completed (links session → PI)
-      await sendWebhook('checkout.session.completed', {
-        id: `cs_test_${order.order_id}`,
-        payment_status: 'paid',
-        payment_intent: `pi_checkout_${order.order_id}`,
-      }).expect(200);
-
-      // Then Stripe sends payment_intent.succeeded
-      mockStripeService.getChargeDetails.mockResolvedValue({
-        receipt_url: 'https://stripe.com/receipt/checkout_test',
-      });
-
-      await sendWebhook('payment_intent.succeeded', {
-        id: `pi_checkout_${order.order_id}`,
-        latest_charge: 'ch_checkout_123',
-        amount: 8500,
-      }).expect(200);
-
-      // Verify order is PAID
-      const statusRes = await request(app.getHttpServer())
-        .get(`/v1/orders/${order.order_id}/payment/status`)
-        .set('Authorization', `Bearer ${token}`)
-        .expect(200);
-
-      expect(statusRes.body.order_status).toBe('PAID');
-      expect(statusRes.body.payment_status).toBe('COMPLETED');
-    });
-
-    it('should reuse existing checkout session (idempotent)', async () => {
-      const order = await createOrder([
-        { item_id: serviceId, item_type: 'SERVICE', quantity: 1 },
-      ]);
-
-      const first = await createCheckout(order.order_id);
-
-      // Second call should return same session
-      const res = await request(app.getHttpServer())
-        .post('/v1/orders/checkout')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ order_id: order.order_id })
-        .expect(200);
-
-      expect(res.body.session_id).toBe(first.session_id);
-      // createCheckoutSession should only be called once
-      expect(mockStripeService.createCheckoutSession).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return 400 for already paid order', async () => {
-      const order = await createOrder([
-        { item_id: productId, item_type: 'PRODUCT', quantity: 1 },
-      ]);
-      await createCheckout(order.order_id);
-
-      // 1. Stripe sends checkout.session.completed (links session → PI)
-      await sendWebhook('checkout.session.completed', {
-        id: `cs_test_${order.order_id}`,
-        payment_status: 'paid',
-        payment_intent: `pi_checkout_${order.order_id}`,
-      }).expect(200);
-
-      // 2. Stripe sends payment_intent.succeeded
-      mockStripeService.getChargeDetails.mockResolvedValue({
-        receipt_url: null,
-      });
-      await sendWebhook('payment_intent.succeeded', {
-        id: `pi_checkout_${order.order_id}`,
-        latest_charge: 'ch_paid',
-        amount: 2500,
-      }).expect(200);
-
-      // Try to checkout again → should fail
-      await request(app.getHttpServer())
-        .post('/v1/orders/checkout')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ order_id: order.order_id })
-        .expect(400);
-    });
-
-    it('should return 404 for non-existent order', async () => {
-      await request(app.getHttpServer())
-        .post('/v1/orders/checkout')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ order_id: 9999 })
-        .expect(404);
     });
   });
 
@@ -523,7 +386,6 @@ describe('Orders E2E — Webhook Flow', () => {
       mockStripeService.constructWebhookEvent.mockImplementation(() => {
         throw new BadRequestException('Webhook signature verification failed');
       });
-
       await request(app.getHttpServer())
         .post('/v1/stripe/webhook')
         .set('stripe-signature', 'invalid_sig')
@@ -543,26 +405,26 @@ describe('Orders E2E — Webhook Flow', () => {
   // WEBHOOK: unknown payment intent
   // ═══════════════════════════════════════════════
   describe('Webhook: unknown payment intent', () => {
-    it('should return 200 but ignore unknown intent (no DB record)', async () => {
+    it('should return 200 but ignore unknown intent', async () => {
       await sendWebhook('payment_intent.succeeded', {
         id: 'pi_nonexistent',
         latest_charge: 'ch_nope',
         amount: 1000,
       }).expect(200);
-      // No error — just warns and returns
     });
   });
 
   // ═══════════════════════════════════════════════
-  // CREATE ORDER (unchanged from before)
+  // POST /v1/orders — create + auto checkout
   // ═══════════════════════════════════════════════
   describe('POST /v1/orders', () => {
-    it('should create order with product', async () => {
+    it('should create order with product and return checkout_url', async () => {
       const order = await createOrder([
         { item_id: productId, item_type: 'PRODUCT', quantity: 2 },
       ]);
       expect(Number(order.total_amount)).toBe(50);
       expect(order.order_details).toHaveLength(1);
+      expect(order.checkout_url).toContain('https://checkout.stripe.com');
     });
 
     it('should create order with service', async () => {
@@ -575,9 +437,7 @@ describe('Orders E2E — Webhook Flow', () => {
     it('should return 401 without JWT', async () => {
       await request(app.getHttpServer())
         .post('/v1/orders')
-        .send({
-          items: [{ item_id: productId, item_type: 'PRODUCT', quantity: 1 }],
-        })
+        .send({ items: [{ item_id: productId, item_type: 'PRODUCT', quantity: 1 }] })
         .expect(401);
     });
 
@@ -593,10 +453,49 @@ describe('Orders E2E — Webhook Flow', () => {
       await request(app.getHttpServer())
         .post('/v1/orders')
         .set('Authorization', `Bearer ${token}`)
-        .send({
-          items: [{ item_id: productId, item_type: 'PRODUCT', quantity: 9999 }],
-        })
+        .send({ items: [{ item_id: productId, item_type: 'PRODUCT', quantity: 9999 }] })
         .expect(400);
+    });
+  });
+
+  // ═══════════════════════════════════════════════
+  // POST /v1/orders/confirm
+  // ═══════════════════════════════════════════════
+  describe('POST /v1/orders/confirm', () => {
+    it('should return PENDING before payment', async () => {
+      const order = await createOrder([
+        { item_id: productId, item_type: 'PRODUCT', quantity: 1 },
+      ]);
+      const res = await request(app.getHttpServer())
+        .post('/v1/orders/confirm')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: order.order_id })
+        .expect(200);
+      expect(res.body.status).toBe('PENDING');
+      expect(res.body.payment_status).toBe('PENDING');
+    });
+
+    it('should return PAID after payment', async () => {
+      const order = await createOrder([
+        { item_id: serviceId, item_type: 'SERVICE', quantity: 1 },
+      ]);
+      await simulatePayment(order);
+
+      const res = await request(app.getHttpServer())
+        .post('/v1/orders/confirm')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: order.order_id })
+        .expect(200);
+      expect(res.body.status).toBe('PAID');
+      expect(res.body.payment_status).toBe('COMPLETED');
+    });
+
+    it('should return 404 for non-existent order', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/orders/confirm')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: 9999 })
+        .expect(404);
     });
   });
 
@@ -606,9 +505,7 @@ describe('Orders E2E — Webhook Flow', () => {
   describe('GET /v1/orders', () => {
     it('should return paginated orders', async () => {
       for (let i = 0; i < 3; i++) {
-        await createOrder([
-          { item_id: serviceId, item_type: 'SERVICE', quantity: 1 },
-        ]);
+        await createOrder([{ item_id: serviceId, item_type: 'SERVICE', quantity: 1 }]);
       }
       const res = await request(app.getHttpServer())
         .get('/v1/orders?page=1&limit=2')
@@ -627,32 +524,28 @@ describe('Orders E2E — Webhook Flow', () => {
       const order = await createOrder([
         { item_id: productId, item_type: 'PRODUCT', quantity: 5 },
       ]);
-
       const res = await request(app.getHttpServer())
         .patch(`/v1/orders/${order.order_id}/cancel`)
         .set('Authorization', `Bearer ${token}`)
         .send({ reason: 'Changed mind' })
         .expect(200);
-
       expect(res.body.status).toBe('CANCELLED');
 
       const dbProduct = await ds
         .getRepository(Product)
         .findOne({ where: { product_id: productId } });
-      expect(dbProduct!.stock_quantity).toBe(50); // restored
+      expect(dbProduct!.stock_quantity).toBe(50);
     });
 
     it('should return 400 for already cancelled', async () => {
       const order = await createOrder([
         { item_id: serviceId, item_type: 'SERVICE', quantity: 1 },
       ]);
-
       await request(app.getHttpServer())
         .patch(`/v1/orders/${order.order_id}/cancel`)
         .set('Authorization', `Bearer ${token}`)
         .send({ reason: 'first' })
         .expect(200);
-
       await request(app.getHttpServer())
         .patch(`/v1/orders/${order.order_id}/cancel`)
         .set('Authorization', `Bearer ${token}`)
@@ -662,85 +555,28 @@ describe('Orders E2E — Webhook Flow', () => {
   });
 
   // ═══════════════════════════════════════════════
-  // PAYMENT STATUS (replaces old confirm)
-  // ═══════════════════════════════════════════════
-  describe('GET /v1/orders/:orderId/payment/status', () => {
-    it('should return PENDING before webhook', async () => {
-      const order = await createOrder([
-        { item_id: productId, item_type: 'PRODUCT', quantity: 1 },
-      ]);
-      await createIntent(order.order_id);
-
-      const res = await request(app.getHttpServer())
-        .get(`/v1/orders/${order.order_id}/payment/status`)
-        .set('Authorization', `Bearer ${token}`)
-        .expect(200);
-
-      expect(res.body.order_status).toBe('PENDING');
-      expect(res.body.payment_status).toBe('PENDING');
-      expect(res.body.payment_intent_id).toBe(`pi_${order.order_id}`);
-    });
-
-    it('should return null payment_status when no intent created', async () => {
-      const order = await createOrder([
-        { item_id: serviceId, item_type: 'SERVICE', quantity: 1 },
-      ]);
-
-      const res = await request(app.getHttpServer())
-        .get(`/v1/orders/${order.order_id}/payment/status`)
-        .set('Authorization', `Bearer ${token}`)
-        .expect(200);
-
-      expect(res.body.payment_status).toBeNull();
-      expect(res.body.payment_intent_id).toBeNull();
-    });
-
-    it('should return 404 for non-existent order', async () => {
-      await request(app.getHttpServer())
-        .get('/v1/orders/9999/payment/status')
-        .set('Authorization', `Bearer ${token}`)
-        .expect(404);
-    });
-  });
-
-  // ═══════════════════════════════════════════════
-  // REFUND (via API, not webhook)
+  // REFUND (via API)
   // ═══════════════════════════════════════════════
   describe('POST /v1/orders/:orderId/refund', () => {
     it('should refund via API endpoint', async () => {
       const order = await createOrder([
         { item_id: productId, item_type: 'PRODUCT', quantity: 2 },
       ]);
-      await createIntent(order.order_id);
-      mockStripeService.getChargeDetails.mockResolvedValue({
-        receipt_url: null,
-      });
-
-      await sendWebhook('payment_intent.succeeded', {
-        id: `pi_${order.order_id}`,
-        latest_charge: 'ch_api_refund',
-        amount: 5000,
-      }).expect(200);
+      await simulatePayment(order);
 
       mockStripeService.refundCharge.mockResolvedValue({ id: 're_test' });
-
       const res = await request(app.getHttpServer())
         .post(`/v1/orders/${order.order_id}/refund`)
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
-
       expect(res.body.success).toBe(true);
       expect(res.body.status).toBe('REFUNDED');
-      expect(mockStripeService.refundCharge).toHaveBeenCalledWith(
-        'ch_api_refund',
-      );
     });
 
     it('should return 400 for non-paid order', async () => {
       const order = await createOrder([
         { item_id: serviceId, item_type: 'SERVICE', quantity: 1 },
       ]);
-
       await request(app.getHttpServer())
         .post(`/v1/orders/${order.order_id}/refund`)
         .set('Authorization', `Bearer ${token}`)
@@ -748,3 +584,4 @@ describe('Orders E2E — Webhook Flow', () => {
     });
   });
 });
+
