@@ -110,6 +110,7 @@ describe('Orders E2E — Webhook Flow', () => {
   // ── SEED ──
   beforeEach(async () => {
     jest.clearAllMocks();
+    orderCounter = 0;
     await ds.synchronize(true);
 
     const store = await ds.getRepository(Store).save({ name: 'E2E Store' });
@@ -192,7 +193,7 @@ describe('Orders E2E — Webhook Flow', () => {
     mockStripeService.createCheckoutSession.mockResolvedValue({
       checkout_url: `https://checkout.stripe.com/pay/cs_test_${orderCounter}`,
       session_id: `cs_test_${orderCounter}`,
-      payment_intent_id: null,
+      payment_intent_id: `pi_test_${orderCounter}`,
     });
     const res = await request(app.getHttpServer())
       .post('/v1/orders')
@@ -223,12 +224,12 @@ describe('Orders E2E — Webhook Flow', () => {
     await sendWebhook('checkout.session.completed', {
       id: order.session_id,
       payment_status: 'paid',
-      payment_intent: `pi_${order.order_id}`,
+      payment_intent: `pi_test_${order.order_id}`,
     }).expect(200);
 
     mockStripeService.getChargeDetails.mockResolvedValue({ receipt_url: null });
     await sendWebhook('payment_intent.succeeded', {
-      id: `pi_${order.order_id}`,
+      id: `pi_test_${order.order_id}`,
       latest_charge: `ch_${order.order_id}`,
       amount: Number(order.total_amount) * 100,
     }).expect(200);
@@ -255,11 +256,11 @@ describe('Orders E2E — Webhook Flow', () => {
       await sendWebhook('checkout.session.completed', {
         id: order.session_id,
         payment_status: 'paid',
-        payment_intent: `pi_${order.order_id}`,
+        payment_intent: `pi_test_${order.order_id}`,
       }).expect(200);
 
       await sendWebhook('payment_intent.succeeded', {
-        id: `pi_${order.order_id}`,
+        id: `pi_test_${order.order_id}`,
         latest_charge: 'ch_test_123',
         amount: 11000,
       }).expect(200);
@@ -302,14 +303,12 @@ describe('Orders E2E — Webhook Flow', () => {
         { item_id: productId, item_type: 'PRODUCT', quantity: 1 },
       ]);
 
-      await sendWebhook('checkout.session.completed', {
-        id: order.session_id,
-        payment_status: 'paid',
-        payment_intent: `pi_${order.order_id}`,
-      }).expect(200);
+      // WE NO LONGER SIMULATE checkout.session.completed here 
+      // because a failed payment wouldn't have it.
+      // The DB already has pi_test_${order.order_id} saved.
 
       await sendWebhook('payment_intent.payment_failed', {
-        id: `pi_${order.order_id}`,
+        id: `pi_test_${order.order_id}`,
         last_payment_error: { message: 'Your card was declined' },
       }).expect(200);
 
@@ -336,7 +335,7 @@ describe('Orders E2E — Webhook Flow', () => {
 
       await sendWebhook('charge.refunded', {
         id: `ch_${order.order_id}`,
-        payment_intent: `pi_${order.order_id}`,
+        payment_intent: `pi_test_${order.order_id}`,
       }).expect(200);
 
       const dbOrder = await ds
@@ -363,11 +362,11 @@ describe('Orders E2E — Webhook Flow', () => {
       await sendWebhook('checkout.session.completed', {
         id: order.session_id,
         payment_status: 'paid',
-        payment_intent: `pi_${order.order_id}`,
+        payment_intent: `pi_test_${order.order_id}`,
       }).expect(200);
 
       mockStripeService.getChargeDetails.mockResolvedValue({ receipt_url: null });
-      const payload = { id: `pi_${order.order_id}`, latest_charge: 'ch_dup', amount: 6000 };
+      const payload = { id: `pi_test_${order.order_id}`, latest_charge: 'ch_dup', amount: 6000 };
 
       await sendWebhook('payment_intent.succeeded', payload).expect(200);
       await sendWebhook('payment_intent.succeeded', payload).expect(200);

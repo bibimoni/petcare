@@ -216,7 +216,7 @@ export class OrdersService {
         status: PaymentStatus.PENDING,
         stripe_checkout_session_id: sessionData.session_id,
         stripe_checkout_url: sessionData.checkout_url,
-        stripe_payment_intent_id: undefined,
+        stripe_payment_intent_id: sessionData.payment_intent_id || undefined,
       });
       await this.paymentsRepository.save(payment);
 
@@ -491,10 +491,8 @@ export class OrdersService {
       return;
     }
 
-    // Idempotency: already processed
-    if (payment.status === PaymentStatus.COMPLETED) {
-      return;
-    }
+    // We don't return early here if COMPLETED because we might still need to 
+    // update stripe_charge_id and stripe_receipt_url that arrived with this webhook.
 
     // Fetch receipt URL (best-effort, don't block)
     let receiptUrl: string | null = null;
@@ -537,19 +535,27 @@ export class OrdersService {
         }
       }
 
-      if (!lockedPayment || lockedPayment.status === PaymentStatus.COMPLETED) {
+      if (!lockedPayment) {
         await queryRunner.rollbackTransaction();
         return;
       }
 
+      const isAlreadyCompleted = lockedPayment.status === PaymentStatus.COMPLETED;
+
       lockedPayment.status = PaymentStatus.COMPLETED;
-      lockedPayment.stripe_charge_id = chargeId ?? null;
-      lockedPayment.stripe_receipt_url = receiptUrl ?? null;
+      if (chargeId) {
+        lockedPayment.stripe_charge_id = chargeId;
+      }
+      if (receiptUrl) {
+        lockedPayment.stripe_receipt_url = receiptUrl;
+      }
       await queryRunner.manager.save(Payment, lockedPayment);
 
-      await queryRunner.manager.update(Order, lockedPayment.order_id, {
-        status: OrderStatus.PAID,
-      });
+      if (!isAlreadyCompleted) {
+        await queryRunner.manager.update(Order, lockedPayment.order_id, {
+          status: OrderStatus.PAID,
+        });
+      }
 
       await queryRunner.commitTransaction();
     } catch (error) {
