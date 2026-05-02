@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -270,6 +271,65 @@ export class StoresController {
   ) {
     const admin = isSuperAdmin(user);
     return this.storesService.getStoreStaff(
+      parseInt(storeId),
+      user.user_id,
+      admin,
+    );
+  }
+
+  @Delete(':storeId/staff/:userId')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions(STORE_PERMISSIONS.STAFF_DELETE)
+  @ApiOperation({
+    summary: 'Remove staff member from store',
+    description:
+      'Removes a staff member from the store by clearing their store_id and role_id. Requires STAFF_DELETE permission.',
+  })
+  @ApiParam({ name: 'storeId', description: 'Store ID', example: 1 })
+  @ApiParam({ name: 'userId', description: 'User ID to remove', example: 2 })
+  @ApiResponse({ status: 200, description: 'Staff removed successfully' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions or self-removal',
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async removeStaff(
+    @Param('storeId') storeId: string,
+    @Param('userId') userId: string,
+    @CurrentUser() user: any,
+  ) {
+    const admin = isSuperAdmin(user);
+    return this.storesService.removeStaff(
+      parseInt(storeId),
+      parseInt(userId),
+      user.user_id,
+      admin,
+    );
+  }
+
+  @Delete(':storeId/staff/me')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Leave store (self-removal)',
+    description:
+      'Allows a staff member to leave a store by clearing their own store_id and role_id. No STAFF_DELETE permission required.',
+  })
+  @ApiParam({ name: 'storeId', description: 'Store ID', example: 1 })
+  @ApiResponse({ status: 200, description: 'Left store successfully' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Last admin cannot leave',
+  })
+  async leaveStore(
+    @Param('storeId') storeId: string,
+    @CurrentUser() user: any,
+  ) {
+    const admin = isSuperAdmin(user);
+    return this.storesService.leaveStore(
       parseInt(storeId),
       user.user_id,
       admin,

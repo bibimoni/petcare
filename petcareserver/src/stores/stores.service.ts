@@ -412,6 +412,91 @@ export class StoresService {
     };
   }
 
+  private async checkLastAdmin(storeId: number, targetUserId: number) {
+    const targetUser = await this.userRepository.findOne({
+      where: { user_id: targetUserId, store_id: storeId },
+      relations: { role: true },
+    });
+
+    if (targetUser && targetUser.role?.name === 'ADMIN') {
+      const adminsInStore = await this.userRepository
+        .createQueryBuilder('user')
+        .innerJoin('user.role', 'role')
+        .where('user.store_id = :storeId', { storeId })
+        .andWhere('role.name = :roleName', { roleName: 'ADMIN' })
+        .getCount();
+
+      if (adminsInStore <= 1) {
+        throw new ForbiddenException(
+          'Không thể xóa quản trị viên cuối cùng của cửa hàng',
+        );
+      }
+    }
+  }
+
+  async removeStaff(
+    storeId: number,
+    targetUserId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
+
+    if (currentUserId === targetUserId) {
+      throw new ForbiddenException(
+        'Không thể tự xóa khỏi cửa hàng. Vui lòng sử dụng chức năng rời cửa hàng',
+      );
+    }
+
+    const targetUser = await this.userRepository.findOne({
+      where: { user_id: targetUserId },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException('Không tìm thấy người dùng');
+    }
+
+    if (targetUser.store_id !== storeId) {
+      throw new ForbiddenException('Người dùng không thuộc cửa hàng này');
+    }
+
+    await this.checkLastAdmin(storeId, targetUserId);
+
+    await this.userRepository.update(targetUserId, {
+      store_id: null as any,
+      role_id: null as any,
+    });
+
+    return {
+      message: 'Đã xóa nhân viên khỏi cửa hàng',
+      user: {
+        user_id: targetUser.user_id,
+        email: targetUser.email,
+        full_name: targetUser.full_name,
+      },
+    };
+  }
+
+  async leaveStore(
+    storeId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
+
+    await this.checkLastAdmin(storeId, currentUserId);
+
+    await this.userRepository.update(currentUserId, {
+      store_id: null as any,
+      role_id: null as any,
+    });
+
+    return {
+      message: 'Đã rời cửa hàng thành công',
+      user_id: currentUserId,
+    };
+  }
+
   async getAllStores() {
     const stores = await this.storeRepository.find({
       order: { id: 'ASC' },
