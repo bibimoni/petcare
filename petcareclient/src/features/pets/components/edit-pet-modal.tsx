@@ -2,7 +2,6 @@ import { X, Save, Upload, Trash2, PawPrint } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
-import { handleApiError } from "@/lib/api";
 import { PetService, type PetWithHistory } from "@/lib/pets";
 
 type Props = {
@@ -99,7 +98,7 @@ export default function EditPetModal({ open, onClose, pet, onUpdated }: Props) {
       onClose();
       if (onUpdated) await onUpdated(updated);
     } catch (err) {
-      handleApiError(err);
+      // API error is handled globally
     } finally {
       setLoading(false);
     }

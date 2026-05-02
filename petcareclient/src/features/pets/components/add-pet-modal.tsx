@@ -1,7 +1,6 @@
 import { X, Save, Upload, Trash2, PawPrint } from "lucide-react";
 import { useState, useEffect } from "react";
 
-import { handleApiError } from "@/lib/api";
 import { CustomerService } from "@/lib/customers";
 import { PetService } from "@/lib/pets";
 
@@ -88,7 +87,7 @@ export default function AddPetModal({ open, onClose, onCreated }: Props) {
         const customerRes = await CustomerService.getAll();
         setCustomers(normalizeCustomers(customerRes));
       } catch (err) {
-        handleApiError(err);
+        // API error is handled globally
       }
     };
 
@@ -168,7 +167,7 @@ export default function AddPetModal({ open, onClose, onCreated }: Props) {
       alert("Thêm thú cưng thành công");
       await onCreated?.();
     } catch (err) {
-      handleApiError(err);
+      // API error is handled globally
     } finally {
       setLoading(false);
     }
@@ -206,10 +205,10 @@ export default function AddPetModal({ open, onClose, onCreated }: Props) {
       {/* overlay */}
       <div
         className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-        // onClick={() =>{
-        //   resetForm();
-        //   onClose();
-        // }}
+      // onClick={() =>{
+      //   resetForm();
+      //   onClose();
+      // }}
       />
 
       {/* modal */}
