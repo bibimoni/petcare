@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 
+import { Footer } from "@/components/Footer";
 import { Sidebar } from "@/components/Sidebar";
 import { sidebarUser } from "@/lib/user";
 
@@ -12,7 +13,6 @@ import {
   getDashboardActivities,
 } from "./api/dashboard-api";
 import { ActivityFeed } from "./components/activity-feed";
-import { Footer } from "@/components/Footer";
 import { Header } from "./components/header";
 import { RevenueChart } from "./components/revenue-chart";
 import { StatsGrid } from "./components/stats-grid";
