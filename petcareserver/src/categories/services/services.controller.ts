@@ -56,7 +56,7 @@ export class ServicesController {
     return this.servicesService.create(user.store_id, createServiceDto);
   }
 
-  @Get('/:categoryId')
+  @Get('/category/:categoryId')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.SERVICE_VIEW)
   @ApiOperation({

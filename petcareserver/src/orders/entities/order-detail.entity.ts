@@ -4,17 +4,19 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  Check,
 } from 'typeorm';
 import { Order } from './order.entity';
 import { Product } from '../../categories/entities/product.entity';
 import { Service } from '../../categories/entities/service.entity';
 import { Pet } from '../../pets/entities/pet.entity';
+import { CategoryType } from '../../common/enum';
 
-export enum ItemType {
-  PRODUCT = 'PRODUCT',
-  SERVICE = 'SERVICE',
-}
-
+@Check(`
+  (item_type = 'PRODUCT' AND product_id IS NOT NULL AND service_id IS NULL)
+  OR
+  (item_type = 'SERVICE' AND service_id IS NOT NULL AND product_id IS NULL)
+`)
 @Entity('order_details')
 export class OrderDetail {
   @PrimaryGeneratedColumn()
@@ -29,20 +31,20 @@ export class OrderDetail {
   @JoinColumn({ name: 'order_id' })
   order: Order;
 
-  @Column({ name: 'item_type', type: 'simple-enum', enum: ItemType })
-  item_type: ItemType;
+  @Column({ name: 'item_type', type: 'simple-enum', enum: CategoryType })
+  item_type: CategoryType;
 
   @Column({ name: 'product_id', nullable: true })
   product_id: number;
 
-  @ManyToOne(() => Product, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Product, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
   @Column({ name: 'service_id', nullable: true })
   service_id: number;
 
-  @ManyToOne(() => Service, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Service, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'service_id' })
   service: Service;
 

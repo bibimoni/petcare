@@ -11,13 +11,16 @@ export const envValidationSchema = Joi.object({
   JWT_EXPIRES_IN: Joi.string().default('1d'),
 
   CLD_CLOUD_NAME: Joi.string().required(),
-	CLD_API_KEY: Joi.string().required(),
-	CLD_API_SECRET: Joi.string().required(),
+  CLD_API_KEY: Joi.string().required(),
+  CLD_API_SECRET: Joi.string().required(),
 
-	EMAIL_HOST: Joi.string().required(),
-	EMAIL_PORT: Joi.number().required(),
-	EMAIL_USER: Joi.string().required(),
-	GOOGLE_APP_PASSWORD: Joi.string().required(),
+  EMAIL_HOST: Joi.string().required(),
+  EMAIL_PORT: Joi.number().required(),
+  EMAIL_USER: Joi.string().required(),
+  GOOGLE_APP_PASSWORD: Joi.string().required(),
 
-	FRONTEND_URL: Joi.string().required(),
+  FRONTEND_URL: Joi.string().required(),
+
+  STRIPE_SECRET_KEY: Joi.string().required(),
+  STRIPE_PUBLIC_KEY: Joi.string().required(),
 });

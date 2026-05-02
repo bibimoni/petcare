@@ -48,7 +48,7 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    const { cost_price: undefined, ...safeProduct } = product;
+    const { cost_price: _cost_price, ...safeProduct } = product;
     return safeProduct;
   }
 
