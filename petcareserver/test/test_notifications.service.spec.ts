@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import {
-  NotificationsService,
-} from '../src/notifications/notifications.service';
+import { NotificationsService } from '../src/notifications/notifications.service';
 import {
   Notification,
   NotificationType,
@@ -144,7 +142,9 @@ describe('NotificationsService', () => {
         getMany: jest.fn(),
       } as any;
 
-      notificationRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      notificationRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
     });
 
     it('should return both personal and store-wide notifications when user has a store', async () => {
@@ -156,8 +156,13 @@ describe('NotificationsService', () => {
 
       const result = await service.findByUser(userId, storeId);
 
-      expect(notificationRepository.createQueryBuilder).toHaveBeenCalledWith('notification');
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('notification.created_at', 'DESC');
+      expect(notificationRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'notification',
+      );
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'notification.created_at',
+        'DESC',
+      );
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         '(notification.user_id = :userId OR (notification.store_id = :storeId AND notification.user_id IS NULL))',
         { userId, storeId },

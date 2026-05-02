@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Service } from '../entities/service.entity';
+import { Service, ServiceStatus } from '../entities/service.entity';
 import { CreateServiceDto } from '../dto/create-service.dto';
 import { UpdateServiceDto } from '../dto/update-service.dto';
 
@@ -15,6 +15,38 @@ export class ServicesService {
     @InjectRepository(Service)
     private readonly serviceRepository: Repository<Service>,
   ) {}
+
+  async findAll(
+    storeId: number | null,
+    isAdmin: boolean,
+    filters?: { search?: string; category_id?: number; status?: ServiceStatus },
+  ): Promise<Service[]> {
+    const query = this.serviceRepository
+      .createQueryBuilder('service')
+      .orderBy('service.created_at', 'DESC');
+
+    if (!isAdmin && storeId) {
+      query.where('service.store_id = :storeId', { storeId });
+    }
+
+    if (filters?.search) {
+      query.andWhere('service.combo_name ILIKE :search', {
+        search: `%${filters.search}%`,
+      });
+    }
+
+    if (filters?.category_id) {
+      query.andWhere('service.category_id = :categoryId', {
+        categoryId: filters.category_id,
+      });
+    }
+
+    if (filters?.status) {
+      query.andWhere('service.status = :status', { status: filters.status });
+    }
+
+    return query.getMany();
+  }
 
   async findByService(storeId: number, serviceId: number): Promise<Service> {
     const service = await this.serviceRepository.findOne({

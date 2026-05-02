@@ -28,6 +28,7 @@ import {
   JwtAuthGuard,
   PermissionsGuard,
   RequirePermissions,
+  isSuperAdmin,
 } from '../common';
 import { AcceptInvitationResponseDto } from './dto/accept-invitation-response.dto';
 import { STORE_PERMISSIONS } from '../common/permissions';
@@ -117,10 +118,12 @@ export class StoresController {
     @Body() inviteStaffDto: InviteStaffDto,
     @CurrentUser() user: any,
   ) {
+    const admin = isSuperAdmin(user);
     return this.storesService.inviteStaff(
       parseInt(storeId),
       inviteStaffDto,
       user.user_id,
+      admin,
     );
   }
 
@@ -178,10 +181,12 @@ export class StoresController {
     @Body() updateData: UpdateStoreDto,
     @CurrentUser() user: any,
   ) {
+    const admin = isSuperAdmin(user);
     return this.storesService.updateStore(
       parseInt(storeId),
       updateData,
       user.user_id,
+      admin,
     );
   }
 
@@ -230,10 +235,12 @@ export class StoresController {
     @Body() body: UpdateNotificationScheduleDto,
     @CurrentUser() user: any,
   ) {
+    const admin = isSuperAdmin(user);
     return this.storesService.updateNotificationSchedule(
       parseInt(storeId),
       body.cron_expression,
       user.user_id,
+      admin,
     );
   }
 
@@ -261,7 +268,12 @@ export class StoresController {
     @Param('storeId') storeId: string,
     @CurrentUser() user: any,
   ) {
-    return this.storesService.getStoreStaff(parseInt(storeId), user.user_id);
+    const admin = isSuperAdmin(user);
+    return this.storesService.getStoreStaff(
+      parseInt(storeId),
+      user.user_id,
+      admin,
+    );
   }
 
   @Get('invitations/accept')

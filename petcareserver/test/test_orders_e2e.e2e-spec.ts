@@ -123,15 +123,13 @@ describe('Orders E2E — Webhook Flow', () => {
       'order.refund',
       'order.view_all',
     ];
-    const savedPerms = await ds
-      .getRepository(Permission)
-      .save(
-        perms.map((slug) => ({
-          slug,
-          scope: 'STORE',
-          is_system_defined: true,
-        })) as any,
-      );
+    const savedPerms = await ds.getRepository(Permission).save(
+      perms.map((slug) => ({
+        slug,
+        scope: 'STORE',
+        is_system_defined: true,
+      })) as any,
+    );
 
     const role = await ds
       .getRepository(Role)
@@ -152,7 +150,7 @@ describe('Orders E2E — Webhook Flow', () => {
       role_id: roleId,
       status: 'ACTIVE',
     } as any);
-    userId = (user as any).user_id;
+    userId = user.user_id;
 
     const cat = await ds.getRepository(Category).save({
       name: 'Food',
@@ -163,20 +161,20 @@ describe('Orders E2E — Webhook Flow', () => {
     const prod = await ds.getRepository(Product).save({
       name: 'Dog Food',
       store_id: storeId,
-      category_id: (cat as any).category_id,
+      category_id: cat.category_id,
       cost_price: 10,
       sell_price: 25,
       stock_quantity: 50,
     } as any);
-    productId = (prod as any).product_id;
+    productId = prod.product_id;
 
     const svc = await ds.getRepository(PetService).save({
       combo_name: 'Grooming',
       store_id: storeId,
-      category_id: (cat as any).category_id,
+      category_id: cat.category_id,
       price: 60,
     } as any);
-    serviceId = (svc as any).id;
+    serviceId = svc.id;
 
     token = jwtService.sign({
       sub: userId,
@@ -491,7 +489,9 @@ describe('Orders E2E — Webhook Flow', () => {
       }).expect(200);
 
       // 2. Stripe sends payment_intent.succeeded
-      mockStripeService.getChargeDetails.mockResolvedValue({ receipt_url: null });
+      mockStripeService.getChargeDetails.mockResolvedValue({
+        receipt_url: null,
+      });
       await sendWebhook('payment_intent.succeeded', {
         id: `pi_checkout_${order.order_id}`,
         latest_charge: 'ch_paid',
