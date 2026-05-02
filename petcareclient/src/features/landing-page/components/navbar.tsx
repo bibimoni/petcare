@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { NavMenu } from "@/features/landing-page/components/nav-menu";
@@ -6,6 +8,12 @@ import { useNavigation } from "@/features/landing-page/hooks/navigation";
 
 const Navbar = () => {
   const handleNavigation = useNavigation();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    setIsAuthenticated(!!token);
+  }, []);
 
   return (
     <nav className="h-16 sticky top-0 z-50 border-b bg-background/15 backdrop-blur-md">
@@ -16,19 +24,30 @@ const Navbar = () => {
         <NavMenu className="hidden md:block" />
 
         <div className="flex items-center gap-3">
-          <Button
-            className="hidden sm:inline-flex cursor-pointer rounded-full font-bold"
-            variant="outline"
-            onClick={() => handleNavigation("login")}
-          >
-            Đăng nhập
-          </Button>
-          <Button
-            className="cursor-pointer rounded-full font-bold"
-            onClick={() => handleNavigation("register")}
-          >
-            Đăng ký
-          </Button>
+          {isAuthenticated ? (
+            <Button
+              className="cursor-pointer rounded-full font-bold"
+              onClick={() => handleNavigation("dashboard")}
+            >
+              Dashboard
+            </Button>
+          ) : (
+            <>
+              <Button
+                className="hidden sm:inline-flex cursor-pointer rounded-full font-bold"
+                variant="outline"
+                onClick={() => handleNavigation("login")}
+              >
+                Đăng nhập
+              </Button>
+              <Button
+                className="cursor-pointer rounded-full font-bold"
+                onClick={() => handleNavigation("register")}
+              >
+                Đăng ký
+              </Button>
+            </>
+          )}
 
           {/* Mobile Menu */}
           <div className="md:hidden">

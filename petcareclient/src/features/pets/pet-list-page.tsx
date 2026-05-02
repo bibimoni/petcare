@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { Footer } from "@/components/Footer";
 import { Sidebar } from "@/components/Sidebar";
 import { queryClient } from "@/lib/query-client";
 import { sidebarUser } from "@/lib/user";
 
-import { Footer } from "../landing-page/components/footer";
 import { getPetsForList, type PetListItem } from "./api/pets.api";
 import Breadcrumb from "./components/break-crump";
 import PetFilters from "./components/pet-filter";

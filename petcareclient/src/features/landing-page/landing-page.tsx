@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 
-import { Footer } from "./components/footer";
+import { Footer } from "@/components/Footer";
+
 import Navbar from "./components/navbar";
 import { CtaSection } from "./sections/Cta";
 import Features from "./sections/Features";

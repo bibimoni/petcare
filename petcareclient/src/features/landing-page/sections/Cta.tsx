@@ -39,6 +39,9 @@ export function CtaSection() {
               <Button
                 size="lg"
                 variant="outline"
+                onClick={() =>
+                  (window.location.href = "mailto:petcarevn@gmail.com")
+                }
                 className="border-white/30 font-bold text-background bg-white/10 hover:bg-white/20 hover:text-background cursor-pointer px-6 md:px-8 w-full sm:w-auto"
                 aria-label="Get advice"
               >
