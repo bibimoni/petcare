@@ -27,7 +27,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 
-import { Currency, OrderStatus, PayMethod, CategoryType } from '../common/enum';
+import { Currency, OrderStatus, PaymentMethod, CategoryType } from '../common/enum';
 import {
   CurrentUser,
   JwtAuthGuard,
