@@ -19,6 +19,7 @@ import { Role } from '../src/roles/entities/role.entity';
 import { RolePermission } from '../src/roles/entities/role-permission.entity';
 import { Notification } from '../src/notifications/entities/notification.entity';
 import { Payment } from '../src/orders/entities/payment.entity';
+import { CustomerHistory, CustomerHistoryAction } from '../src/customers/entities/customer-history.entity';
 
 import { UserStatus, StoreStatus, CategoryType, OrderStatus, PaymentMethod, PaymentStatus } from '../src/common/enum';
 
@@ -36,7 +37,7 @@ async function seedAnalyticsData() {
 
   const connectionOptions: any = {
     type: dbType,
-    entities: [User, Order, OrderDetail, Product, Category, Service, Customer, Pet, PetWeightHistory, Store, Permission, Role, RolePermission, Notification, Payment],
+    entities: [User, Order, OrderDetail, Product, Category, Service, Customer, Pet, PetWeightHistory, Store, Permission, Role, RolePermission, Notification, Payment, CustomerHistory],
     synchronize: true,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   };
@@ -64,21 +65,22 @@ async function seedAnalyticsData() {
   const orderRepository = connection.getRepository(Order);
   const orderDetailRepository = connection.getRepository(OrderDetail);
   const paymentRepository = connection.getRepository(Payment);
+  const customerHistoryRepository = connection.getRepository(CustomerHistory);
 
   // ── Ensure base data exists (store, roles, superadmin) ──
   console.log('\n=== Ensuring base data ===');
 
-  let store = await storeRepository.findOne({ where: { name: 'Pet Haven Veterinary Clinic' } });
+  let store = await storeRepository.findOne({ where: { name: 'Phòng Khám Thú Y Pet Haven' } });
   if (!store) {
     store = storeRepository.create({
-      name: 'Pet Haven Veterinary Clinic',
+      name: 'Phòng Khám Thú Y Pet Haven',
       status: StoreStatus.ACTIVE,
-      phone: '+1-555-0100',
-      address: '123 Happy Pets Boulevard',
-      city: 'Los Angeles',
-      state: 'California',
-      country: 'United States',
-      postal_code: '90001',
+      phone: '028-1234-5678',
+      address: '123 Nguyễn Văn Linh',
+      city: 'Hồ Chí Minh',
+      state: 'Hồ Chí Minh',
+      country: 'Việt Nam',
+      postal_code: '700000',
     });
     store = await storeRepository.save(store);
     console.log(`Store created: ${store.name} (ID: ${store.id})`);
@@ -123,14 +125,14 @@ async function seedAnalyticsData() {
 
   let superAdmin = await userRepository.findOne({ where: { email: 'superadmin@petcare.com' } });
   if (!superAdmin) {
-    superAdmin = userRepository.create({ email: 'superadmin@petcare.com', password_hash: hashedPassword, full_name: 'PetCare Super Admin', phone: '+1-555-0001', status: UserStatus.ACTIVE, role_id: superAdminRole.id });
+    superAdmin = userRepository.create({ email: 'superadmin@petcare.com', password_hash: hashedPassword, full_name: 'Quản Trị Hệ Thống PetCare', phone: '090-000-0001', status: UserStatus.ACTIVE, role_id: superAdminRole.id });
     superAdmin = await userRepository.save(superAdmin);
     console.log('Super admin created');
   }
 
   let storeAdmin = await userRepository.findOne({ where: { email: 'admin@pethaven.com' } });
   if (!storeAdmin) {
-    storeAdmin = userRepository.create({ email: 'admin@pethaven.com', password_hash: hashedPassword, full_name: 'Sarah Johnson', phone: '+1-555-0200', address: '456 Staff Quarters', store_id: store.id, role_id: storeAdminRole.id, status: UserStatus.ACTIVE });
+    storeAdmin = userRepository.create({ email: 'admin@pethaven.com', password_hash: hashedPassword, full_name: 'Nguyễn Thị Hương', phone: '090-000-0200', address: '456 Lê Văn Việt, Quận 9', store_id: store.id, role_id: storeAdminRole.id, status: UserStatus.ACTIVE });
     storeAdmin = await userRepository.save(storeAdmin);
     console.log('Store admin created');
   }
@@ -138,13 +140,13 @@ async function seedAnalyticsData() {
   // Create a staff user
   let staffUser = await userRepository.findOne({ where: { email: 'staff@pethaven.com' } });
   if (!staffUser) {
-    const staffRole = roleRepository.create({ name: 'Staff', description: 'Regular staff', is_editable: true, store_id: store.id, is_system_role: false });
+    const staffRole = roleRepository.create({ name: 'Nhân viên', description: 'Nhân viên phòng khám', is_editable: true, store_id: store.id, is_system_role: false });
     const savedStaffRole = await roleRepository.save(staffRole);
     const viewPerms = allStorePerms.filter(p => p.slug.endsWith('.view') || p.slug.endsWith('.manage'));
     for (const p of viewPerms.slice(0, 10)) {
       await rolePermissionRepository.save({ role_id: savedStaffRole.id, permission_id: p.id });
     }
-    staffUser = userRepository.create({ email: 'staff@pethaven.com', password_hash: hashedPassword, full_name: 'Mike Chen', phone: '+1-555-0300', store_id: store.id, role_id: savedStaffRole.id, status: UserStatus.ACTIVE });
+    staffUser = userRepository.create({ email: 'staff@pethaven.com', password_hash: hashedPassword, full_name: 'Trần Văn Minh', phone: '090-000-0300', store_id: store.id, role_id: savedStaffRole.id, status: UserStatus.ACTIVE });
     staffUser = await userRepository.save(staffUser);
     console.log('Staff user created');
   }
@@ -152,7 +154,7 @@ async function seedAnalyticsData() {
   // Create an unaffiliated user (no store)
   let unaffiliatedUser = await userRepository.findOne({ where: { email: 'newuser@example.com' } });
   if (!unaffiliatedUser) {
-    unaffiliatedUser = userRepository.create({ email: 'newuser@example.com', password_hash: hashedPassword, full_name: 'John Doe', phone: '+1-555-9999', status: UserStatus.ACTIVE });
+    unaffiliatedUser = userRepository.create({ email: 'newuser@example.com', password_hash: hashedPassword, full_name: 'Lê Hoàng Nam', phone: '090-000-9999', status: UserStatus.ACTIVE });
     unaffiliatedUser = await userRepository.save(unaffiliatedUser);
     console.log('Unaffiliated user created');
   }
@@ -160,21 +162,21 @@ async function seedAnalyticsData() {
   // ── Seed Categories ──
   console.log('\n=== Seeding Categories ===');
 
-  let productCategory = await categoryRepository.findOne({ where: { name: 'Grooming Products', store_id: store.id } });
+  let productCategory = await categoryRepository.findOne({ where: { name: 'Sản phẩm chăm sóc lông', store_id: store.id } });
   if (!productCategory) {
-    productCategory = categoryRepository.create({ name: 'Grooming Products', type: CategoryType.PRODUCT, store_id: store.id });
+    productCategory = categoryRepository.create({ name: 'Sản phẩm chăm sóc lông', type: CategoryType.PRODUCT, store_id: store.id });
     productCategory = await categoryRepository.save(productCategory);
   }
 
-  let serviceCategory = await categoryRepository.findOne({ where: { name: 'Grooming Services', store_id: store.id } });
+  let serviceCategory = await categoryRepository.findOne({ where: { name: 'Dịch vụ chải lông', store_id: store.id } });
   if (!serviceCategory) {
-    serviceCategory = categoryRepository.create({ name: 'Grooming Services', type: CategoryType.SERVICE, store_id: store.id });
+    serviceCategory = categoryRepository.create({ name: 'Dịch vụ chải lông', type: CategoryType.SERVICE, store_id: store.id });
     serviceCategory = await categoryRepository.save(serviceCategory);
   }
 
-  let foodCategory = await categoryRepository.findOne({ where: { name: 'Pet Food', store_id: store.id } });
+  let foodCategory = await categoryRepository.findOne({ where: { name: 'Thức ăn thú cưng', store_id: store.id } });
   if (!foodCategory) {
-    foodCategory = categoryRepository.create({ name: 'Pet Food', type: CategoryType.PRODUCT, store_id: store.id });
+    foodCategory = categoryRepository.create({ name: 'Thức ăn thú cưng', type: CategoryType.PRODUCT, store_id: store.id });
     foodCategory = await categoryRepository.save(foodCategory);
   }
 
@@ -184,13 +186,13 @@ async function seedAnalyticsData() {
   console.log('\n=== Seeding Products ===');
 
   const productsData = [
-    { name: 'Premium Dog Shampoo', cost_price: 5, sell_price: 15, stock_quantity: 50, min_stock_level: 10, category_id: productCategory.category_id, status: 'ACTIVE' as any },
-    { name: 'Cat Brush Pro', cost_price: 3, sell_price: 12, stock_quantity: 30, min_stock_level: 5, category_id: productCategory.category_id, status: 'ACTIVE' as any },
-    { name: 'Low Stock Item', cost_price: 8, sell_price: 20, stock_quantity: 2, min_stock_level: 5, category_id: productCategory.category_id, status: 'ACTIVE' as any },
-    { name: 'Out of Stock Item', cost_price: 10, sell_price: 25, stock_quantity: 0, min_stock_level: 3, category_id: productCategory.category_id, status: 'ACTIVE' as any },
-    { name: 'Expiring Soon Food', cost_price: 2, sell_price: 8, stock_quantity: 20, min_stock_level: 5, category_id: foodCategory.category_id, status: 'ACTIVE' as any, expiry_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) },
-    { name: 'Organic Dog Food', cost_price: 15, sell_price: 35, stock_quantity: 100, min_stock_level: 20, category_id: foodCategory.category_id, status: 'ACTIVE' as any },
-    { name: 'Archived Product', cost_price: 4, sell_price: 10, stock_quantity: 0, min_stock_level: 5, category_id: productCategory.category_id, status: 'ARCHIVED' as any },
+    { name: 'Dầu tắm chó cao cấp', cost_price: 125000, sell_price: 375000, stock_quantity: 50, min_stock_level: 10, category_id: productCategory.category_id, status: 'ACTIVE' as any },
+    { name: 'Bàn chải lông mèo', cost_price: 75000, sell_price: 300000, stock_quantity: 30, min_stock_level: 5, category_id: productCategory.category_id, status: 'ACTIVE' as any },
+    { name: 'Sản phẩm sắp hết hàng', cost_price: 200000, sell_price: 500000, stock_quantity: 2, min_stock_level: 5, category_id: productCategory.category_id, status: 'ACTIVE' as any },
+    { name: 'Sản phẩm hết hàng', cost_price: 250000, sell_price: 625000, stock_quantity: 0, min_stock_level: 3, category_id: productCategory.category_id, status: 'ACTIVE' as any },
+    { name: 'Thức ăn sắp hết hạn', cost_price: 50000, sell_price: 200000, stock_quantity: 20, min_stock_level: 5, category_id: foodCategory.category_id, status: 'ACTIVE' as any, expiry_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) },
+    { name: 'Thức ăn chó hữu cơ', cost_price: 375000, sell_price: 875000, stock_quantity: 100, min_stock_level: 20, category_id: foodCategory.category_id, status: 'ACTIVE' as any },
+    { name: 'Sản phẩm đã ngưng bán', cost_price: 100000, sell_price: 250000, stock_quantity: 0, min_stock_level: 5, category_id: productCategory.category_id, status: 'ARCHIVED' as any },
   ];
 
   const products: Product[] = [];
@@ -208,10 +210,10 @@ async function seedAnalyticsData() {
   console.log('\n=== Seeding Services ===');
 
   const servicesData = [
-    { combo_name: 'Basic Bath & Brush', price: 30, min_weight: 1, max_weight: 15, category_id: serviceCategory.category_id, status: 'ACTIVE' as any, description: 'Basic grooming service' },
-    { combo_name: 'Full Grooming Package', price: 60, min_weight: 5, max_weight: 50, category_id: serviceCategory.category_id, status: 'ACTIVE' as any, description: 'Complete grooming with nail trim' },
-    { combo_name: 'Premium Spa Treatment', price: 100, min_weight: 1, max_weight: 80, category_id: serviceCategory.category_id, status: 'ACTIVE' as any, description: 'Luxury spa experience' },
-    { combo_name: 'Archived Service', price: 20, category_id: serviceCategory.category_id, status: 'ARCHIVED' as any, description: 'No longer offered' },
+    { combo_name: 'Tắm & chải lông cơ bản', price: 750000, min_weight: 1, max_weight: 15, category_id: serviceCategory.category_id, status: 'ACTIVE' as any, description: 'Dịch vụ chải lông cơ bản' },
+    { combo_name: 'Gói chải lông đầy đủ', price: 1500000, min_weight: 5, max_weight: 50, category_id: serviceCategory.category_id, status: 'ACTIVE' as any, description: 'Chải lông đầy đủ kèm cắt móng' },
+    { combo_name: 'Spa cao cấp', price: 2500000, min_weight: 1, max_weight: 80, category_id: serviceCategory.category_id, status: 'ACTIVE' as any, description: 'Trải nghiệm spa sang trọng' },
+    { combo_name: 'Dịch vụ đã ngưng', price: 500000, category_id: serviceCategory.category_id, status: 'ARCHIVED' as any, description: 'Không còn cung cấp' },
   ];
 
   const services: Service[] = [];
@@ -229,11 +231,11 @@ async function seedAnalyticsData() {
   console.log('\n=== Seeding Customers & Pets ===');
 
   const customersData = [
-    { full_name: 'Alice Williams', phone: '+1-555-1001', email: 'alice@example.com', address: '100 Main St' },
-    { full_name: 'Bob Brown', phone: '+1-555-1002', email: 'bob@example.com', address: '200 Oak Ave' },
-    { full_name: 'Carol Davis', phone: '+1-555-1003', email: 'carol@example.com', address: '300 Pine Rd' },
-    { full_name: 'David Lee', phone: '+1-555-1004', email: 'david@example.com', address: '400 Elm Blvd' },
-    { full_name: 'Eva Martinez', phone: '+1-555-1005', email: 'eva@example.com', address: '500 Cedar Ln' },
+    { full_name: 'Nguyễn Minh Anh', phone: '090-100-0001', email: 'minhanh@email.com', address: '100 Nguyễn Huệ, Quận 1' },
+    { full_name: 'Trần Đức Bình', phone: '090-100-0002', email: 'ducbinh@email.com', address: '200 Lê Lợi, Quận 1' },
+    { full_name: 'Lê Thu Cúc', phone: '090-100-0003', email: 'thucuc@email.com', address: '300 Hai Bà Trưng, Quận 3' },
+    { full_name: 'Phạm Văn Đức', phone: '090-100-0004', email: 'vanduc@email.com', address: '400 Võ Văn Tần, Quận 3' },
+    { full_name: 'Hoàng Thị Êmbơr', phone: '090-100-0005', email: 'embor@email.com', address: '500 Điện Biên Phủ, Bình Thạnh' },
   ];
 
   const customers: Customer[] = [];
@@ -247,11 +249,11 @@ async function seedAnalyticsData() {
   }
 
   const petsData = [
-    { name: 'Buddy', breed: 'Labrador', gender: 'MALE' as any, dob: new Date('2020-03-15'), customer_id: customers[0].customer_id, status: 'ALIVE' as any },
-    { name: 'Whiskers', breed: 'Persian Cat', gender: 'FEMALE' as any, dob: new Date('2019-07-20'), customer_id: customers[0].customer_id, status: 'ALIVE' as any },
-    { name: 'Max', breed: 'German Shepherd', gender: 'MALE' as any, dob: new Date('2021-01-10'), customer_id: customers[1].customer_id, status: 'ALIVE' as any },
-    { name: 'Luna', breed: 'Siamese Cat', gender: 'FEMALE' as any, dob: new Date('2022-05-25'), customer_id: customers[2].customer_id, status: 'ALIVE' as any },
-    { name: 'Rocky', breed: 'Bulldog', gender: 'MALE' as any, dob: new Date('2018-11-30'), customer_id: customers[3].customer_id, status: 'DECEASED' as any },
+    { name: 'Vàng', breed: 'Labrador', gender: 'MALE' as any, dob: new Date('2020-03-15'), customer_id: customers[0].customer_id, status: 'ALIVE' as any },
+    { name: 'Mướp', breed: 'Mèo Ba Tư', gender: 'FEMALE' as any, dob: new Date('2019-07-20'), customer_id: customers[0].customer_id, status: 'ALIVE' as any },
+    { name: 'Đen', breed: 'Béc Giê', gender: 'MALE' as any, dob: new Date('2021-01-10'), customer_id: customers[1].customer_id, status: 'ALIVE' as any },
+    { name: 'Lam', breed: 'Mèo Xiêm', gender: 'FEMALE' as any, dob: new Date('2022-05-25'), customer_id: customers[2].customer_id, status: 'ALIVE' as any },
+    { name: 'Sốc', breed: 'Bulldog', gender: 'MALE' as any, dob: new Date('2018-11-30'), customer_id: customers[3].customer_id, status: 'DECEASED' as any },
   ];
 
   const pets: Pet[] = [];
@@ -274,26 +276,67 @@ async function seedAnalyticsData() {
   const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const lastMonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
+  const apr1 = new Date('2026-04-01T10:00:00');
+  const apr5 = new Date('2026-04-05T11:30:00');
+  const apr10 = new Date('2026-04-10T09:15:00');
+  const apr15 = new Date('2026-04-15T14:00:00');
+  const apr20 = new Date('2026-04-20T16:45:00');
+  const apr25 = new Date('2026-04-25T10:30:00');
+  const apr28 = new Date('2026-04-28T13:00:00');
+
   const ordersData = [
     { customer_id: customers[0].customer_id, status: OrderStatus.PAID, created_at: now, items: [
-      { item_type: CategoryType.PRODUCT, product_id: products[0].product_id, quantity: 2, unit_price: 15, original_cost: 10, subtotal: 30 },
-      { item_type: CategoryType.SERVICE, service_id: services[0].id, quantity: 1, unit_price: 30, original_cost: 0, subtotal: 30, pet_id: pets[0].pet_id },
+      { item_type: CategoryType.PRODUCT, product_id: products[0].product_id, quantity: 2, unit_price: 375000, original_cost: 250000, subtotal: 750000 },
+      { item_type: CategoryType.SERVICE, service_id: services[0].id, quantity: 1, unit_price: 750000, original_cost: 0, subtotal: 750000, pet_id: pets[0].pet_id },
     ]},
     { customer_id: customers[1].customer_id, status: OrderStatus.PAID, created_at: yesterday, items: [
-      { item_type: CategoryType.PRODUCT, product_id: products[1].product_id, quantity: 1, unit_price: 12, original_cost: 3, subtotal: 12 },
-      { item_type: CategoryType.SERVICE, service_id: services[1].id, quantity: 1, unit_price: 60, original_cost: 0, subtotal: 60, pet_id: pets[2].pet_id },
+      { item_type: CategoryType.PRODUCT, product_id: products[1].product_id, quantity: 1, unit_price: 300000, original_cost: 75000, subtotal: 300000 },
+      { item_type: CategoryType.SERVICE, service_id: services[1].id, quantity: 1, unit_price: 1500000, original_cost: 0, subtotal: 1500000, pet_id: pets[2].pet_id },
     ]},
     { customer_id: customers[2].customer_id, status: OrderStatus.PAID, created_at: lastWeek, items: [
-      { item_type: CategoryType.SERVICE, service_id: services[2].id, quantity: 1, unit_price: 100, original_cost: 0, subtotal: 100, pet_id: pets[3].pet_id },
+      { item_type: CategoryType.SERVICE, service_id: services[2].id, quantity: 1, unit_price: 2500000, original_cost: 0, subtotal: 2500000, pet_id: pets[3].pet_id },
     ]},
     { customer_id: customers[3].customer_id, status: OrderStatus.PENDING, created_at: now, items: [
-      { item_type: CategoryType.PRODUCT, product_id: products[5].product_id, quantity: 3, unit_price: 35, original_cost: 45, subtotal: 105 },
+      { item_type: CategoryType.PRODUCT, product_id: products[5].product_id, quantity: 3, unit_price: 875000, original_cost: 1125000, subtotal: 2625000 },
     ]},
-    { customer_id: customers[4].customer_id, status: OrderStatus.CANCELLED, created_at: lastMonth, cancel_reason: 'Customer changed mind', items: [
-      { item_type: CategoryType.PRODUCT, product_id: products[0].product_id, quantity: 1, unit_price: 15, original_cost: 5, subtotal: 15 },
+    { customer_id: customers[4].customer_id, status: OrderStatus.CANCELLED, created_at: lastMonth, cancel_reason: 'Khách hàng đổi ý', items: [
+      { item_type: CategoryType.PRODUCT, product_id: products[0].product_id, quantity: 1, unit_price: 375000, original_cost: 125000, subtotal: 375000 },
     ]},
     { customer_id: customers[0].customer_id, status: OrderStatus.PAID, created_at: lastMonth, items: [
-      { item_type: CategoryType.PRODUCT, product_id: products[5].product_id, quantity: 2, unit_price: 35, original_cost: 30, subtotal: 70 },
+      { item_type: CategoryType.PRODUCT, product_id: products[5].product_id, quantity: 2, unit_price: 875000, original_cost: 750000, subtotal: 1750000 },
+    ]},
+
+    // ── April 2026 orders ──
+    { customer_id: customers[0].customer_id, status: OrderStatus.PAID, created_at: apr1, items: [
+      { item_type: CategoryType.SERVICE, service_id: services[1].id, quantity: 1, unit_price: 1500000, original_cost: 0, subtotal: 1500000, pet_id: pets[0].pet_id },
+      { item_type: CategoryType.PRODUCT, product_id: products[5].product_id, quantity: 1, unit_price: 875000, original_cost: 375000, subtotal: 875000 },
+    ]},
+    { customer_id: customers[1].customer_id, status: OrderStatus.PAID, created_at: apr5, items: [
+      { item_type: CategoryType.SERVICE, service_id: services[0].id, quantity: 1, unit_price: 750000, original_cost: 0, subtotal: 750000, pet_id: pets[2].pet_id },
+    ]},
+    { customer_id: customers[2].customer_id, status: OrderStatus.PAID, created_at: apr10, items: [
+      { item_type: CategoryType.SERVICE, service_id: services[2].id, quantity: 1, unit_price: 2500000, original_cost: 0, subtotal: 2500000, pet_id: pets[3].pet_id },
+      { item_type: CategoryType.PRODUCT, product_id: products[0].product_id, quantity: 2, unit_price: 375000, original_cost: 250000, subtotal: 750000 },
+    ]},
+    { customer_id: customers[3].customer_id, status: OrderStatus.PAID, created_at: apr15, items: [
+      { item_type: CategoryType.PRODUCT, product_id: products[5].product_id, quantity: 2, unit_price: 875000, original_cost: 750000, subtotal: 1750000 },
+      { item_type: CategoryType.PRODUCT, product_id: products[1].product_id, quantity: 1, unit_price: 300000, original_cost: 75000, subtotal: 300000 },
+    ]},
+    { customer_id: customers[4].customer_id, status: OrderStatus.CANCELLED, created_at: apr15, cancel_reason: 'Khách hàng đổi lịch', items: [
+      { item_type: CategoryType.SERVICE, service_id: services[1].id, quantity: 1, unit_price: 1500000, original_cost: 0, subtotal: 1500000, pet_id: pets[4].pet_id },
+    ]},
+    { customer_id: customers[0].customer_id, status: OrderStatus.PAID, created_at: apr20, items: [
+      { item_type: CategoryType.PRODUCT, product_id: products[0].product_id, quantity: 3, unit_price: 375000, original_cost: 375000, subtotal: 1125000 },
+    ]},
+    { customer_id: customers[1].customer_id, status: OrderStatus.PAID, created_at: apr25, items: [
+      { item_type: CategoryType.SERVICE, service_id: services[0].id, quantity: 1, unit_price: 750000, original_cost: 0, subtotal: 750000, pet_id: pets[2].pet_id },
+      { item_type: CategoryType.SERVICE, service_id: services[2].id, quantity: 1, unit_price: 2500000, original_cost: 0, subtotal: 2500000, pet_id: pets[2].pet_id },
+    ]},
+    { customer_id: customers[2].customer_id, status: OrderStatus.PAID, created_at: apr28, items: [
+      { item_type: CategoryType.PRODUCT, product_id: products[5].product_id, quantity: 1, unit_price: 875000, original_cost: 375000, subtotal: 875000 },
+    ]},
+    { customer_id: customers[3].customer_id, status: OrderStatus.PAID, created_at: apr28, items: [
+      { item_type: CategoryType.SERVICE, service_id: services[1].id, quantity: 1, unit_price: 1500000, original_cost: 0, subtotal: 1500000, pet_id: pets[4].pet_id },
     ]},
   ];
 
@@ -332,6 +375,127 @@ async function seedAnalyticsData() {
     }
 
     console.log(`Order #${savedOrder.order_id} created (${oData.status}, ${totalAmount})`);
+  }
+
+  // ── Seed Customer History ──
+  console.log('\n=== Seeding Customer History ===');
+
+  const existingHistoryCount = await customerHistoryRepository.count({ where: { store_id: store.id } });
+  if (existingHistoryCount === 0) {
+    const historyEntries = [
+      {
+        customer_id: customers[0].customer_id,
+        action: CustomerHistoryAction.CREATED,
+        performed_by: storeAdmin.user_id,
+        performed_by_name: storeAdmin.full_name,
+        old_values: null,
+        new_values: { full_name: 'Nguyễn Minh Anh', phone: '090-100-0001', email: 'minhanh@email.com', address: '100 Nguyễn Huệ, Quận 1', notes: null },
+        created_at: new Date('2026-01-15T10:00:00'),
+      },
+      {
+        customer_id: customers[0].customer_id,
+        action: CustomerHistoryAction.UPDATED,
+        performed_by: storeAdmin.user_id,
+        performed_by_name: storeAdmin.full_name,
+        old_values: { full_name: 'Nguyễn Minh Anh', phone: '090-100-0001', email: 'minhanh@email.com', address: '100 Nguyễn Huệ, Quận 1', notes: null },
+        new_values: { full_name: 'Nguyễn Minh Anh', phone: '090-100-0001', email: 'minhanh.new@email.com', address: '100 Nguyễn Huệ, Quận 1', notes: 'Khách hàng VIP' },
+        created_at: new Date('2026-02-20T14:30:00'),
+      },
+      {
+        customer_id: customers[1].customer_id,
+        action: CustomerHistoryAction.CREATED,
+        performed_by: staffUser.user_id,
+        performed_by_name: staffUser.full_name,
+        old_values: null,
+        new_values: { full_name: 'Trần Đức Bình', phone: '090-100-0002', email: 'ducbinh@email.com', address: '200 Lê Lợi, Quận 1', notes: null },
+        created_at: new Date('2026-01-20T09:15:00'),
+      },
+      {
+        customer_id: customers[1].customer_id,
+        action: CustomerHistoryAction.UPDATED,
+        performed_by: storeAdmin.user_id,
+        performed_by_name: storeAdmin.full_name,
+        old_values: { full_name: 'Trần Đức Bình', phone: '090-100-0002', email: 'ducbinh@email.com', address: '200 Lê Lợi, Quận 1', notes: null },
+        new_values: { full_name: 'Trần Đức Bình', phone: '090-100-0002', email: 'ducbinh@email.com', address: '250 Lê Lợi, Lầu 3', notes: null },
+        created_at: new Date('2026-03-10T11:00:00'),
+      },
+      {
+        customer_id: customers[2].customer_id,
+        action: CustomerHistoryAction.CREATED,
+        performed_by: storeAdmin.user_id,
+        performed_by_name: storeAdmin.full_name,
+        old_values: null,
+        new_values: { full_name: 'Lê Thu Cúc', phone: '090-100-0003', email: 'thucuc@email.com', address: '300 Hai Bà Trưng, Quận 3', notes: null },
+        created_at: new Date('2026-02-05T16:45:00'),
+      },
+      {
+        customer_id: customers[3].customer_id,
+        action: CustomerHistoryAction.CREATED,
+        performed_by: staffUser.user_id,
+        performed_by_name: staffUser.full_name,
+        old_values: null,
+        new_values: { full_name: 'Phạm Văn Đức', phone: '090-100-0004', email: 'vanduc@email.com', address: '400 Võ Văn Tần, Quận 3', notes: null },
+        created_at: new Date('2026-03-01T08:30:00'),
+      },
+      {
+        customer_id: customers[3].customer_id,
+        action: CustomerHistoryAction.UPDATED,
+        performed_by: storeAdmin.user_id,
+        performed_by_name: storeAdmin.full_name,
+        old_values: { full_name: 'Phạm Văn Đức', phone: '090-100-0004', email: 'vanduc@email.com', address: '400 Võ Văn Tần, Quận 3', notes: null },
+        new_values: { full_name: 'Phạm Văn Đức', phone: '090-100-0004', email: 'vanduc.pham@email.com', address: '400 Võ Văn Tần, Quận 3', notes: 'Dị ứng thịt gà' },
+        created_at: new Date('2026-04-12T13:20:00'),
+      },
+      {
+        customer_id: customers[4].customer_id,
+        action: CustomerHistoryAction.CREATED,
+        performed_by: storeAdmin.user_id,
+        performed_by_name: storeAdmin.full_name,
+        old_values: null,
+        new_values: { full_name: 'Hoàng Thị Êmbơr', phone: '090-100-0005', email: 'embor@email.com', address: '500 Điện Biên Phủ, Bình Thạnh', notes: null },
+        created_at: new Date('2026-03-15T10:00:00'),
+      },
+      {
+        customer_id: customers[4].customer_id,
+        action: CustomerHistoryAction.UPDATED,
+        performed_by: staffUser.user_id,
+        performed_by_name: staffUser.full_name,
+        old_values: { full_name: 'Hoàng Thị Êmbơr', phone: '090-100-0005', email: 'embor@email.com', address: '500 Điện Biên Phủ, Bình Thạnh', notes: null },
+        new_values: { full_name: 'Hoàng Thị Êm Bơr', phone: '090-100-0005', email: 'embor@email.com', address: '500 Điện Biên Phủ, Bình Thạnh', notes: null },
+        created_at: new Date('2026-04-22T15:45:00'),
+      },
+      {
+        customer_id: customers[0].customer_id,
+        action: CustomerHistoryAction.UPDATED,
+        performed_by: storeAdmin.user_id,
+        performed_by_name: storeAdmin.full_name,
+        old_values: { full_name: 'Nguyễn Minh Anh', phone: '090-100-0001', email: 'minhanh.new@email.com', address: '100 Nguyễn Huệ, Quận 1', notes: 'Khách hàng VIP' },
+        new_values: { full_name: 'Nguyễn Minh Anh', phone: '090-100-0001', email: 'minhanh.new@email.com', address: '150 Nguyễn Huệ, Phòng A', notes: 'Khách hàng VIP' },
+        created_at: new Date('2026-04-28T09:00:00'),
+      },
+    ];
+
+    for (const entry of historyEntries) {
+      const saved = await customerHistoryRepository.save(customerHistoryRepository.create({
+        customer_id: entry.customer_id,
+        store_id: store.id,
+        action: entry.action,
+        performed_by: entry.performed_by,
+        performed_by_name: entry.performed_by_name,
+        old_values: entry.old_values,
+        new_values: entry.new_values,
+      }) as any) as any;
+
+      const placeholder = dbType === 'sqlite' ? '?' : '$1';
+      const idPlaceholder = dbType === 'sqlite' ? '?' : '$2';
+      await connection.query(
+        `UPDATE customer_history SET created_at = ${placeholder} WHERE id = ${idPlaceholder}`,
+        [entry.created_at, saved.id],
+      );
+    }
+    console.log(`${historyEntries.length} customer history entries created`);
+  } else {
+    console.log(`Customer history already exists (${existingHistoryCount} entries)`);
   }
 
   console.log('\n' + '='.repeat(50));
