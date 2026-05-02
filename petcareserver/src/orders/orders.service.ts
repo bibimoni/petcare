@@ -44,7 +44,12 @@ export class OrdersService {
     createOrderDto: CreateOrderDto,
     storeId: number,
     userId: number,
-  ): Promise<Order> {
+    checkoutOptions?: {
+      currency?: string;
+      success_url?: string;
+      cancel_url?: string;
+    },
+  ): Promise<{ order: Order; checkout_url: string; session_id: string }> {
     const { customer_id, items, note } = createOrderDto;
 
     type DetailPayload = {
@@ -185,7 +190,41 @@ export class OrdersService {
         );
       }
 
-      return completeOrder;
+      const currency = checkoutOptions?.currency || 'usd';
+      const frontendUrl =
+        this.configService.get<string>('FRONTEND_URL') ||
+        'http://localhost:3000';
+      const successUrl =
+        checkoutOptions?.success_url ||
+        `${frontendUrl}/orders/${completeOrder.order_id}/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl =
+        checkoutOptions?.cancel_url ||
+        `${frontendUrl}/orders/${completeOrder.order_id}/cancel`;
+
+      const sessionData = await this.stripeService.createCheckoutSession(
+        completeOrder.order_id,
+        totalAmount,
+        currency,
+        successUrl,
+        cancelUrl,
+      );
+
+      const payment = this.paymentsRepository.create({
+        order_id: completeOrder.order_id,
+        payment_method: PaymentMethod.STRIPE,
+        amount: totalAmount,
+        status: PaymentStatus.PENDING,
+        stripe_checkout_session_id: sessionData.session_id,
+        stripe_checkout_url: sessionData.checkout_url,
+        stripe_payment_intent_id: undefined,
+      });
+      await this.paymentsRepository.save(payment);
+
+      return {
+        order: completeOrder,
+        checkout_url: sessionData.checkout_url,
+        session_id: sessionData.session_id,
+      };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -398,6 +437,44 @@ export class OrdersService {
     };
   }
 
+  async confirmOrder(
+    orderId: number,
+    storeId: number,
+  ): Promise<{
+    order_id: number;
+    status: string;
+    payment_status: string | null;
+    amount: number;
+    receipt_url: string | null;
+  }> {
+    const order = await this.ordersRepository.findOne({
+      where: { order_id: orderId },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order ${orderId} not found`);
+    }
+
+    if (order.store_id !== storeId) {
+      throw new ForbiddenException(
+        'You do not have permission to confirm this order',
+      );
+    }
+
+    const payment = await this.paymentsRepository.findOne({
+      where: { order_id: orderId },
+      order: { created_at: 'DESC' },
+    });
+
+    return {
+      order_id: orderId,
+      status: order.status,
+      payment_status: payment?.status ?? null,
+      amount: Number(order.total_amount),
+      receipt_url: payment?.stripe_receipt_url ?? null,
+    };
+  }
+
   async handlePaymentIntentSucceeded(
     paymentIntentId: string,
     chargeId: string | null,
@@ -493,7 +570,6 @@ export class OrdersService {
     sessionId: string,
     paymentIntentId: string,
   ): Promise<void> {
-    // Find payment by checkout session ID
     const payment = await this.paymentsRepository.findOne({
       where: { stripe_checkout_session_id: sessionId },
     });
@@ -505,9 +581,36 @@ export class OrdersService {
       return;
     }
 
-    if (!payment.stripe_payment_intent_id) {
+    // Idempotency
+    if (payment.status === PaymentStatus.COMPLETED) return;
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Lưu payment_intent_id + update COMPLETED ngay tại đây
+      // Không chờ payment_intent.succeeded vì có thể đến trước khi DB lưu kịp
       payment.stripe_payment_intent_id = paymentIntentId;
-      await this.paymentsRepository.save(payment);
+      payment.status = PaymentStatus.COMPLETED;
+      await queryRunner.manager.save(Payment, payment);
+
+      await queryRunner.manager.update(Order, payment.order_id, {
+        status: OrderStatus.PAID,
+      });
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error(
+        `[CRITICAL] checkout.session.completed for ${sessionId} — DB update failed:`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Failed to process checkout webhook',
+      );
+    } finally {
+      await queryRunner.release();
     }
   }
 

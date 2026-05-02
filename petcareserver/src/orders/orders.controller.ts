@@ -24,7 +24,9 @@ import {
   ApiOperation,
   ApiResponse,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
+
 import { Currency, OrderStatus } from '../common/enum';
 import {
   CurrentUser,
@@ -44,8 +46,8 @@ export class OrdersController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions(STORE_PERMISSIONS.ORDER_CREATE)
-  @ApiOperation({ summary: 'Create a new order' })
-  @ApiResponse({ status: 201, description: 'Order created successfully' })
+  @ApiOperation({ summary: 'Create a new order and return Stripe checkout URL' })
+  @ApiResponse({ status: 201, description: 'Order created with checkout_url' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   async createOrder(
     @Body() createOrderDto: CreateOrderDto,
@@ -55,7 +57,69 @@ export class OrdersController {
       createOrderDto,
       user.store_id,
       user.user_id,
+      {
+        currency: createOrderDto.currency,
+        success_url: createOrderDto.success_url,
+        cancel_url: createOrderDto.cancel_url,
+      },
     );
+  }
+
+  @Post('confirm')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.ORDER_VIEW)
+  @ApiOperation({
+    summary: 'Confirm order payment status after Stripe checkout redirect',
+    description:
+      'FE gọi endpoint này sau khi Stripe redirect về success_url. Trả về trạng thái thanh toán hiện tại.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['order_id'],
+      properties: {
+        order_id: {
+          type: 'integer',
+          example: 1,
+          description: 'ID của đơn hàng cần xác nhận thanh toán',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Trạng thái thanh toán',
+    schema: {
+      type: 'object',
+      properties: {
+        order_id: { type: 'integer', example: 1 },
+        status: {
+          type: 'string',
+          enum: ['PENDING', 'PAID', 'CANCELLED'],
+          example: 'PAID',
+        },
+        payment_status: {
+          type: 'string',
+          enum: ['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED'],
+          nullable: true,
+          example: 'COMPLETED',
+        },
+        amount: { type: 'number', example: 110 },
+        receipt_url: {
+          type: 'string',
+          nullable: true,
+          example: 'https://pay.stripe.com/receipts/...',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async confirmOrder(
+    @Body('order_id', ParseIntPipe) orderId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.ordersService.confirmOrder(orderId, user.store_id);
   }
 
   @Get()
