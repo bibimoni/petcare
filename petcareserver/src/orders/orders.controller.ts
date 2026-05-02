@@ -184,6 +184,7 @@ export class OrdersController {
   @Post('payment/intent')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.ORDER_CREATE)
+  @ApiOperation({ deprecated: true })
   @ApiOperation({ summary: 'Create a Stripe payment intent for an order' })
   @ApiResponse({ status: 200, description: 'Payment intent created' })
   @ApiResponse({ status: 404, description: 'Order not found' })
@@ -202,6 +203,7 @@ export class OrdersController {
   @Post('checkout')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.ORDER_CREATE)
+  @ApiOperation({ deprecated: true })
   @ApiOperation({
     summary:
       'Create Stripe Checkout Session — redirects to Stripe payment page',

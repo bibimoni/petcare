@@ -162,6 +162,19 @@ export class StripeService {
     }
   }
 
+  async retrieveCheckoutSession(sessionId: string) {
+    try {
+      return await this.stripe.checkout.sessions.retrieve(sessionId);
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeError) {
+        throw new BadRequestException(`Stripe error: ${error.message}`);
+      }
+      throw new InternalServerErrorException(
+        'Failed to retrieve checkout session',
+      );
+    }
+  }
+
   async confirmPaymentIntent(paymentIntentId: string): Promise<
     | {
         success: true;

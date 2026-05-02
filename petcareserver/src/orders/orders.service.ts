@@ -466,12 +466,76 @@ export class OrdersService {
       order: { created_at: 'DESC' },
     });
 
+    let receiptUrl = payment?.stripe_receipt_url ?? null;
+    let paymentStatus = payment?.status ?? null;
+    let orderStatus = order.status;
+
+    // Proactive sync if webhook is delayed or receipt_url is missing
+    if (payment && (!receiptUrl || paymentStatus === PaymentStatus.PENDING)) {
+      try {
+        let paymentIntentId = payment?.stripe_payment_intent_id;
+
+        // If intent ID is not in DB yet, fetch it from the Checkout Session
+        if (!paymentIntentId && payment?.stripe_checkout_session_id) {
+          const session = await this.stripeService.retrieveCheckoutSession(
+            payment.stripe_checkout_session_id,
+          );
+          if (session.payment_intent) {
+            paymentIntentId =
+              typeof session.payment_intent === 'string'
+                ? session.payment_intent
+                : session.payment_intent.id;
+                
+            payment.stripe_payment_intent_id = paymentIntentId;
+          }
+        }
+
+        if (paymentIntentId) {
+          const intentInfo =
+            await this.stripeService.confirmPaymentIntent(paymentIntentId);
+
+          if (intentInfo.success && intentInfo.charge_id) {
+            // It's actually paid!
+            if (paymentStatus === PaymentStatus.PENDING) {
+              paymentStatus = PaymentStatus.COMPLETED as any;
+              orderStatus = OrderStatus.PAID as any;
+              payment.status = PaymentStatus.COMPLETED;
+              order.status = OrderStatus.PAID;
+              await this.ordersRepository.save(order);
+            }
+
+            if (!receiptUrl) {
+              const charge = await this.stripeService.getChargeDetails(
+                intentInfo.charge_id,
+              );
+              receiptUrl = charge.receipt_url ?? null;
+
+              payment.stripe_charge_id = intentInfo.charge_id;
+              payment.stripe_receipt_url = receiptUrl;
+            }
+            await this.paymentsRepository.save(payment);
+          } else if (
+            !intentInfo.success &&
+            (intentInfo.status === 'canceled' ||
+              intentInfo.status === 'failed') &&
+            paymentStatus === PaymentStatus.PENDING
+          ) {
+            paymentStatus = PaymentStatus.FAILED as any;
+            payment.status = PaymentStatus.FAILED;
+            await this.paymentsRepository.save(payment);
+          }
+        }
+      } catch (err) {
+        console.error('Proactive sync failed in confirmOrder:', err);
+      }
+    }
+
     return {
       order_id: orderId,
-      status: order.status,
-      payment_status: payment?.status ?? null,
+      status: orderStatus,
+      payment_status: paymentStatus,
       amount: Number(order.total_amount),
-      receipt_url: payment?.stripe_receipt_url ?? null,
+      receipt_url: receiptUrl,
     };
   }
 
