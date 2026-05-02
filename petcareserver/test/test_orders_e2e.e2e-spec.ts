@@ -399,7 +399,7 @@ describe('Orders E2E — Webhook Flow', () => {
       mockStripeService.createCheckoutSession.mockResolvedValue({
         checkout_url: `https://checkout.stripe.com/pay/cs_test_${orderId}`,
         session_id: `cs_test_${orderId}`,
-        payment_intent_id: `pi_checkout_${orderId}`,
+        payment_intent_id: null, // PI is created after customer pays, linked via checkout.session.completed webhook
       });
       const res = await request(app.getHttpServer())
         .post('/v1/orders/checkout')
@@ -483,7 +483,14 @@ describe('Orders E2E — Webhook Flow', () => {
       ]);
       await createCheckout(order.order_id);
 
-      // Simulate payment succeeded
+      // 1. Stripe sends checkout.session.completed (links session → PI)
+      await sendWebhook('checkout.session.completed', {
+        id: `cs_test_${order.order_id}`,
+        payment_status: 'paid',
+        payment_intent: `pi_checkout_${order.order_id}`,
+      }).expect(200);
+
+      // 2. Stripe sends payment_intent.succeeded
       mockStripeService.getChargeDetails.mockResolvedValue({ receipt_url: null });
       await sendWebhook('payment_intent.succeeded', {
         id: `pi_checkout_${order.order_id}`,
