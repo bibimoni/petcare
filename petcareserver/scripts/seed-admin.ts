@@ -94,9 +94,9 @@ async function seedAdmin() {
     superAdmin = userRepository.create({
       email: 'superadmin@petcare.com',
       password_hash: hashedPassword,
-      full_name: 'PetCare Super Admin',
-      phone: '+1-555-0001',
-      address: 'Platform Headquarters, Tech City',
+      full_name: 'Quản Trị Hệ Thống PetCare',
+      phone: '090-000-0001',
+      address: 'Trụ sở nền tảng, Quận 1, Hồ Chí Minh',
       status: UserStatus.ACTIVE,
     });
 
@@ -112,7 +112,7 @@ async function seedAdmin() {
   console.log('\n=== Seeding Store ===');
 
   const existingStore = await storeRepository.findOne({
-    where: { name: 'Pet Haven Veterinary Clinic' },
+    where: { name: 'Phòng Khám Thú Y Pet Haven' },
   });
 
   let store: Store;
@@ -123,14 +123,14 @@ async function seedAdmin() {
     console.log('Creating store...');
 
     store = storeRepository.create({
-      name: 'Pet Haven Veterinary Clinic',
+      name: 'Phòng Khám Thú Y Pet Haven',
       status: StoreStatus.ACTIVE,
-      phone: '+1-555-0100',
-      address: '123 Happy Pets Boulevard',
-      city: 'Los Angeles',
-      state: 'California',
-      country: 'United States',
-      postal_code: '90001',
+      phone: '028-1234-5678',
+      address: '123 Nguyễn Văn Linh',
+      city: 'Hồ Chí Minh',
+      state: 'Hồ Chí Minh',
+      country: 'Việt Nam',
+      postal_code: '700000',
     });
 
     store = await storeRepository.save(store);
@@ -298,9 +298,9 @@ async function seedAdmin() {
     storeAdmin = userRepository.create({
       email: 'admin@pethaven.com',
       password_hash: hashedPassword,
-      full_name: 'Sarah Johnson',
-      phone: '+1-555-0200',
-      address: '456 Staff Quarters, Los Angeles, CA',
+      full_name: 'Nguyễn Thị Hương',
+      phone: '090-000-0200',
+      address: '456 Lê Văn Việt, Quận 9, Hồ Chí Minh',
       store_id: store.id,
       role_id: storeAdminRole.id,
       status: UserStatus.ACTIVE,
@@ -336,12 +336,12 @@ async function seedAdmin() {
 
     pet = petRepository.create({
       store_id: store.id,
-      name: 'Buddy',
+      name: 'Vàng',
       pet_code: 'PET-2024-001',
       gender: 'MALE' as any,
       breed: 'Labrador',
       dob: new Date('2021-06-10'),
-      notes: 'Store pet - clinic mascot',
+      notes: 'Thú cưng cửa hàng - linh vật phòng khám',
       status: 'ALIVE' as any,
     });
 
@@ -367,19 +367,19 @@ async function seedAdmin() {
       {
         pet_id: pet.pet_id,
         weight: 25.0,
-        notes: 'Initial weight check',
+        notes: 'Cân đo ban đầu',
         recorded_at: new Date('2022-06-10'),
       },
       {
         pet_id: pet.pet_id,
         weight: 27.5,
-        notes: '1-year checkup',
+        notes: 'Khám năm 1',
         recorded_at: new Date('2023-06-10'),
       },
       {
         pet_id: pet.pet_id,
         weight: 30.2,
-        notes: '2-year checkup',
+        notes: 'Khám năm 2',
         recorded_at: new Date('2024-06-10'),
       },
     ];

@@ -9,6 +9,10 @@ import { Repository } from 'typeorm';
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
+import {
+  CustomerHistory,
+  CustomerHistoryAction,
+} from './entities/customer-history.entity';
 import { Pet } from '../pets/entities/pet.entity';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
@@ -18,6 +22,9 @@ export class CustomersService {
     @InjectRepository(Customer)
     private customerRepository: Repository<Customer>,
 
+    @InjectRepository(CustomerHistory)
+    private customerHistoryRepository: Repository<CustomerHistory>,
+
     @InjectRepository(Pet)
     private petRepository: Repository<Pet>,
 
@@ -26,6 +33,8 @@ export class CustomersService {
   async createCustomer(
     storeId: number,
     dto: CreateCustomerDto,
+    performedBy?: number,
+    performedByName?: string,
   ): Promise<Customer> {
     const customer = this.customerRepository.create({
       ...dto,
@@ -33,7 +42,25 @@ export class CustomersService {
     });
 
     try {
-      return await this.customerRepository.save(customer);
+      const saved = await this.customerRepository.save(customer);
+
+      await this.customerHistoryRepository.save({
+        customer_id: saved.customer_id,
+        store_id: storeId,
+        action: CustomerHistoryAction.CREATED,
+        performed_by: performedBy ?? null,
+        performed_by_name: performedByName ?? null,
+        old_values: null,
+        new_values: {
+          full_name: saved.full_name,
+          phone: saved.phone,
+          email: saved.email,
+          address: saved.address,
+          notes: saved.notes,
+        },
+      });
+
+      return saved;
     } catch (error: any) {
       if (error.code === '23505') {
         throw new ConflictException('Số điện thoại này đã được đăng ký');
@@ -117,6 +144,8 @@ export class CustomersService {
     id: number,
     dto: UpdateCustomerDto,
     storeId: number,
+    performedBy?: number,
+    performedByName?: string,
   ): Promise<Customer> {
     const customer = await this.customerRepository.findOne({
       where: { customer_id: id, store_id: storeId },
@@ -136,14 +165,42 @@ export class CustomersService {
       }
     }
 
+    const oldValues = {
+      full_name: customer.full_name,
+      phone: customer.phone,
+      email: customer.email,
+      address: customer.address,
+      notes: customer.notes,
+    };
+
     Object.assign(customer, dto);
 
-    return this.customerRepository.save(customer);
+    const saved = await this.customerRepository.save(customer);
+
+    await this.customerHistoryRepository.save({
+      customer_id: saved.customer_id,
+      store_id: storeId,
+      action: CustomerHistoryAction.UPDATED,
+      performed_by: performedBy ?? null,
+      performed_by_name: performedByName ?? null,
+      old_values: oldValues,
+      new_values: {
+        full_name: saved.full_name,
+        phone: saved.phone,
+        email: saved.email,
+        address: saved.address,
+        notes: saved.notes,
+      },
+    });
+
+    return saved;
   }
 
   async deleteCustomer(
     id: number,
     storeId: number,
+    performedBy?: number,
+    performedByName?: string,
   ): Promise<{ message: string }> {
     const customer = await this.customerRepository.findOne({
       where: { customer_id: id, store_id: storeId },
@@ -152,6 +209,22 @@ export class CustomersService {
     if (!customer) {
       throw new NotFoundException('Không tìm thấy khách hàng');
     }
+
+    await this.customerHistoryRepository.save({
+      customer_id: customer.customer_id,
+      store_id: storeId,
+      action: CustomerHistoryAction.DELETED,
+      performed_by: performedBy ?? null,
+      performed_by_name: performedByName ?? null,
+      old_values: {
+        full_name: customer.full_name,
+        phone: customer.phone,
+        email: customer.email,
+        address: customer.address,
+        notes: customer.notes,
+      },
+      new_values: null,
+    });
 
     await this.customerRepository.softRemove(customer);
 
@@ -191,5 +264,15 @@ export class CustomersService {
     }
 
     return cloudinaryResp.secure_url;
+  }
+
+  async getHistory(
+    storeId: number,
+    customerId: number,
+  ): Promise<CustomerHistory[]> {
+    return this.customerHistoryRepository.find({
+      where: { customer_id: customerId, store_id: storeId },
+      order: { created_at: 'DESC' },
+    });
   }
 }

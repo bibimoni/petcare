@@ -80,6 +80,8 @@ export class CustomersController {
     return this.customersService.createCustomer(
       user.store_id,
       createCustomerDto,
+      user.user_id,
+      user.full_name,
     );
   }
 
@@ -111,6 +113,27 @@ export class CustomersController {
       date_from,
       date_to,
     });
+  }
+
+  @Get('/:customerId/history')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.CUSTOMER_VIEW)
+  @ApiOperation({
+    summary: 'Get customer history',
+    description:
+      'Retrieves the change history for a specific customer (create, update, delete events)',
+  })
+  @ApiParam({ name: 'customerId', type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Customer history retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Customer not found' })
+  getHistory(
+    @Param('customerId', ParseIntPipe) customerId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.customersService.getHistory(user.store_id, customerId);
   }
 
   @Get('/:customerId')
@@ -179,7 +202,7 @@ export class CustomersController {
     @Body() dto: UpdateCustomerDto,
     @CurrentUser() user: any,
   ) {
-    return this.customersService.update(customerId, dto, user.store_id);
+    return this.customersService.update(customerId, dto, user.store_id, user.user_id, user.full_name);
   }
 
   @Delete('/:customerId')
@@ -203,7 +226,7 @@ export class CustomersController {
     @Param('customerId', ParseIntPipe) customerId: number,
     @CurrentUser() user: any,
   ) {
-    return this.customersService.deleteCustomer(customerId, user.store_id);
+    return this.customersService.deleteCustomer(customerId, user.store_id, user.user_id, user.full_name);
   }
 
   @Post('pets/:petId/avatar')

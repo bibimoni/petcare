@@ -128,6 +128,7 @@ export class StoresService {
     await this.userRepository.update(currentUserId, {
       store_id: savedStore.id,
       role_id: adminRole.id,
+      last_active_at: new Date(),
     });
 
     return {
@@ -465,6 +466,7 @@ export class StoresService {
     await this.userRepository.update(targetUserId, {
       store_id: null as any,
       role_id: null as any,
+      last_active_at: new Date(),
     });
 
     return {
@@ -504,6 +506,7 @@ export class StoresService {
     await this.userRepository.update(currentUserId, {
       store_id: null as any,
       role_id: null as any,
+      last_active_at: new Date(),
     });
 
     return {
@@ -553,18 +556,16 @@ export class StoresService {
     await this.userRepository.update(currentUserId, {
       store_id: null as any,
       role_id: null as any,
+      last_active_at: new Date(),
     });
 
-    await this.storeRepository.update(storeId, {
-      status: StoreStatus.SUSPENDED,
-    });
+    await this.storeRepository.delete(storeId);
 
     return {
       message: 'Đã xóa cửa hàng thành công',
       store: {
         id: store.id,
         name: store.name,
-        status: StoreStatus.SUSPENDED,
       },
     };
   }
@@ -647,6 +648,7 @@ export class StoresService {
       store_id: invitation.store_id,
       role_id: invitation.role_id,
       status: UserStatus.ACTIVE,
+      last_active_at: new Date(),
     });
 
     await this.invitationRepository.update(invitation.id, {

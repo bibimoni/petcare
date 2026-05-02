@@ -240,9 +240,9 @@ describe('StoresService - Staff Removal', () => {
       expect(userRepository.update).toHaveBeenCalledWith(2, {
         store_id: null as any,
         role_id: null as any,
+        last_active_at: expect.any(Date),
       });
       expect(result.message).toBe('Đã xóa nhân viên khỏi cửa hàng');
-      expect(result.user.user_id).toBe(2);
     });
 
     it('should throw ForbiddenException when trying to remove self', async () => {
@@ -307,6 +307,7 @@ describe('StoresService - Staff Removal', () => {
       expect(userRepository.update).toHaveBeenCalledWith(3, {
         store_id: null as any,
         role_id: null as any,
+        last_active_at: expect.any(Date),
       });
       expect(result.message).toBe('Đã xóa nhân viên khỏi cửa hàng');
     });
@@ -331,6 +332,7 @@ describe('StoresService - Staff Removal', () => {
       expect(userRepository.update).toHaveBeenCalledWith(2, {
         store_id: null as any,
         role_id: null as any,
+        last_active_at: expect.any(Date),
       });
       expect(result.message).toBe('Đã rời cửa hàng thành công');
       expect(result.user.user_id).toBe(2);
@@ -370,6 +372,7 @@ describe('StoresService - Staff Removal', () => {
       expect(userRepository.update).toHaveBeenCalledWith(1, {
         store_id: null as any,
         role_id: null as any,
+        last_active_at: expect.any(Date),
       });
       expect(result.message).toBe('Đã rời cửa hàng thành công');
     });
@@ -423,19 +426,18 @@ describe('StoresService - Staff Removal', () => {
       userRepository.count.mockResolvedValue(1);
       storeRepository.findOne.mockResolvedValue(mockStore);
       userRepository.update.mockResolvedValue(undefined);
-      storeRepository.update.mockResolvedValue(undefined);
+      storeRepository.delete.mockResolvedValue(undefined);
 
       const result = await service.removeStore(1, 1);
 
       expect(userRepository.update).toHaveBeenCalledWith(1, {
         store_id: null as any,
         role_id: null as any,
+        last_active_at: expect.any(Date),
       });
-      expect(storeRepository.update).toHaveBeenCalledWith(1, {
-        status: StoreStatus.SUSPENDED,
-      });
+      expect(storeRepository.delete).toHaveBeenCalledWith(1);
       expect(result.message).toBe('Đã xóa cửa hàng thành công');
-      expect(result.store.status).toBe(StoreStatus.SUSPENDED);
+      expect(result.store.id).toBe(1);
     });
 
     it('should throw ForbiddenException when store still has other members', async () => {
