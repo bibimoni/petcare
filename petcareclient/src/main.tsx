@@ -33,6 +33,7 @@ import CustomerProfilePage from "./features/profile/customer";
 import PetProfile from "./features/profile/pets";
 import ProfilePage from "./features/profile/profile";
 import ServicesPage from "./features/service/components/service-page";
+import SettingsPage from "./features/settings/page";
 import CreateStorePage from "./features/store/create-store-page";
 import TermAndServicePage from "./features/term-and-service/page";
 import { queryClient } from "./lib/query-client";
@@ -197,6 +198,14 @@ createRoot(document.getElementById("root")!).render(
               <ProtectedRoute>
                 <ProfilePage />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <SettingsPage />
+              </RoleRoute>
             }
           />
           <Route path="*" element={<NotFound />} />
