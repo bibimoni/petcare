@@ -27,6 +27,12 @@ export type ServicePageData = {
   categories: ServiceCategoryDto[];
 };
 
+export type ServiceFilters = {
+  search?: string;
+  status?: string;
+  categoryId?: number | string;
+};
+
 const extractList = <T extends Record<string, unknown>>(
   payload: unknown,
 ): T[] => {
@@ -65,15 +71,27 @@ const normalizeServices = (payload: unknown): ServiceDto[] => {
 };
 
 export const getServiceCategories = async (): Promise<ServiceCategoryDto[]> => {
-  const response = await api.get("/categories?type=SERVICE");
+  const response = await api.get("/categories?categoryType=SERVICE");
   return normalizeServiceCategories(response);
+};
+
+export const getServices = async (
+  filters: ServiceFilters = {},
+): Promise<ServiceDto[]> => {
+  const response = await api.get("/services", {
+    params: {
+      search: filters.search,
+      category_id: filters.categoryId,
+      status: filters.status,
+    },
+  });
+  return normalizeServices(response);
 };
 
 export const getServicesByCategoryId = async (
   categoryId: number | string,
 ): Promise<ServiceDto[]> => {
-  const response = await api.get(`/services/${categoryId}`);
-  return normalizeServices(response);
+  return getServices({ categoryId });
 };
 
 export const getServicesForTable = async (
@@ -83,7 +101,7 @@ export const getServicesForTable = async (
     const categories = await getServiceCategories();
     const responses = await Promise.all(
       categories.map((category) =>
-        getServicesByCategoryId(category.category_id),
+        getServices({ categoryId: category.category_id }),
       ),
     );
 
@@ -101,7 +119,9 @@ export const getServicePageData = async (): Promise<ServicePageData> => {
   }
 
   const serviceResponses = await Promise.all(
-    categories.map((category) => getServicesByCategoryId(category.category_id)),
+    categories.map((category) =>
+      getServices({ categoryId: category.category_id }),
+    ),
   );
 
   return {

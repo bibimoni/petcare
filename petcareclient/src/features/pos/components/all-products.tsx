@@ -7,14 +7,16 @@ import {
   getPosProducts,
   getPosServices,
   type PosService,
+  type PosProduct,
   getPosProductCategories,
   getPosServiceCategories,
 } from "@/features/pos/api/pos.api";
 import { sidebarUser, getSidebarUser } from "@/lib/user";
 
-import { ServiceDetailModal } from "./service-detail-modal";
-import { CreateOrderModal } from "./create-order-modal";
 import type { OrderItem } from "../pos-page";
+
+import { CreateOrderModal } from "./create-order-modal";
+import { ServiceDetailModal } from "./service-detail-modal";
 
 const chunkItems = <T,>(items: T[], pageSize: number): T[][] => {
   if (items.length === 0) {
@@ -41,9 +43,12 @@ const AllProductsPage = () => {
     useState<string>("all");
   const [servicePage, setServicePage] = useState(1);
   const [isServiceDetailOpen, setIsServiceDetailOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<PosService | null>(null);
+  const [selectedService, setSelectedService] = useState<PosService | null>(
+    null,
+  );
 
-  const [selectedProductCategory, setSelectedProductCategory] = useState<string>("all");
+  const [selectedProductCategory, setSelectedProductCategory] =
+    useState<string>("all");
   const [productPage, setProductPage] = useState(1);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const location = useLocation();
@@ -174,19 +179,32 @@ const AllProductsPage = () => {
     setIsServiceDetailOpen(true);
   };
 
-  const handleAddItem = (item: PosService | PosProduct, type: "service" | "product") => {
+  const handleAddItem = (
+    item: PosService | PosProduct,
+    type: "service" | "product",
+  ) => {
     setOrderItems((prev) => {
       const cartItemId = `${type}-${item.id}`;
       const existing = prev.find((i) => i.id === cartItemId);
       if (existing) {
         return prev.map((i) =>
-          i.id === cartItemId ? { ...i, quantity: i.quantity + 1 } : i
+          i.id === cartItemId ? { ...i, quantity: i.quantity + 1 } : i,
         );
       }
-      const numericPrice = "rawPrice" in item ? (item as any).rawPrice : parseInt(item.price.replace(/\D/g, ""), 10) || 0;
+      const numericPrice =
+        "rawPrice" in item
+          ? (item as any).rawPrice
+          : parseInt(item.price.replace(/\D/g, ""), 10) || 0;
       return [
         ...prev,
-        { id: cartItemId, name: item.name, price: item.price, numericPrice, quantity: 1, type },
+        {
+          id: cartItemId,
+          name: item.name,
+          price: item.price,
+          numericPrice,
+          quantity: 1,
+          type,
+        },
       ];
     });
     setIsCreateOrderOpen(true);
@@ -194,13 +212,15 @@ const AllProductsPage = () => {
 
   const handleUpdateQuantity = (id: string, delta: number) => {
     setOrderItems((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const newQuantity = Math.max(0, item.quantity + delta);
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      }).filter((item) => item.quantity > 0)
+      prev
+        .map((item) => {
+          if (item.id === id) {
+            const newQuantity = Math.max(0, item.quantity + delta);
+            return { ...item, quantity: newQuantity };
+          }
+          return item;
+        })
+        .filter((item) => item.quantity > 0),
     );
   };
 
@@ -221,7 +241,9 @@ const AllProductsPage = () => {
   }, [location.state]);
 
   return (
-    <div className={`flex h-screen w-full overflow-hidden transition-all duration-300 ${isCreateOrderOpen ? "pr-[400px]" : ""}`}>
+    <div
+      className={`flex h-screen w-full overflow-hidden transition-all duration-300 ${isCreateOrderOpen ? "pr-[400px]" : ""}`}
+    >
       <Sidebar userInfo={sidebarUser} />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
@@ -245,7 +267,7 @@ const AllProductsPage = () => {
               <input
                 className="h-11 w-full rounded-full border border-[#ecdcd1] bg-[#fdfaf8] pl-12 pr-4 text-sm text-[#523c30] outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4]"
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Tìm sản phẩm, dịch vụ hoặc khách hàng"
+                placeholder="Tìm sản phẩm, dịch vụ"
                 type="text"
                 value={searchTerm}
               />
@@ -296,10 +318,11 @@ const AllProductsPage = () => {
 
                   return (
                     <button
-                      className={`rounded-2xl border cursor-pointer px-4 py-2 text-sm font-semibold transition ${isActive
-                        ? "border-[#2d1f16] bg-[#1f140f] text-white"
-                        : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
-                        }`}
+                      className={`rounded-2xl border cursor-pointer px-4 py-2 text-sm font-semibold transition ${
+                        isActive
+                          ? "border-[#2d1f16] bg-[#1f140f] text-white"
+                          : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
+                      }`}
                       key={tab.id}
                       onClick={() => setSelectedServiceCategory(tab.id)}
                       type="button"
@@ -312,7 +335,9 @@ const AllProductsPage = () => {
             </div>
 
             {isServicesLoading ? (
-              <div className={`grid gap-4 ${isCreateOrderOpen ? "grid-cols-4" : "grid-cols-5"}`}>
+              <div
+                className={`grid gap-4 ${isCreateOrderOpen ? "grid-cols-4" : "grid-cols-5"}`}
+              >
                 {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                   <article
                     className="overflow-hidden rounded-3xl border border-[#f0e3dc] bg-white p-3"
@@ -365,7 +390,9 @@ const AllProductsPage = () => {
                                 </h4>
 
                                 <button
-                                  onClick={() => handleAddItem(service, "service")}
+                                  onClick={() =>
+                                    handleAddItem(service, "service")
+                                  }
                                   className="flex h-8 w-8 cursor-pointer shrink-0 items-center justify-center rounded-full bg-[#f7f3f1] text-xl text-[#9f7f6b] transition hover:bg-[#efe5df]"
                                   type="button"
                                 >
@@ -451,10 +478,11 @@ const AllProductsPage = () => {
 
                   return (
                     <button
-                      className={`rounded-2xl cursor-pointer border px-4 py-2 text-sm font-semibold transition ${isActive
-                        ? "border-[#2d1f16] bg-[#1f140f] text-white"
-                        : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
-                        }`}
+                      className={`rounded-2xl cursor-pointer border px-4 py-2 text-sm font-semibold transition ${
+                        isActive
+                          ? "border-[#2d1f16] bg-[#1f140f] text-white"
+                          : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
+                      }`}
                       key={tab.id}
                       onClick={() => setSelectedProductCategory(tab.id)}
                       type="button"
@@ -467,7 +495,9 @@ const AllProductsPage = () => {
             </div>
 
             {isProductsLoading ? (
-              <div className={`grid gap-4 ${isCreateOrderOpen ? "grid-cols-4" : "grid-cols-5"}`}>
+              <div
+                className={`grid gap-4 ${isCreateOrderOpen ? "grid-cols-4" : "grid-cols-5"}`}
+              >
                 {Array.from({ length: ITEMS_PER_PAGE * 2 }).map((_, index) => (
                   <article
                     className="overflow-hidden rounded-3xl border border-[#f0e3dc] bg-white p-3"
@@ -531,7 +561,9 @@ const AllProductsPage = () => {
                                 {product.price}
                               </p>
                               <button
-                                onClick={() => handleAddItem(product, "product")}
+                                onClick={() =>
+                                  handleAddItem(product, "product")
+                                }
                                 className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-xl text-[#9f7f6b] transition hover:bg-[#efe5df]"
                                 type="button"
                               >
@@ -591,13 +623,13 @@ const AllProductsPage = () => {
           service={
             selectedService
               ? {
-                name: selectedService.name,
-                description: selectedService.description,
-                minWeight: selectedService.minWeight,
-                price: selectedService.rawPrice,
-                categoryName: selectedServiceCategoryName,
-                maxWeight: selectedService.maxWeight,
-              }
+                  name: selectedService.name,
+                  description: selectedService.description,
+                  minWeight: selectedService.minWeight,
+                  price: selectedService.rawPrice,
+                  categoryName: selectedServiceCategoryName,
+                  maxWeight: selectedService.maxWeight,
+                }
               : null
           }
         />

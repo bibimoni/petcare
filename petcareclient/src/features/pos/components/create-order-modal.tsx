@@ -1,17 +1,19 @@
-import { X, Trash2 } from "lucide-react";
-import type { OrderItem } from "../pos-page";
 import { useQuery } from "@tanstack/react-query";
+import { X, Trash2 } from "lucide-react";
+import { useState } from "react";
+
 import { CustomerApi } from "@/features/customer/api/customer-api";
 import { PetService } from "@/lib/pets";
-import { useState } from "react";
+
+import type { OrderItem } from "../pos-page";
 
 interface CreateOrderModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  items: OrderItem[];
-  onUpdateQuantity: (id: string, delta: number) => void;
-  onRemoveItem: (id: string) => void;
   userName: string;
+  items: OrderItem[];
+  onClose: () => void;
+  onRemoveItem: (id: string) => void;
+  onUpdateQuantity: (id: string, delta: number) => void;
 }
 
 export const CreateOrderModal = ({
@@ -37,12 +39,15 @@ export const CreateOrderModal = ({
     queryFn: async () => {
       if (!selectedCustomerId) return [];
       const res = await PetService.getByCustomer(Number(selectedCustomerId));
-      return (Array.isArray(res) ? res : res?.data || []) as Record<string, any>[];
+      return (Array.isArray(res) ? res : res?.data || []) as Record<
+        string,
+        any
+      >[];
     },
     enabled: !!selectedCustomerId,
   });
 
-  const filteredCustomers = customers.filter(c => {
+  const filteredCustomers = customers.filter((c) => {
     const term = customerSearchTerm.toLowerCase();
     return (
       (c.fullName || c.full_name || "").toLowerCase().includes(term) ||
@@ -50,7 +55,10 @@ export const CreateOrderModal = ({
     );
   });
 
-  const subTotal = items.reduce((sum, item) => sum + item.numericPrice * item.quantity, 0);
+  const subTotal = items.reduce(
+    (sum, item) => sum + item.numericPrice * item.quantity,
+    0,
+  );
   const vat = subTotal * 0.08;
   const total = subTotal + vat;
 
@@ -62,8 +70,9 @@ export const CreateOrderModal = ({
     <>
       {/* Non-blocking background overlay just for visual transition (optional, removed to allow clicks) */}
       <div
-        className={`fixed right-0 top-0 z-40 h-full w-[400px] flex flex-col border-l border-[#f0e3dc] bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+        className={`fixed right-0 top-0 z-40 h-full w-[400px] flex flex-col border-l border-[#f0e3dc] bg-white shadow-2xl transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
       >
         <div className="flex items-center justify-between border-b border-[#f0e3dc] px-6 py-4">
           <h2 className="text-xl font-extrabold text-[#2f231d]">Hóa đơn</h2>
@@ -101,32 +110,47 @@ export const CreateOrderModal = ({
                   }
                 }}
                 onFocus={() => setIsCustomerDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setIsCustomerDropdownOpen(false), 200)}
+                onBlur={() =>
+                  setTimeout(() => setIsCustomerDropdownOpen(false), 200)
+                }
                 className="w-full rounded-xl border border-[#ecdcd1] bg-[#fdfaf8] py-2.5 pl-10 pr-10 text-sm outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4]"
               />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#be9477] hover:text-[#2f231d]">
-                <span className="material-symbols-outlined text-[20px]">person_add</span>
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#be9477] hover:text-[#2f231d]"
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  person_add
+                </span>
               </button>
 
               {isCustomerDropdownOpen && customerSearchTerm && (
                 <div className="absolute top-full left-0 z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-[#ecdcd1] bg-white shadow-lg">
                   {filteredCustomers.length > 0 ? (
-                    filteredCustomers.map(c => (
+                    filteredCustomers.map((c) => (
                       <div
                         key={c.customer_id as string}
                         onClick={() => {
                           setSelectedCustomerId(c.customer_id as string);
-                          setCustomerSearchTerm(c.fullName || c.full_name || "");
+                          setCustomerSearchTerm(
+                            c.fullName || c.full_name || "",
+                          );
                           setIsCustomerDropdownOpen(false);
                         }}
                         className="cursor-pointer px-4 py-3 hover:bg-[#f8f1ec] border-b border-[#f0e3dc] last:border-0"
                       >
-                        <div className="font-bold text-[#2f231d]">{c.fullName || c.full_name}</div>
-                        <div className="text-xs text-[#9f7d67]">{c.phone || "Không có SĐT"}</div>
+                        <div className="font-bold text-[#2f231d]">
+                          {c.fullName || c.full_name}
+                        </div>
+                        <div className="text-xs text-[#9f7d67]">
+                          {c.phone || "Không có SĐT"}
+                        </div>
                       </div>
                     ))
                   ) : (
-                    <div className="px-4 py-3 text-sm text-[#9f7d67]">Không tìm thấy khách hàng</div>
+                    <div className="px-4 py-3 text-sm text-[#9f7d67]">
+                      Không tìm thấy khách hàng
+                    </div>
                   )}
                 </div>
               )}
@@ -140,7 +164,9 @@ export const CreateOrderModal = ({
             </label>
             <div className="relative">
               <div className="pointer-events-none absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#efe5df] text-[#8d6955]">
-                <span className="material-symbols-outlined text-[18px]">pets</span>
+                <span className="material-symbols-outlined text-[18px]">
+                  pets
+                </span>
               </div>
               <select
                 value={selectedPetId}
@@ -148,7 +174,13 @@ export const CreateOrderModal = ({
                 disabled={!selectedCustomerId || pets.length === 0}
                 className="w-full cursor-pointer appearance-none rounded-xl border border-[#ecdcd1] bg-[#fdfaf8] py-2.5 pl-12 pr-10 text-sm font-medium text-[#523c30] outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value="">{selectedCustomerId ? (pets.length === 0 ? "Khách hàng này chưa có pet" : "Chọn thú cưng...") : "Vui lòng chọn khách hàng trước"}</option>
+                <option value="">
+                  {selectedCustomerId
+                    ? pets.length === 0
+                      ? "Khách hàng này chưa có pet"
+                      : "Chọn thú cưng..."
+                    : "Vui lòng chọn khách hàng trước"}
+                </option>
                 {pets.map((p) => (
                   <option key={p.pet_id || p.id} value={p.pet_id || p.id}>
                     {p.name || p.pet_name} - {p.breed || p.species || "Khác"}
@@ -169,7 +201,10 @@ export const CreateOrderModal = ({
               </div>
             ) : (
               items.map((item) => (
-                <div key={item.id} className="flex gap-4 rounded-xl border border-[#f0e3dc] p-3 shadow-sm">
+                <div
+                  key={item.id}
+                  className="flex gap-4 rounded-xl border border-[#f0e3dc] p-3 shadow-sm"
+                >
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#dcae8c] text-white">
                     <span className="material-symbols-outlined">
                       {item.type === "service" ? "spa" : "inventory_2"}
@@ -181,9 +216,7 @@ export const CreateOrderModal = ({
                         <h4 className="line-clamp-1 text-sm font-bold text-[#2f231d]">
                           {item.name}
                         </h4>
-                        <p className="text-xs text-[#9f7d67]">
-                          NV: {userName}
-                        </p>
+                        <p className="text-xs text-[#9f7d67]">NV: {userName}</p>
                       </div>
                       <button
                         onClick={() => onRemoveItem(item.id)}
@@ -226,7 +259,9 @@ export const CreateOrderModal = ({
         <div className="border-t border-[#f0e3dc] bg-[#faf7f5] p-6 space-y-4">
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-[#523c30]">
-              <span>Tạm tính ({items.reduce((sum, i) => sum + i.quantity, 0)} món)</span>
+              <span>
+                Tạm tính ({items.reduce((sum, i) => sum + i.quantity, 0)} món)
+              </span>
               <span className="font-medium">{formatPrice(subTotal)}</span>
             </div>
             <div className="flex justify-between text-[#523c30]">
@@ -236,7 +271,9 @@ export const CreateOrderModal = ({
           </div>
 
           <div className="flex justify-between items-end pt-2 border-t border-[#eaded6]">
-            <span className="text-base font-bold text-[#2f231d]">Tổng tiền</span>
+            <span className="text-base font-bold text-[#2f231d]">
+              Tổng tiền
+            </span>
             <span className="text-2xl font-black text-[#f27a4d]">
               {formatPrice(total)}
             </span>

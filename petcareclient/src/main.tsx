@@ -25,6 +25,7 @@ import InvitationPage from "./features/invitation/invitation-page";
 import NotAuthenticatedPage from "./features/not-authenticated/page";
 import PetListPage from "./features/pets/pet-list-page";
 import AllProductsPage from "./features/pos/components/all-products";
+import PaymentSuccessPage from "./features/pos/components/payment-success";
 import PosHistoryPage from "./features/pos/history-page";
 import PosPage from "./features/pos/pos-page";
 import PrivacyPolicyPage from "./features/privacy-policy/page";
@@ -154,6 +155,14 @@ createRoot(document.getElementById("root")!).render(
             element={
               <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <PosHistoryPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/orders/:orderId/success"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <PaymentSuccessPage />
               </RoleRoute>
             }
           />
