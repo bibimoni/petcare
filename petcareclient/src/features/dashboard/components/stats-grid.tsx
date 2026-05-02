@@ -16,8 +16,8 @@ export const StatsGrid = ({ data }: StatsGridProps) => {
         iconBgColor="bg-orange-600/10 dark:bg-blue-900/30"
         iconColor="text-orange-600"
         trend={{
-          direction: "up",
-          value: `${data.servicesPercentage}%`,
+          direction: data.petGrowth >= 0 ? "up" : "down",
+          value: `${data.petGrowth >= 0 ? "+" : ""}${data.petGrowth}%`,
           label: "so với tháng trước",
         }}
       />

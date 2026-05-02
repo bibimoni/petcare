@@ -1,13 +1,14 @@
-// import axiosClient from "@/lib/api";
+import { getProductAlerts } from "@/features/inventory/api/products.api";
+import { getPetsForList } from "@/features/pets/api/pets.api";
 
 export interface StatsData {
   totalPets: number;
+  petGrowth: number;
   revenueToday: string;
   servicesToday: number;
   revenueGrowth: number;
   stockWarnings: number;
   servicesYesterday: number;
-  servicesPercentage: number;
 }
 
 export interface RevenueData {
@@ -37,7 +38,7 @@ export interface DashboardData {
 
 const mockStatsData: StatsData = {
   totalPets: 1240,
-  servicesPercentage: 12,
+  petGrowth: 12,
   servicesToday: 12,
   servicesYesterday: 10,
   revenueToday: "5.4tr",
@@ -98,14 +99,44 @@ const mockActivitiesData: ActivityFeedData = {
 
 export const getDashboardStats = async (): Promise<StatsData> => {
   try {
-    // Uncomment when API is ready:
-    // const response = await axiosClient.get("/dashboard/stats");
-    // return response as StatsData;
+    // Fetch real data where available
+    const [petsList, inventoryAlerts] = await Promise.all([
+      getPetsForList().catch(() => []),
+      getProductAlerts().catch(() => []),
+    ]);
 
-    // Using mock data for now
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(mockStatsData), 500);
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    let petsThisMonth = 0;
+
+    petsList.forEach((pet) => {
+      const createdDate = new Date(pet.createdAt);
+      if (
+        createdDate.getMonth() === currentMonth &&
+        createdDate.getFullYear() === currentYear
+      ) {
+        petsThisMonth++;
+      }
     });
+
+    const totalPetsNow = petsList.length;
+    const totalPetsLastMonth = totalPetsNow - petsThisMonth;
+
+    let petGrowth = 0;
+    if (totalPetsLastMonth === 0) {
+      petGrowth = petsThisMonth > 0 ? 100 : 0;
+    } else {
+      petGrowth = Math.round((petsThisMonth / totalPetsLastMonth) * 100);
+    }
+
+    return {
+      ...mockStatsData,
+      totalPets: petsList.length,
+      petGrowth: petGrowth,
+      stockWarnings: inventoryAlerts.length,
+    };
   } catch (error) {
     console.error("Failed to fetch dashboard stats:", error);
     return mockStatsData;

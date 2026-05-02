@@ -9,6 +9,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -118,17 +119,17 @@ export function AddProductModal() {
       !costPrice ||
       !sellPrice
     ) {
-      alert("Vui lòng điền đầy đủ các trường có dấu *");
+      toast.error("Vui lòng điền đầy đủ các trường có dấu *");
       return;
     }
 
     if (isOtherCategory && !newCategoryName.trim()) {
-      alert("Vui lòng nhập tên danh mục mới!");
+      toast.error("Vui lòng nhập tên danh mục mới!");
       return;
     }
 
     if (Number(costPrice) >= Number(sellPrice)) {
-      alert("Giá bán phải lớn hơn giá vốn!");
+      toast.error("Giá bán phải lớn hơn giá vốn!");
       return;
     }
 
@@ -138,7 +139,7 @@ export function AddProductModal() {
     );
 
     if (totalQuantity <= 0) {
-      alert("Vui lòng nhập số lượng lô hàng hợp lệ!");
+      toast.error("Vui lòng nhập số lượng lô hàng hợp lệ!");
       return;
     }
 
@@ -186,7 +187,7 @@ export function AddProductModal() {
 
       // 5. Gửi lên Backend
       await api.post("/products", payload);
-      alert("Nhập kho thành công!");
+      toast.success("Nhập kho thành công!");
 
       setName("");
       setCategoryId("");
@@ -217,7 +218,7 @@ export function AddProductModal() {
         }
       }
 
-      alert("Lỗi: " + errorMsg);
+      toast.error("Lỗi: " + errorMsg);
     } finally {
       setIsSubmitting(false);
     }

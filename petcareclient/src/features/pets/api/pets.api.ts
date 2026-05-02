@@ -8,6 +8,7 @@ export type PetListItem = {
   gender: string;
   status?: string;
   imageUrl: string;
+  createdAt: string;
   id: number | string;
   customer?: {
     fullName: string;
@@ -40,6 +41,7 @@ const mapPetToUi = (
     gender: String(pet.gender ?? "UNKNOWN"),
     imageUrl: String(pet.avatar_url ?? ""),
     status: String(pet.status ?? ""),
+    createdAt: String(pet.created_at ?? new Date().toISOString()),
     customer: {
       fullName: ownerName,
     },

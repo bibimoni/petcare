@@ -1,5 +1,6 @@
 import { X, Save, Upload, Trash2, PawPrint } from "lucide-react";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 import { handleApiError } from "@/lib/api";
 import { CustomerService } from "@/lib/customers";
@@ -165,7 +166,7 @@ export default function AddPetModal({ open, onClose, onCreated }: Props) {
 
       resetForm();
       onClose();
-      alert("Thêm thú cưng thành công");
+      toast.success("Thêm thú cưng thành công");
       await onCreated?.();
     } catch (err) {
       handleApiError(err);
