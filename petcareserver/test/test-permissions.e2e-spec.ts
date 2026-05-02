@@ -651,8 +651,7 @@ describe('Permissions E2E', () => {
         if (t.body && t.method !== 'GET') req.send(t.body);
 
         const res = await req;
-        expect(res.status).not.toBe(403);
-        expect(res.status).not.toBe(401);
+        expect(res.status).toBeLessThan(400);
       });
     }
   });
@@ -697,15 +696,14 @@ describe('Permissions E2E', () => {
           [ep.method.toLowerCase()](ep.path)
           .set('Authorization', `Bearer ${superAdminToken}`)
           .expect((res) => {
-            if (res.status === 403) {
+            if (res.status >= 400) {
               throw new Error(
-                `Superadmin got 403 on ${ep.path}: ${res.body?.message}`,
+                `Superadmin got ${res.status} on ${ep.path}: ${res.body?.message}`,
               );
             }
           });
 
-        expect(res.status).not.toBe(403);
-        expect(res.status).not.toBe(401);
+        expect(res.status).toBeLessThan(400);
       });
     }
   });
@@ -779,7 +777,7 @@ describe('Permissions E2E', () => {
         .get('/v1/pets')
         .set('Authorization', `Bearer ${token}`)
         .expect((res) => {
-          expect(res.status).not.toBe(403);
+          expect(res.status).toBeLessThan(400);
         });
 
       await request(app.getHttpServer())
@@ -796,7 +794,7 @@ describe('Permissions E2E', () => {
         .get('/v1/orders')
         .set('Authorization', `Bearer ${token}`)
         .expect((res) => {
-          expect(res.status).not.toBe(403);
+          expect(res.status).toBeLessThan(400);
         });
 
       await request(app.getHttpServer())
@@ -813,7 +811,7 @@ describe('Permissions E2E', () => {
         .get('/v1/products')
         .set('Authorization', `Bearer ${token}`)
         .expect((res) => {
-          expect(res.status).not.toBe(403);
+          expect(res.status).toBeLessThan(400);
         });
 
       await request(app.getHttpServer())
@@ -830,7 +828,7 @@ describe('Permissions E2E', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ full_name: 'New', phone: '+1-555-1111' })
         .expect((res) => {
-          expect(res.status).not.toBe(403);
+          expect(res.status).toBeLessThan(400);
         });
 
       await request(app.getHttpServer())
@@ -846,7 +844,7 @@ describe('Permissions E2E', () => {
         .get('/v1/analytics/dashboard')
         .set('Authorization', `Bearer ${token}`)
         .expect((res) => {
-          expect(res.status).not.toBe(403);
+          expect(res.status).toBeLessThan(400);
         });
 
       await request(app.getHttpServer())
@@ -862,7 +860,7 @@ describe('Permissions E2E', () => {
         .get('/v1/analytics/inventory/alerts')
         .set('Authorization', `Bearer ${token}`)
         .expect((res) => {
-          expect(res.status).not.toBe(403);
+          expect(res.status).toBeLessThan(400);
         });
 
       await request(app.getHttpServer())
@@ -879,7 +877,7 @@ describe('Permissions E2E', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ name: 'NewRole', description: 'Test', permission_ids: [] })
         .expect((res) => {
-          expect(res.status).not.toBe(403);
+          expect(res.status).toBeLessThan(400);
         });
 
       await request(app.getHttpServer())
