@@ -15,6 +15,16 @@ import { OrderDetailModal } from "./completed-order-modal";
 import { ServiceDetailModal } from "./components/service-detail-modal";
 import { historyTransactions, type HistoryTransaction } from "./mock-data";
 import { PendingOrderModal } from "./pending-order-modal";
+import { CreateOrderModal } from "./components/create-order-modal";
+
+export type OrderItem = {
+  id: string;
+  name: string;
+  price: string;
+  numericPrice: number;
+  quantity: number;
+  type: "service" | "product";
+};
 
 const PosPage = () => {
   const navigate = useNavigate();
@@ -27,9 +37,7 @@ const PosPage = () => {
   const [servicePage, setServicePage] = useState(1);
   const [productPage, setProductPage] = useState(1);
   const [isServiceDetailOpen, setIsServiceDetailOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<PosService | null>(
-    null,
-  );
+  const [selectedService, setSelectedService] = useState<PosService | null>(null);
 
   const { data: profile } = useQuery({
     queryKey: ["sidebar-user"],
@@ -201,8 +209,14 @@ const PosPage = () => {
     setIsServiceDetailOpen(true);
   };
 
+  const handleAddItem = (item: PosService | PosProduct, type: "service" | "product") => {
+    navigate("/pos/all-products", {
+      state: { addedItem: { item, type } }
+    });
+  };
+
   return (
-    <div className="flex h-screen w-full overflow-hidden">
+    <div className="flex h-screen w-full overflow-hidden transition-all duration-300">
       <Sidebar userInfo={sidebarUser} />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
@@ -258,6 +272,7 @@ const PosPage = () => {
               </p>
 
               <button
+                onClick={() => navigate("/pos/all-products", { state: { openCreateOrder: true } })}
                 type="button"
                 className="group relative mt-2 flex h-32 w-[260px] cursor-pointer flex-col items-center justify-center rounded-[22px] border border-[#b8e5d5] bg-[#a9e4d1] text-[#1f5a4b] shadow-[0_8px_24px_rgba(61,181,148,0.2)] transition hover:-translate-y-0.5"
               >
@@ -282,22 +297,20 @@ const PosPage = () => {
                   <button
                     onClick={() => setSelectedCatalogTab("service")}
                     type="button"
-                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${
-                      selectedCatalogTab === "service"
-                        ? "bg-orange-600/80 text-white"
-                        : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
-                    }`}
+                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${selectedCatalogTab === "service"
+                      ? "bg-orange-600/80 text-white"
+                      : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
+                      }`}
                   >
                     Dịch vụ
                   </button>
                   <button
                     onClick={() => setSelectedCatalogTab("product")}
                     type="button"
-                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${
-                      selectedCatalogTab === "product"
-                        ? "bg-orange-600/80 text-white"
-                        : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
-                    }`}
+                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition ${selectedCatalogTab === "product"
+                      ? "bg-orange-600/80 text-white"
+                      : "border border-[#eaded6] bg-white text-[#9b745b] hover:bg-[#f8f1ec]"
+                      }`}
                   >
                     Sản phẩm
                   </button>
@@ -346,106 +359,108 @@ const PosPage = () => {
                     >
                       {selectedCatalogTab === "service"
                         ? servicePages.map((serviceItems, pageIndex) => (
-                            <div
-                              key={`service-page-${pageIndex + 1}`}
-                              className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
-                            >
-                              {serviceItems.map((service, itemIndex) => (
-                                <article
-                                  key={`${service.id}-${pageIndex}-${itemIndex}`}
-                                  className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
-                                >
-                                  <div className="mb-3 rounded-2xl bg-[#f7f3f1] p-3">
-                                    <div className="flex items-center gap-3">
-                                      <div
-                                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${service.iconTone}`}
-                                      >
-                                        <span className="material-symbols-outlined text-[20px]">
-                                          {service.icon}
-                                        </span>
-                                      </div>
-
-                                      <h4 className="min-w-0 flex-1 text-base font-black leading-tight text-[#2f231d]">
-                                        {service.name}
-                                      </h4>
+                          <div
+                            key={`service-page-${pageIndex + 1}`}
+                            className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
+                          >
+                            {serviceItems.map((service, itemIndex) => (
+                              <article
+                                key={`${service.id}-${pageIndex}-${itemIndex}`}
+                                className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
+                              >
+                                <div className="mb-3 rounded-2xl bg-[#f7f3f1] p-3">
+                                  <div className="flex items-center gap-3">
+                                    <div
+                                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${service.iconTone}`}
+                                    >
+                                      <span className="material-symbols-outlined text-[20px]">
+                                        {service.icon}
+                                      </span>
                                     </div>
-                                  </div>
 
-                                  <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
-                                    {service.description}
+                                    <h4 className="min-w-0 flex-1 text-base font-black leading-tight text-[#2f231d]">
+                                      {service.name}
+                                    </h4>
+                                  </div>
+                                </div>
+
+                                <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
+                                  {service.description}
+                                </p>
+
+                                <div className="mt-3 flex items-center justify-between">
+                                  <p className="text-base font-extrabold text-orange-600/80">
+                                    {service.price}
                                   </p>
 
-                                  <div className="mt-3 flex items-center justify-between">
-                                    <p className="text-base font-extrabold text-orange-600/80">
-                                      {service.price}
-                                    </p>
-
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        className="cursor-pointer rounded-full border border-[#eaded6] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#8d6955] transition hover:bg-[#f8f1ec]"
-                                        onClick={() =>
-                                          handleOpenServiceDetail(service)
-                                        }
-                                        type="button"
-                                      >
-                                        Chi tiết
-                                      </button>
-
-                                      <button
-                                        type="button"
-                                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
-                                      >
-                                        +
-                                      </button>
-                                    </div>
-                                  </div>
-                                </article>
-                              ))}
-                            </div>
-                          ))
-                        : productPages.map((productItems, pageIndex) => (
-                            <div
-                              key={`product-page-${pageIndex + 1}`}
-                              className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
-                            >
-                              {productItems.map((product, itemIndex) => (
-                                <article
-                                  key={`${product.id}-${pageIndex}-${itemIndex}`}
-                                  className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
-                                >
-                                  <div className="relative mb-3 overflow-hidden rounded-2xl bg-[#f7f3f1]">
-                                    <span className="absolute right-2 top-2 rounded-full bg-white px-2 py-0.5 text-sm font-bold text-[#4f3d33]">
-                                      Kho: {product.stock}
-                                    </span>
-                                    <img
-                                      alt={product.name}
-                                      className="h-32 w-full object-cover"
-                                      src={product.image}
-                                    />
-                                  </div>
-
-                                  <h4 className="line-clamp-2 min-h-10 text-lg font-black leading-tight text-[#2f231d]">
-                                    {product.name}
-                                  </h4>
-                                  <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
-                                    {product.description}
-                                  </p>
-
-                                  <div className="mt-3 flex items-center justify-between">
-                                    <p className="text-base font-extrabold text-orange-600/80">
-                                      {product.price}
-                                    </p>
+                                  <div className="flex items-center gap-2">
                                     <button
+                                      className="cursor-pointer rounded-full border border-[#eaded6] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#8d6955] transition hover:bg-[#f8f1ec]"
+                                      onClick={() =>
+                                        handleOpenServiceDetail(service)
+                                      }
                                       type="button"
-                                      className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
+                                    >
+                                      Chi tiết
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleAddItem(service, "service")}
+                                      type="button"
+                                      className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
                                     >
                                       +
                                     </button>
                                   </div>
-                                </article>
-                              ))}
-                            </div>
-                          ))}
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        ))
+                        : productPages.map((productItems, pageIndex) => (
+                          <div
+                            key={`product-page-${pageIndex + 1}`}
+                            className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
+                          >
+                            {productItems.map((product, itemIndex) => (
+                              <article
+                                key={`${product.id}-${pageIndex}-${itemIndex}`}
+                                className="group overflow-hidden rounded-2xl border border-[#f0e3dc] bg-white p-3 shadow-[0_6px_16px_rgba(108,71,42,0.08)] transition hover:-translate-y-1"
+                              >
+                                <div className="relative mb-3 overflow-hidden rounded-2xl bg-[#f7f3f1]">
+                                  <span className="absolute right-2 top-2 rounded-full bg-white px-2 py-0.5 text-sm font-bold text-[#4f3d33]">
+                                    Kho: {product.stock}
+                                  </span>
+                                  <img
+                                    alt={product.name}
+                                    className="h-32 w-full object-cover"
+                                    src={product.image}
+                                  />
+                                </div>
+
+                                <h4 className="line-clamp-2 min-h-10 text-lg font-black leading-tight text-[#2f231d]">
+                                  {product.name}
+                                </h4>
+                                <p className="mt-1 line-clamp-1 text-sm text-[#9f7d67]">
+                                  {product.description}
+                                </p>
+
+                                <div className="mt-3 flex items-center justify-between">
+                                  <p className="text-base font-extrabold text-orange-600/80">
+                                    {product.price}
+                                  </p>
+                                  <button
+                                    onClick={() => handleAddItem(product, "product")}
+                                    type="button"
+                                    className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        ))}
                     </div>
                   </div>
 
@@ -589,13 +604,13 @@ const PosPage = () => {
           service={
             selectedService
               ? {
-                  name: selectedService.name,
-                  minWeight: selectedService.minWeight,
-                  description: selectedService.description,
-                  price: selectedService.rawPrice,
-                  categoryName: selectedService.categoryName,
-                  maxWeight: selectedService.maxWeight,
-                }
+                name: selectedService.name,
+                minWeight: selectedService.minWeight,
+                description: selectedService.description,
+                price: selectedService.rawPrice,
+                categoryName: selectedService.categoryName,
+                maxWeight: selectedService.maxWeight,
+              }
               : null
           }
         />
@@ -605,14 +620,14 @@ const PosPage = () => {
           isOpen={selectedTx?.status === "COMPLETED"}
           orderId={selectedTx?.numericId || null}
           onClose={() => setSelectedTx(null)}
-          onStatusChange={() => {}}
+          onStatusChange={() => { }}
         />
 
         <PendingOrderModal
           isOpen={selectedTx?.status === "PENDING"}
           orderId={selectedTx?.numericId || null}
           onClose={() => setSelectedTx(null)}
-          onStatusChange={() => {}}
+          onStatusChange={() => { }}
         />
 
         <CancelledOrderModal
@@ -620,6 +635,7 @@ const PosPage = () => {
           orderId={selectedTx?.numericId || null}
           onClose={() => setSelectedTx(null)}
         />
+
       </main>
     </div>
   );

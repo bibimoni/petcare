@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
 import {
@@ -10,9 +10,11 @@ import {
   getPosProductCategories,
   getPosServiceCategories,
 } from "@/features/pos/api/pos.api";
-import { sidebarUser } from "@/lib/user";
+import { sidebarUser, getSidebarUser } from "@/lib/user";
 
 import { ServiceDetailModal } from "./service-detail-modal";
+import { CreateOrderModal } from "./create-order-modal";
+import type { OrderItem } from "../pos-page";
 
 const chunkItems = <T,>(items: T[], pageSize: number): T[][] => {
   if (items.length === 0) {
@@ -30,7 +32,8 @@ const chunkItems = <T,>(items: T[], pageSize: number): T[][] => {
 
 const AllProductsPage = () => {
   const navigate = useNavigate();
-  const ITEMS_PER_PAGE = 5;
+  const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false);
+  const ITEMS_PER_PAGE = isCreateOrderOpen ? 4 : 5;
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -38,13 +41,25 @@ const AllProductsPage = () => {
     useState<string>("all");
   const [servicePage, setServicePage] = useState(1);
   const [isServiceDetailOpen, setIsServiceDetailOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<PosService | null>(
-    null,
-  );
+  const [selectedService, setSelectedService] = useState<PosService | null>(null);
 
-  const [selectedProductCategory, setSelectedProductCategory] =
-    useState<string>("all");
+  const [selectedProductCategory, setSelectedProductCategory] = useState<string>("all");
   const [productPage, setProductPage] = useState(1);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const location = useLocation();
+
+  const { data: profile } = useQuery({
+    queryKey: ["sidebar-user"],
+    queryFn: getSidebarUser,
+  });
+
+  const greetingName = useMemo(() => {
+    const fullName = profile?.full_name?.trim();
+    if (fullName) {
+      return fullName;
+    }
+    return "Bạn";
+  }, [profile?.full_name]);
   const { data: serviceCategories = [] } = useQuery({
     queryKey: ["pos-service-categories"],
     queryFn: getPosServiceCategories,
@@ -159,8 +174,54 @@ const AllProductsPage = () => {
     setIsServiceDetailOpen(true);
   };
 
+  const handleAddItem = (item: PosService | PosProduct, type: "service" | "product") => {
+    setOrderItems((prev) => {
+      const cartItemId = `${type}-${item.id}`;
+      const existing = prev.find((i) => i.id === cartItemId);
+      if (existing) {
+        return prev.map((i) =>
+          i.id === cartItemId ? { ...i, quantity: i.quantity + 1 } : i
+        );
+      }
+      const numericPrice = "rawPrice" in item ? (item as any).rawPrice : parseInt(item.price.replace(/\D/g, ""), 10) || 0;
+      return [
+        ...prev,
+        { id: cartItemId, name: item.name, price: item.price, numericPrice, quantity: 1, type },
+      ];
+    });
+    setIsCreateOrderOpen(true);
+  };
+
+  const handleUpdateQuantity = (id: string, delta: number) => {
+    setOrderItems((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          const newQuantity = Math.max(0, item.quantity + delta);
+          return { ...item, quantity: newQuantity };
+        }
+        return item;
+      }).filter((item) => item.quantity > 0)
+    );
+  };
+
+  const handleRemoveItem = (id: string) => {
+    setOrderItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  useEffect(() => {
+    if (location.state?.openCreateOrder) {
+      setIsCreateOrderOpen(true);
+    }
+    if (location.state?.addedItem) {
+      const { item, type } = location.state.addedItem;
+      handleAddItem(item, type);
+    }
+    // Clear state so it doesn't reopen on refresh
+    window.history.replaceState({}, document.title);
+  }, [location.state]);
+
   return (
-    <div className="flex h-screen w-full overflow-hidden">
+    <div className={`flex h-screen w-full overflow-hidden transition-all duration-300 ${isCreateOrderOpen ? "pr-[400px]" : ""}`}>
       <Sidebar userInfo={sidebarUser} />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
@@ -191,6 +252,7 @@ const AllProductsPage = () => {
             </div>
 
             <button
+              onClick={() => setIsCreateOrderOpen(true)}
               className="whitespace-nowrap rounded-2xl cursor-pointer bg-orange-600/80 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-600"
               type="button"
             >
@@ -234,11 +296,10 @@ const AllProductsPage = () => {
 
                   return (
                     <button
-                      className={`rounded-2xl border cursor-pointer px-4 py-2 text-sm font-semibold transition ${
-                        isActive
-                          ? "border-[#2d1f16] bg-[#1f140f] text-white"
-                          : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
-                      }`}
+                      className={`rounded-2xl border cursor-pointer px-4 py-2 text-sm font-semibold transition ${isActive
+                        ? "border-[#2d1f16] bg-[#1f140f] text-white"
+                        : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
+                        }`}
                       key={tab.id}
                       onClick={() => setSelectedServiceCategory(tab.id)}
                       type="button"
@@ -251,8 +312,8 @@ const AllProductsPage = () => {
             </div>
 
             {isServicesLoading ? (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-                {Array.from({ length: 5 }).map((_, index) => (
+              <div className={`grid gap-4 ${isCreateOrderOpen ? "grid-cols-4" : "grid-cols-5"}`}>
+                {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                   <article
                     className="overflow-hidden rounded-3xl border border-[#f0e3dc] bg-white p-3"
                     key={`service-skeleton-${index}`}
@@ -281,7 +342,7 @@ const AllProductsPage = () => {
                   >
                     {servicePages.map((serviceItems, pageIndex) => (
                       <div
-                        className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
+                        className={`grid min-w-full gap-4 ${isCreateOrderOpen ? "grid-cols-4" : "grid-cols-5"}`}
                         key={`service-page-${pageIndex + 1}`}
                       >
                         {serviceItems.map((service, itemIndex) => (
@@ -304,6 +365,7 @@ const AllProductsPage = () => {
                                 </h4>
 
                                 <button
+                                  onClick={() => handleAddItem(service, "service")}
                                   className="flex h-8 w-8 cursor-pointer shrink-0 items-center justify-center rounded-full bg-[#f7f3f1] text-xl text-[#9f7f6b] transition hover:bg-[#efe5df]"
                                   type="button"
                                 >
@@ -389,11 +451,10 @@ const AllProductsPage = () => {
 
                   return (
                     <button
-                      className={`rounded-2xl cursor-pointer border px-4 py-2 text-sm font-semibold transition ${
-                        isActive
-                          ? "border-[#2d1f16] bg-[#1f140f] text-white"
-                          : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
-                      }`}
+                      className={`rounded-2xl cursor-pointer border px-4 py-2 text-sm font-semibold transition ${isActive
+                        ? "border-[#2d1f16] bg-[#1f140f] text-white"
+                        : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
+                        }`}
                       key={tab.id}
                       onClick={() => setSelectedProductCategory(tab.id)}
                       type="button"
@@ -406,8 +467,8 @@ const AllProductsPage = () => {
             </div>
 
             {isProductsLoading ? (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-                {Array.from({ length: 10 }).map((_, index) => (
+              <div className={`grid gap-4 ${isCreateOrderOpen ? "grid-cols-4" : "grid-cols-5"}`}>
+                {Array.from({ length: ITEMS_PER_PAGE * 2 }).map((_, index) => (
                   <article
                     className="overflow-hidden rounded-3xl border border-[#f0e3dc] bg-white p-3"
                     key={`product-skeleton-${index}`}
@@ -439,7 +500,7 @@ const AllProductsPage = () => {
                   >
                     {productPages.map((productItems, pageIndex) => (
                       <div
-                        className="grid min-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
+                        className={`grid min-w-full gap-4 ${isCreateOrderOpen ? "grid-cols-4" : "grid-cols-5"}`}
                         key={`product-page-${pageIndex + 1}`}
                       >
                         {productItems.map((product, itemIndex) => (
@@ -470,7 +531,8 @@ const AllProductsPage = () => {
                                 {product.price}
                               </p>
                               <button
-                                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f7f3f1] text-xl text-[#9f7f6b] transition hover:bg-[#efe5df]"
+                                onClick={() => handleAddItem(product, "product")}
+                                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-xl text-[#9f7f6b] transition hover:bg-[#efe5df]"
                                 type="button"
                               >
                                 +
@@ -529,15 +591,24 @@ const AllProductsPage = () => {
           service={
             selectedService
               ? {
-                  name: selectedService.name,
-                  description: selectedService.description,
-                  minWeight: selectedService.minWeight,
-                  price: selectedService.rawPrice,
-                  categoryName: selectedServiceCategoryName,
-                  maxWeight: selectedService.maxWeight,
-                }
+                name: selectedService.name,
+                description: selectedService.description,
+                minWeight: selectedService.minWeight,
+                price: selectedService.rawPrice,
+                categoryName: selectedServiceCategoryName,
+                maxWeight: selectedService.maxWeight,
+              }
               : null
           }
+        />
+
+        <CreateOrderModal
+          isOpen={isCreateOrderOpen}
+          onClose={() => setIsCreateOrderOpen(false)}
+          items={orderItems}
+          onUpdateQuantity={handleUpdateQuantity}
+          onRemoveItem={handleRemoveItem}
+          userName={greetingName}
         />
       </main>
     </div>
