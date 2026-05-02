@@ -20,12 +20,11 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY package*.json ./
-RUN npm ci
-
 COPY --from=development /app/dist ./dist
 COPY --from=development /app/src ./src
 COPY --from=development /app/scripts ./scripts
+COPY --from=development /app/node_modules ./node_modules
+COPY --from=development /app/package.json ./package.json
 COPY --from=development /app/tsconfig.build.json ./tsconfig.build.json
 COPY --from=development /app/tsconfig.json ./tsconfig.json
 
