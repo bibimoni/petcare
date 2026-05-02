@@ -568,13 +568,12 @@ export class OrdersService {
         cancel_reason: 'Refunded via Stripe',
       });
 
-      // Restore stock
-      const orderDetails = await this.orderDetailsRepository.find({
+      const orderDetails = await queryRunner.manager.find(OrderDetail, {
         where: { order_id: payment.order_id },
       });
 
       for (const detail of orderDetails) {
-        if (detail.item_type === 'PRODUCT' && detail.product_id) {
+        if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
           await queryRunner.manager
             .createQueryBuilder()
             .update(Product)
@@ -630,10 +629,6 @@ export class OrdersService {
       );
     }
 
-    const orderDetails = await this.orderDetailsRepository.find({
-      where: { order_id: orderId },
-    });
-
     const pendingPayment = await this.paymentsRepository.findOne({
       where: { order_id: orderId, status: PaymentStatus.PENDING },
     });
@@ -646,6 +641,10 @@ export class OrdersService {
     await queryRunner.startTransaction();
 
     try {
+      const orderDetails = await queryRunner.manager.find(OrderDetail, {
+        where: { order_id: orderId },
+      });
+
       // Hoàn trả tồn kho atomic
       for (const detail of orderDetails) {
         if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
@@ -852,14 +851,11 @@ export class OrdersService {
       order.cancel_reason = 'Refunded';
       await queryRunner.manager.save(Order, order);
 
-      // Restore stock for product items
-      const orderDetails = await this.orderDetailsRepository.find({
+      const orderDetails = await queryRunner.manager.find(OrderDetail, {
         where: { order_id: orderId },
       });
 
-      // Call Stripe refund
-      await this.stripeService.refundCharge(payment.stripe_charge_id);
-
+      // Restore stock
       for (const detail of orderDetails) {
         if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
           await queryRunner.manager
@@ -879,14 +875,26 @@ export class OrdersService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error(
-        `[CRITICAL] Refund processed on Stripe for order ${orderId} but DB update failed:`,
+        `[CRITICAL] Refund DB update failed for order ${orderId}:`,
         error,
       );
       throw new InternalServerErrorException(
-        'Refund was processed on Stripe but failed to update database. Please contact support.',
+        'Failed to process refund in database.',
       );
     } finally {
       await queryRunner.release();
+    }
+
+    try {
+      await this.stripeService.refundCharge(payment.stripe_charge_id!);
+    } catch (err) {
+      console.error(
+        `[CRITICAL] DB updated but Stripe refund failed for order ${orderId}:`,
+        err,
+      );
+      throw new InternalServerErrorException(
+        'Database updated but Stripe refund failed. Please process refund manually.',
+      );
     }
 
     return {

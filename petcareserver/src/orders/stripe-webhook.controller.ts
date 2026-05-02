@@ -16,6 +16,8 @@ import {
 } from '@nestjs/swagger';
 import { StripeService } from './stripe.service';
 import { OrdersService } from './orders.service';
+import * as common from '@nestjs/common';
+import { Request } from 'express';
 
 @ApiTags('Stripe Webhook')
 @Controller({ path: '/stripe', version: '1' })
@@ -34,14 +36,18 @@ export class StripeWebhookController {
   @ApiResponse({ status: 200, description: 'Webhook processed' })
   @ApiResponse({ status: 400, description: 'Invalid webhook signature' })
   async handleWebhook(
-    @Req() req: any,
+    @Req() req: common.RawBodyRequest<Request>,
     @Headers('stripe-signature') signature: string,
   ) {
     if (!signature) {
       throw new BadRequestException('Missing stripe-signature header');
     }
 
-    const rawBody = req.rawBody ?? Buffer.from(JSON.stringify(req.body));
+    const rawBody = req.rawBody;
+    if (!rawBody) {
+      throw new BadRequestException('Missing raw body — ensure rawBody:true is set in NestFactory');
+    }
+
     const event = this.stripeService.constructWebhookEvent(rawBody, signature);
 
     this.logger.log(`Received Stripe event: ${event.type} (${event.id})`);
@@ -90,10 +96,7 @@ export class StripeWebhookController {
               ? session.payment_intent
               : session.payment_intent?.id;
           if (piId) {
-            await this.ordersService.handleCheckoutCompleted(
-              session.id,
-              piId,
-            );
+            await this.ordersService.handleCheckoutCompleted(session.id, piId);
           }
         }
         break;

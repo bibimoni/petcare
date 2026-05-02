@@ -94,7 +94,7 @@ describe('Orders E2E — Webhook Flow', () => {
       .useValue(mockStripeService)
       .compile();
 
-    app = module.createNestApplication();
+    app = module.createNestApplication({ rawBody: true });
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, transform: true }),
     );
