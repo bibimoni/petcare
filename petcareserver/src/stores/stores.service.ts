@@ -482,9 +482,24 @@ export class StoresService {
     currentUserId: number,
     isSuperAdmin: boolean = false,
   ) {
-    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
+    if (isSuperAdmin) {
+      const currentUser = await this.userRepository.findOne({
+        where: { user_id: currentUserId },
+      });
+      if (!currentUser || currentUser.store_id !== storeId) {
+        throw new ForbiddenException(
+          'Bạn không phải là thành viên của cửa hàng này',
+        );
+      }
+    } else {
+      await this.validateStoreMembership(storeId, currentUserId, false);
+    }
 
     await this.checkLastAdmin(storeId, currentUserId);
+
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
 
     await this.userRepository.update(currentUserId, {
       store_id: null as any,
@@ -493,7 +508,11 @@ export class StoresService {
 
     return {
       message: 'Đã rời cửa hàng thành công',
-      user_id: currentUserId,
+      user: {
+        user_id: currentUser!.user_id,
+        email: currentUser!.email,
+        full_name: currentUser!.full_name,
+      },
     };
   }
 

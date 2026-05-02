@@ -291,7 +291,10 @@ describe('StoresService - Staff Removal', () => {
 
   describe('leaveStore', () => {
     it('should allow a staff member to leave the store', async () => {
-      userRepository.findOne.mockResolvedValueOnce(mockStaffUser);
+      userRepository.findOne
+        .mockResolvedValueOnce(mockStaffUser)
+        .mockResolvedValueOnce(mockStaffUser)
+        .mockResolvedValueOnce(mockStaffUser);
       (userRepository.createQueryBuilder as jest.Mock).mockReturnValue({
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -307,7 +310,7 @@ describe('StoresService - Staff Removal', () => {
         role_id: null as any,
       });
       expect(result.message).toBe('Đã rời cửa hàng thành công');
-      expect(result.user_id).toBe(2);
+      expect(result.user.user_id).toBe(2);
     });
 
     it('should throw ForbiddenException when last admin tries to leave', async () => {
@@ -327,7 +330,10 @@ describe('StoresService - Staff Removal', () => {
     });
 
     it('should allow admin to leave when there are other admins', async () => {
-      userRepository.findOne.mockResolvedValueOnce(mockAdminUser);
+      userRepository.findOne
+        .mockResolvedValueOnce(mockAdminUser)
+        .mockResolvedValueOnce(mockAdminUser)
+        .mockResolvedValueOnce(mockAdminUser);
       (userRepository.createQueryBuilder as jest.Mock).mockReturnValue({
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -356,11 +362,11 @@ describe('StoresService - Staff Removal', () => {
       );
     });
 
-    it('should allow super admin to bypass store membership check', async () => {
-      userRepository.findOne.mockResolvedValueOnce({
-        ...mockStaffUser,
-        store_id: 1,
-      });
+    it('should allow super admin in the store to leave', async () => {
+      userRepository.findOne
+        .mockResolvedValueOnce({ ...mockStaffUser, store_id: 1 })
+        .mockResolvedValueOnce(mockStaffUser)
+        .mockResolvedValueOnce(mockStaffUser);
       (userRepository.createQueryBuilder as jest.Mock).mockReturnValue({
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -372,6 +378,17 @@ describe('StoresService - Staff Removal', () => {
       const result = await service.leaveStore(1, 2, true);
 
       expect(result.message).toBe('Đã rời cửa hàng thành công');
+    });
+
+    it('should throw ForbiddenException when super admin is not a member of the store', async () => {
+      userRepository.findOne.mockResolvedValueOnce({
+        ...mockStaffUser,
+        store_id: 999,
+      });
+
+      await expect(service.leaveStore(1, 2, true)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });

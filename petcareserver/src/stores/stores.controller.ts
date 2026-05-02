@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  ParseIntPipe,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -277,6 +278,30 @@ export class StoresController {
     );
   }
 
+  @Delete(':storeId/staff/me')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Leave store (self-removal)',
+    description:
+      'Allows a staff member to leave a store by clearing their own store_id and role_id. No STAFF_DELETE permission required.',
+  })
+  @ApiParam({ name: 'storeId', description: 'Store ID', example: 1 })
+  @ApiResponse({ status: 200, description: 'Left store successfully' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Last admin cannot leave',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid store ID' })
+  async leaveStore(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @CurrentUser() user: any,
+  ) {
+    const admin = isSuperAdmin(user);
+    return this.storesService.leaveStore(storeId, user.user_id, admin);
+  }
+
   @Delete(':storeId/staff/:userId')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -295,42 +320,16 @@ export class StoresController {
     description: 'Forbidden - Insufficient permissions or self-removal',
   })
   @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 400, description: 'Invalid store ID or user ID' })
   async removeStaff(
-    @Param('storeId') storeId: string,
-    @Param('userId') userId: string,
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Param('userId', ParseIntPipe) userId: number,
     @CurrentUser() user: any,
   ) {
     const admin = isSuperAdmin(user);
     return this.storesService.removeStaff(
-      parseInt(storeId),
-      parseInt(userId),
-      user.user_id,
-      admin,
-    );
-  }
-
-  @Delete(':storeId/staff/me')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Leave store (self-removal)',
-    description:
-      'Allows a staff member to leave a store by clearing their own store_id and role_id. No STAFF_DELETE permission required.',
-  })
-  @ApiParam({ name: 'storeId', description: 'Store ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Left store successfully' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Last admin cannot leave',
-  })
-  async leaveStore(
-    @Param('storeId') storeId: string,
-    @CurrentUser() user: any,
-  ) {
-    const admin = isSuperAdmin(user);
-    return this.storesService.leaveStore(
-      parseInt(storeId),
+      storeId,
+      userId,
       user.user_id,
       admin,
     );
