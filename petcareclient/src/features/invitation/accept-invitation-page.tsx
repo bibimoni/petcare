@@ -66,7 +66,16 @@ export default function AcceptInvitationPage() {
         setResult(response.data ?? null);
 
         if (notificationId) {
-          await axiosClient.patch(`/notifications/${notificationId}/mark-read`);
+          try {
+            await axiosClient.patch(
+              `/notifications/${notificationId}/mark-read`,
+            );
+          } catch (markReadError) {
+            console.error(
+              "Failed to mark notification as read:",
+              markReadError,
+            );
+          }
         }
       } catch {
         setErrorMessage("Không thể chấp nhận lời mời. Vui lòng thử lại.");
@@ -136,7 +145,7 @@ export default function AcceptInvitationPage() {
                   </div>
                   <div className="text-[#7a5a43]">
                     {result?.note ||
-                      "Bạn đã được thêm vào cửa hàng thành công. Vui lòng đăng nhập để tiếp tục"}
+                      "Bạn đã được thêm vào cửa hàng thành công!"}
                   </div>
 
                   <div className="rounded-xl border border-orange-100 bg-[#fdf9f6] p-4 space-y-2 text-[#7a5a43]">
