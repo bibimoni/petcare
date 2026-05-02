@@ -3,8 +3,10 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Body,
   Param,
+  ParseIntPipe,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -274,6 +276,84 @@ export class StoresController {
       user.user_id,
       admin,
     );
+  }
+
+  @Delete(':storeId')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions(STORE_PERMISSIONS.STORE_SETTINGS_MANAGE)
+  @ApiOperation({
+    summary: 'Remove store (soft delete)',
+    description:
+      'Allows the last admin to remove a store. Sets store status to SUSPENDED and removes the admin. The admin must be the only remaining member.',
+  })
+  @ApiParam({ name: 'storeId', description: 'Store ID', example: 1 })
+  @ApiResponse({ status: 200, description: 'Store removed successfully' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Not admin or store still has members',
+  })
+  @ApiResponse({ status: 404, description: 'Store not found' })
+  @ApiResponse({ status: 400, description: 'Invalid store ID' })
+  async removeStore(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @CurrentUser() user: any,
+  ) {
+    const admin = isSuperAdmin(user);
+    return this.storesService.removeStore(storeId, user.user_id, admin);
+  }
+
+  @Delete(':storeId/staff/me')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Leave store (self-removal)',
+    description:
+      'Allows a staff member to leave a store by clearing their own store_id and role_id. No STAFF_DELETE permission required.',
+  })
+  @ApiParam({ name: 'storeId', description: 'Store ID', example: 1 })
+  @ApiResponse({ status: 200, description: 'Left store successfully' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Last admin cannot leave',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid store ID' })
+  async leaveStore(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @CurrentUser() user: any,
+  ) {
+    const admin = isSuperAdmin(user);
+    return this.storesService.leaveStore(storeId, user.user_id, admin);
+  }
+
+  @Delete(':storeId/staff/:userId')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions(STORE_PERMISSIONS.STAFF_DELETE)
+  @ApiOperation({
+    summary: 'Remove staff member from store',
+    description:
+      'Removes a staff member from the store by clearing their store_id and role_id. Requires STAFF_DELETE permission.',
+  })
+  @ApiParam({ name: 'storeId', description: 'Store ID', example: 1 })
+  @ApiParam({ name: 'userId', description: 'User ID to remove', example: 2 })
+  @ApiResponse({ status: 200, description: 'Staff removed successfully' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions or self-removal',
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 400, description: 'Invalid store ID or user ID' })
+  async removeStaff(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Param('userId', ParseIntPipe) userId: number,
+    @CurrentUser() user: any,
+  ) {
+    const admin = isSuperAdmin(user);
+    return this.storesService.removeStaff(storeId, userId, user.user_id, admin);
   }
 
   @Get('invitations/accept')

@@ -412,6 +412,163 @@ export class StoresService {
     };
   }
 
+  private async checkLastAdmin(storeId: number, targetUserId: number) {
+    const targetUser = await this.userRepository.findOne({
+      where: { user_id: targetUserId, store_id: storeId },
+      relations: { role: true },
+    });
+
+    if (targetUser && targetUser.role?.name === 'ADMIN') {
+      const adminsInStore = await this.userRepository
+        .createQueryBuilder('user')
+        .innerJoin('user.role', 'role')
+        .where('user.store_id = :storeId', { storeId })
+        .andWhere('role.name = :roleName', { roleName: 'ADMIN' })
+        .getCount();
+
+      if (adminsInStore <= 1) {
+        throw new ForbiddenException(
+          'Không thể xóa quản trị viên cuối cùng của cửa hàng',
+        );
+      }
+    }
+  }
+
+  async removeStaff(
+    storeId: number,
+    targetUserId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
+
+    if (currentUserId === targetUserId) {
+      throw new ForbiddenException(
+        'Không thể tự xóa khỏi cửa hàng. Vui lòng sử dụng chức năng rời cửa hàng',
+      );
+    }
+
+    const targetUser = await this.userRepository.findOne({
+      where: { user_id: targetUserId },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException('Không tìm thấy người dùng');
+    }
+
+    if (targetUser.store_id !== storeId) {
+      throw new ForbiddenException('Người dùng không thuộc cửa hàng này');
+    }
+
+    await this.checkLastAdmin(storeId, targetUserId);
+
+    await this.userRepository.update(targetUserId, {
+      store_id: null as any,
+      role_id: null as any,
+    });
+
+    return {
+      message: 'Đã xóa nhân viên khỏi cửa hàng',
+      user: {
+        user_id: targetUser.user_id,
+        email: targetUser.email,
+        full_name: targetUser.full_name,
+      },
+    };
+  }
+
+  async leaveStore(
+    storeId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    if (isSuperAdmin) {
+      const currentUser = await this.userRepository.findOne({
+        where: { user_id: currentUserId },
+      });
+      if (!currentUser || currentUser.store_id !== storeId) {
+        throw new ForbiddenException(
+          'Bạn không phải là thành viên của cửa hàng này',
+        );
+      }
+    } else {
+      await this.validateStoreMembership(storeId, currentUserId, false);
+    }
+
+    await this.checkLastAdmin(storeId, currentUserId);
+
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
+
+    await this.userRepository.update(currentUserId, {
+      store_id: null as any,
+      role_id: null as any,
+    });
+
+    return {
+      message: 'Đã rời cửa hàng thành công',
+      user: {
+        user_id: currentUser!.user_id,
+        email: currentUser!.email,
+        full_name: currentUser!.full_name,
+      },
+    };
+  }
+
+  async removeStore(
+    storeId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
+
+    const store = await this.storeRepository.findOne({
+      where: { id: storeId },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Không tìm thấy cửa hàng');
+    }
+
+    const staffCount = await this.userRepository.count({
+      where: { store_id: storeId },
+    });
+
+    if (staffCount > 1) {
+      throw new ForbiddenException(
+        'Cửa hàng vẫn còn nhân viên. Vui lòng xóa tất cả nhân viên trước khi xóa cửa hàng',
+      );
+    }
+
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+      relations: { role: true },
+    });
+
+    if (!currentUser || currentUser.role?.name !== 'ADMIN') {
+      throw new ForbiddenException('Chỉ quản trị viên mới có thể xóa cửa hàng');
+    }
+
+    await this.userRepository.update(currentUserId, {
+      store_id: null as any,
+      role_id: null as any,
+    });
+
+    await this.storeRepository.update(storeId, {
+      status: StoreStatus.SUSPENDED,
+    });
+
+    return {
+      message: 'Đã xóa cửa hàng thành công',
+      store: {
+        id: store.id,
+        name: store.name,
+        status: StoreStatus.SUSPENDED,
+      },
+    };
+  }
+
   async getAllStores() {
     const stores = await this.storeRepository.find({
       order: { id: 'ASC' },
