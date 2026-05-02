@@ -16,6 +16,7 @@ import ForgotPasswordPage from "./features/auth-page/forgot-password-page";
 import ResetPasswordPage from "./features/auth-page/reset-password-page";
 import CustomersPage from "./features/customer/customer-page";
 import { DashboardPage } from "./features/dashboard";
+import EmployeesPage from "./features/employees/page";
 import FaqPage from "./features/faq/page";
 import ExpiringSoonPage from "./features/inventory/expiring-soon-page";
 import InventoryPage from "./features/inventory/inventory-page";
@@ -69,6 +70,14 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/not-authenticated" element={<NotAuthenticatedPage />} />
+          <Route
+            path="/employees"
+            element={
+              <RoleRoute allowedRoles={["ADMIN"]}>
+                <EmployeesPage />
+              </RoleRoute>
+            }
+          />
           <Route
             path="/pets"
             element={
