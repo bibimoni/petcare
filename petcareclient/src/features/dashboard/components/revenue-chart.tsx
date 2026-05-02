@@ -1,13 +1,15 @@
 // Mock Chart
 import { Button } from "@/components/ui/button";
 
-import { type RevenueData } from "../api/dashboard-api";
+import { type RevenueData, type ProfitPeriod } from "../api/dashboard-api";
 
 interface RevenueChartProps {
   data: RevenueData;
+  period: ProfitPeriod;
+  onPeriodChange: (period: ProfitPeriod) => void;
 }
 
-export const RevenueChart = ({ data }: RevenueChartProps) => {
+export const RevenueChart = ({ data, period, onPeriodChange }: RevenueChartProps) => {
   // Calculate chart path based on values
   const maxValue = Math.max(...data.values);
   const chartHeight = 280;
@@ -41,7 +43,7 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-bold text-charcoal dark:text-white">
-            Doanh thu 7 ngày qua
+            Lợi nhuận
           </h3>
           <p className="text-sm text-gray-500">
             Tổng thu:{" "}
@@ -50,10 +52,13 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
             </span>
           </p>
         </div>
-        <Button className="flex items-center gap-1 rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          Tuần này
-          <span className="material-symbols-outlined text-sm">expand_more</span>
-        </Button>
+        <div className="relative">
+          <span
+            className="inline-flex items-center rounded-lg bg-gray-50 dark:bg-gray-800 pl-3 pr-8 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors outline-none cursor-pointer"
+          >
+            Tuần này
+          </span>
+        </div>
       </div>
 
       <div className="relative h-[280px] w-full">
@@ -153,7 +158,7 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
             x={highestPoint.x}
             y={highestPoint.y - 18}
           >
-            {highestPoint.value.toFixed(1)}tr
+            {highestPoint.value.toLocaleString("vi-VN")}
           </text>
           <polygon
             fill="#474A53"

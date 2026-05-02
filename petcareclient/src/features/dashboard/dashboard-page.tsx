@@ -7,6 +7,7 @@ import { sidebarUser } from "@/lib/user";
 import {
   type StatsData,
   type RevenueData,
+  type ProfitPeriod,
   getDashboardStats,
   getDashboardRevenue,
   type ActivityFeedData,
@@ -24,18 +25,18 @@ export const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [revenuePeriod, setRevenuePeriod] = useState<ProfitPeriod>("day");
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [statsData, revenueData, activitiesData] = await Promise.all([
+        const [statsData, activitiesData] = await Promise.all([
           getDashboardStats(),
-          getDashboardRevenue(),
           getDashboardActivities(),
         ]);
 
         setStats(statsData);
-        setRevenue(revenueData);
         setActivities(activitiesData);
         setError(null);
       } catch (err) {
@@ -48,6 +49,14 @@ export const DashboardPage = () => {
 
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    const fetchRevenue = async () => {
+      const revenueData = await getDashboardRevenue(revenuePeriod);
+      setRevenue(revenueData);
+    };
+    fetchRevenue();
+  }, [revenuePeriod]);
 
   const handleSearch = (query: string) => {
     console.log("Search query:", query);
@@ -116,7 +125,13 @@ export const DashboardPage = () => {
                 {/* Charts and Activity Feed Grid */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                   {/* Revenue Chart - Takes up 2 columns */}
-                  {revenue && <RevenueChart data={revenue} />}
+                  {revenue && (
+                    <RevenueChart
+                      data={revenue}
+                      period={revenuePeriod}
+                      onPeriodChange={setRevenuePeriod}
+                    />
+                  )}
 
                   {/* Activity Feed - Takes up 1 column */}
                   {activities && <ActivityFeed data={activities} />}

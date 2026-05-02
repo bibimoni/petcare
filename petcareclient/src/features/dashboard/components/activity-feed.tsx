@@ -12,16 +12,10 @@ export const ActivityFeed = ({ data }: ActivityFeedProps) => {
         <h3 className="text-lg font-bold text-charcoal dark:text-white">
           Hoạt động mới
         </h3>
-        <a
-          href="#"
-          className="text-xs font-bold text-primary hover:text-primary-hover"
-        >
-          Xem tất cả
-        </a>
       </div>
       <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-        {data.activities.map((activity) => (
-          <ActivityItemComponent key={activity.id} activity={activity} />
+        {data.activities.map((activity, index) => (
+          <ActivityItemComponent key={index} activity={activity} />
         ))}
       </div>
     </div>
