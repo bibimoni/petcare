@@ -44,6 +44,21 @@ jobs:
     defaults:
       run:
         working-directory: ./petcareserver
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: petcare_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -58,8 +73,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Start services
-        run: bash scripts/build_docker_local.sh
+      - name: Build
+        run: npm run build
+
+      - name: Start server in background
+        env:
+          POSTGRES_URI: postgresql://postgres:password@localhost:5432/petcare_test
+          DB_TYPE: postgres
+          JWT_SECRET: ci_test_jwt_secret
+          STRIPE_SECRET_KEY: sk_test_fake
+          STRIPE_PUBLIC_KEY: pk_test_fake
+          STRIPE_WEBHOOK_SECRET: whsec_test_fake
+          FRONTEND_URL: http://localhost:3000
+          MAIL_HOST: smtp.ethereal.email
+          MAIL_PORT: 587
+          MAIL_USER: test@test.com
+          MAIL_PASS: test
+          MAIL_FROM: test@test.com
+        run: node dist/main.js &
 
       - name: Wait for server to be ready
         run: |
@@ -73,14 +104,13 @@ jobs:
           done
 
       - name: Seed test data
-        run: docker exec petcare npx ts-node -r tsconfig-paths/register scripts/seed-analytics.ts
+        env:
+          POSTGRES_URI: postgresql://postgres:password@localhost:5432/petcare_test
+          DB_TYPE: postgres
+        run: npx ts-node -r tsconfig-paths/register scripts/seed-analytics.ts
 
       - name: Run endpoint integration tests
-        run: npm run test:endpoints
-
-      - name: Tear down services
-        if: always()
-        run: docker-compose -f docker-compose.dev.yml down -v
+        run: bash scripts/test-endpoints.sh
 
 
   deploy:
