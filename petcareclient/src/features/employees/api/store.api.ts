@@ -46,16 +46,22 @@ export const inviteStaff = async (
 };
 
 export type User = {
-  id: number;
   email: string;
   phone?: string;
+  user_id: number;
   avatar?: string;
   full_name: string;
+  role?: {
+    id: number;
+    name: string;
+  } | null;
 };
 
 export const getUsers = async (): Promise<User[]> => {
-  const response = await apiClient.get<User[]>("/users");
-  return response.data;
+  const response = await apiClient.get<User[]>(
+    "/users?status=ACTIVE&in_store=NOT_IN_STORE",
+  );
+  return response.data.filter((user) => user.role?.name !== "SUPER_ADMIN");
 };
 
 export type StoreRole = {

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Lock, Mail, Search, History } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Lock, Mail, Search } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
@@ -18,11 +18,13 @@ const EmployeesPage = () => {
   const storeId = profile?.store_id || 1;
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedRole, setSelectedRole] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["staff", storeId],
@@ -33,20 +35,27 @@ const EmployeesPage = () => {
   const staff = data?.staff || [];
 
   const filteredStaff = useMemo(() => {
+    const normalize = (str: string) =>
+      (str || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    const normalizedSearch = normalize(searchTerm);
+
     return staff.filter((member) => {
+      const isStaff = member.role?.name?.toUpperCase() === "STAFF";
+      if (!isStaff) return false;
+
+      if (!normalizedSearch) return true;
       const matchesSearch =
-        member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.phone.includes(searchTerm);
+        normalize(member.full_name).includes(normalizedSearch) ||
+        normalize(member.email).includes(normalizedSearch) ||
+        (member.phone && member.phone.includes(searchTerm));
 
-      const matchesRole =
-        selectedRole === "all" || member.role.name === selectedRole;
-      const matchesStatus =
-        selectedStatus === "all" || member.status === selectedStatus;
-
-      return matchesSearch && matchesRole && matchesStatus;
+      return matchesSearch;
     });
-  }, [staff, searchTerm, selectedRole, selectedStatus]);
+  }, [staff, searchTerm]);
 
   const totalPages = Math.ceil(filteredStaff.length / ITEMS_PER_PAGE);
   const paginatedStaff = filteredStaff.slice(
@@ -104,38 +113,6 @@ const EmployeesPage = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full rounded-full border border-[#ecdcd1] bg-[#fdfaf8] py-2.5 pl-11 pr-4 text-sm text-[#523c30] outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4]"
               />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  className="appearance-none rounded-full border border-[#ecdcd1] bg-[#fdfaf8] py-2.5 pl-4 pr-10 text-sm font-medium text-[#523c30] outline-none transition cursor-pointer focus:border-[#dcae8c]"
-                >
-                  <option value="all">Tất cả vai trò</option>
-                  <option value="ADMIN">Quản trị viên</option>
-                  <option value="STAFF">Nhân viên</option>
-                </select>
-                <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#be9477] text-[18px]">
-                  expand_more
-                </span>
-              </div>
-
-              <div className="relative">
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="appearance-none rounded-full border border-[#ecdcd1] bg-[#fdfaf8] py-2.5 pl-4 pr-10 text-sm font-medium text-[#523c30] outline-none transition cursor-pointer focus:border-[#dcae8c]"
-                >
-                  <option value="all">Trạng thái</option>
-                  <option value="ACTIVE">Đang hoạt động</option>
-                  <option value="INACTIVE">Đã khóa</option>
-                </select>
-                <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#be9477] text-[18px]">
-                  expand_more
-                </span>
-              </div>
             </div>
           </div>
         </header>
@@ -232,9 +209,6 @@ const EmployeesPage = () => {
                           <div className="flex items-center justify-center gap-3">
                             <button className="text-[#9f7d67] hover:text-[#523c30] transition cursor-pointer">
                               <Lock className="h-5 w-5" />
-                            </button>
-                            <button className="text-[#9f7d67] hover:text-[#523c30] transition cursor-pointer">
-                              <History className="h-5 w-5" />
                             </button>
                           </div>
                         </td>

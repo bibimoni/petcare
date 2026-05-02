@@ -226,7 +226,7 @@ export const InviteModal = ({ isOpen, onClose, storeId }: InviteModalProps) => {
                   <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-10 max-h-48 overflow-y-auto rounded-2xl border border-[#ecdcd1] bg-white p-2 shadow-xl">
                     {suggestedUsers.map((user) => (
                       <button
-                        key={user.id}
+                        key={user.user_id}
                         onClick={() => handleAddEmail(user)}
                         className="flex w-full cursor-pointer items-center gap-3 rounded-xl p-2 text-left hover:bg-[#fcfafa] transition"
                         type="button"
@@ -313,7 +313,7 @@ export const InviteModal = ({ isOpen, onClose, storeId }: InviteModalProps) => {
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Welcome to our team! Please complete your registration."
+              placeholder="Chào mừng bạn đến với PetCare!"
               className="w-full resize-none rounded-2xl border border-[#ecdcd1] bg-[#fdfaf8] p-4 text-sm font-medium text-[#523c30] outline-none transition focus:border-[#f27a4d] focus:ring-2 focus:ring-[#fff4eb]"
               rows={3}
             />
