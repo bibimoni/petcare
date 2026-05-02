@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, Between } from 'typeorm';
-import { Product } from '../entities/product.entity';
+import { Product, ProductStatus } from '../entities/product.entity';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { NotificationsService } from '../../notifications/notifications.service';
@@ -18,6 +18,47 @@ export class ProductsService {
     private readonly productRepository: Repository<Product>,
     private readonly notificationsService: NotificationsService,
   ) {}
+
+  async findAll(
+    storeId: number | null,
+    isAdmin: boolean,
+    filters?: {
+      search?: string;
+      category_id?: number;
+      status?: ProductStatus;
+      low_stock?: boolean;
+    },
+  ): Promise<Product[]> {
+    const query = this.productRepository
+      .createQueryBuilder('product')
+      .orderBy('product.created_at', 'DESC');
+
+    if (!isAdmin && storeId) {
+      query.where('product.store_id = :storeId', { storeId });
+    }
+
+    if (filters?.search) {
+      query.andWhere('product.name ILIKE :search', {
+        search: `%${filters.search}%`,
+      });
+    }
+
+    if (filters?.category_id) {
+      query.andWhere('product.category_id = :categoryId', {
+        categoryId: filters.category_id,
+      });
+    }
+
+    if (filters?.status) {
+      query.andWhere('product.status = :status', { status: filters.status });
+    }
+
+    if (filters?.low_stock) {
+      query.andWhere('product.stock_quantity <= product.min_stock_level');
+    }
+
+    return query.getMany();
+  }
 
   async findByProduct(storeId: number, productId: number): Promise<Product> {
     const product = await this.productRepository.findOne({

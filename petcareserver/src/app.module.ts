@@ -17,6 +17,7 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { RolesModule } from './roles/roles.module';
 import { MailModule } from './mail/mail.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -29,8 +30,10 @@ import { NotificationsModule } from './notifications/notifications.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const dbType = (configService.get<string>('DB_TYPE') || 'postgres') as 'postgres' | 'sqlite';
-        
+        const dbType = (configService.get<string>('DB_TYPE') || 'postgres') as
+          | 'postgres'
+          | 'sqlite';
+
         const baseConfig = {
           type: dbType,
           autoLoadEntities: true,
@@ -44,7 +47,7 @@ import { NotificationsModule } from './notifications/notifications.module';
         if (dbType === 'sqlite') {
           return {
             ...baseConfig,
-            database: ':memory:',
+            database: configService.get<string>('SQLITE_PATH') || ':memory:',
           } as TypeOrmModuleOptions;
         }
 
@@ -67,6 +70,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     RolesModule,
     MailModule,
     NotificationsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

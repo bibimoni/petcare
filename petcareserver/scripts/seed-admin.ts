@@ -29,11 +29,10 @@ import {
 async function seedAdmin() {
   console.log('Connecting to database...');
 
-  const connection = await createConnection({
-    type: 'postgres',
-    url:
-      process.env.POSTGRES_URI ||
-      'postgresql://postgres:password@localhost:5432/petcare_dev',
+  const dbType = (process.env.DB_TYPE || 'postgres') as 'postgres' | 'sqlite';
+
+  const connectionOptions: any = {
+    type: dbType,
     entities: [
       User,
       Order,
@@ -55,7 +54,17 @@ async function seedAdmin() {
       process.env.NODE_ENV === 'production'
         ? { rejectUnauthorized: false }
         : false,
-  });
+  };
+
+  if (dbType === 'sqlite') {
+    connectionOptions.database = process.env.SQLITE_PATH || ':memory:';
+  } else {
+    connectionOptions.url =
+      process.env.POSTGRES_URI ||
+      'postgresql://postgres:password@localhost:5432/petcare_dev';
+  }
+
+  const connection = await createConnection(connectionOptions);
 
   console.log('Database connected successfully');
 

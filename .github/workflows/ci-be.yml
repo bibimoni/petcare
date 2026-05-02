@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build & Test
+    name: Build & E2E Tests
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     defaults:
@@ -31,8 +31,56 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run tests
+      - name: Run e2e tests
         run: npm run test:e2e
+
+      - name: Run permission tests
+        run: npx jest --config ./test/jest-e2e.json test/test-permissions.e2e-spec.ts --forceExit
+
+  endpoint-tests:
+    name: Endpoint Integration Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    defaults:
+      run:
+        working-directory: ./petcareserver
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: ./petcareserver/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start services
+        run: bash scripts/build_docker_local.sh
+
+      - name: Wait for server to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:8080/ > /dev/null 2>&1; then
+              echo "Server is ready"
+              break
+            fi
+            echo "Waiting for server... ($i/30)"
+            sleep 3
+          done
+
+      - name: Seed test data
+        run: docker exec petcare npx ts-node -r tsconfig-paths/register scripts/seed-analytics.ts
+
+      - name: Run endpoint integration tests
+        run: npm run test:endpoints
+
+      - name: Tear down services
+        if: always()
+        run: docker-compose -f docker-compose.dev.yml down -v
 
 
   deploy:

@@ -13,6 +13,7 @@ import {
   UploadedFile,
   UseInterceptors,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -24,6 +25,7 @@ import {
   ApiConsumes,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -32,6 +34,7 @@ import {
   PermissionsGuard,
   RequirePermissions,
   RolesGuard,
+  isSuperAdmin,
 } from 'src/common';
 import { Customer } from './entities/customer.entity';
 import { STORE_PERMISSIONS } from 'src/common/permissions/store.permissions';
@@ -86,18 +89,28 @@ export class CustomersController {
   @ApiOperation({
     summary: 'Get all customers in a store',
     description:
-      'Retrieves a paginated list of customers for the specified store',
+      'Retrieves a list of customers with optional search and date filters',
   })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'date_from', required: false, type: String })
+  @ApiQuery({ name: 'date_to', required: false, type: String })
   @ApiResponse({
     status: 200,
     description: 'Customers retrieved successfully',
   })
-  @ApiResponse({
-    status: 404,
-    description: 'Deny permission to view customers',
-  })
-  findAll(@CurrentUser() user: any) {
-    return this.customersService.findAllByStore(user.store_id);
+  findAll(
+    @CurrentUser() user: any,
+    @Query('search') search?: string,
+    @Query('date_from') date_from?: string,
+    @Query('date_to') date_to?: string,
+  ) {
+    const admin = isSuperAdmin(user);
+    const storeId = admin ? null : user.store_id;
+    return this.customersService.findAllByStore(storeId, admin, {
+      search,
+      date_from,
+      date_to,
+    });
   }
 
   @Get('/:customerId')

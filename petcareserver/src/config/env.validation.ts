@@ -6,7 +6,13 @@ export const envValidationSchema = Joi.object({
     .default('development'),
   PORT: Joi.number().default(8080),
 
-  POSTGRES_URI: Joi.string().required(),
+  DB_TYPE: Joi.string().valid('postgres', 'sqlite').default('postgres'),
+  SQLITE_PATH: Joi.string().optional(),
+  POSTGRES_URI: Joi.when('DB_TYPE', {
+    is: 'sqlite',
+    then: Joi.string().optional(),
+    otherwise: Joi.string().required(),
+  }),
   JWT_SECRET: Joi.string().default('your-secret-key'),
   JWT_EXPIRES_IN: Joi.string().default('1d'),
 

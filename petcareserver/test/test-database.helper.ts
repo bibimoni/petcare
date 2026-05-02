@@ -59,7 +59,12 @@ export {
   PetWeightHistory,
 };
 
-export { UserStatus, StoreStatus, InvitationStatus, PermissionScope } from '../src/common/enum';
+export {
+  UserStatus,
+  StoreStatus,
+  InvitationStatus,
+  PermissionScope,
+} from '../src/common/enum';
 
 export const TEST_CONFIG = {
   POSTGRES_URI: 'sqlite::memory:',
@@ -128,7 +133,7 @@ export function getTestRepository<T extends keyof RepositoryMap>(
     Pet,
     PetWeightHistory,
   };
-  
+
   return module.get(getRepositoryToken(entityMap[entity]));
 }
 
@@ -152,9 +157,9 @@ export async function createTestApp(modules: any[] = []): Promise<{
 
   const app = moduleFixture.createNestApplication();
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-  
+
   await app.init();
-  
+
   return { app, module: moduleFixture };
 }
 

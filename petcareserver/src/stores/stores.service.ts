@@ -89,9 +89,12 @@ export class StoresService {
       notification_cron: createStoreDto.notification_cron ?? null,
     });
 
-    const savedStore = (await this.storeRepository.save(store)) as Store;
+    const savedStore = await this.storeRepository.save(store);
 
-    this.notificationScheduler.registerStoreJob(savedStore.id, savedStore.notification_cron);
+    this.notificationScheduler.registerStoreJob(
+      savedStore.id,
+      savedStore.notification_cron,
+    );
 
     let adminRole = await this.roleRepository.findOne({
       where: { name: 'ADMIN', store_id: savedStore.id },
@@ -106,7 +109,7 @@ export class StoresService {
         is_system_role: false,
       });
 
-      adminRole = (await this.roleRepository.save(newAdminRole)) as Role;
+      adminRole = await this.roleRepository.save(newAdminRole);
 
       const storePermissions = await this.permissionRepository.find({
         where: { scope: PermissionScope.STORE },
@@ -139,20 +142,29 @@ export class StoresService {
     };
   }
 
+  private async validateStoreMembership(
+    storeId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    if (isSuperAdmin) return;
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
+    if (!currentUser || currentUser.store_id !== storeId) {
+      throw new ForbiddenException(
+        'Bạn không có quyền thực hiện thao tác này trên cửa hàng',
+      );
+    }
+  }
+
   async inviteStaff(
     storeId: number,
     inviteStaffDto: InviteStaffDto,
     currentUserId: number,
+    isSuperAdmin: boolean = false,
   ) {
-    const currentUser = await this.userRepository.findOne({
-      where: { user_id: currentUserId },
-    });
-
-    if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException(
-        'Bạn không có quyền mời nhân viên vào cửa hàng này',
-      );
-    }
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
 
     const store = await this.storeRepository.findOne({
       where: { id: storeId },
@@ -226,14 +238,17 @@ export class StoresService {
               this.configService.get<string>('FRONTEND_URL') || '';
             const actionUrl = buildInvitationUrl(frontendUrl, token);
 
-            const notification = transactionalEntityManager.create(Notification, {
-              store_id: storeId,
-              user_id: existingUser.user_id,
-              type: NotificationType.STORE_INVITATION,
-              title: `Lời mời tham gia ${store.name}`,
-              message: `Bạn đã được mời tham gia ${store.name} với vai trò ${role.name}. Nhấn để xem chi tiết.`,
-              action_url: actionUrl,
-            });
+            const notification = transactionalEntityManager.create(
+              Notification,
+              {
+                store_id: storeId,
+                user_id: existingUser.user_id,
+                type: NotificationType.STORE_INVITATION,
+                title: `Lời mời tham gia ${store.name}`,
+                message: `Bạn đã được mời tham gia ${store.name} với vai trò ${role.name}. Nhấn để xem chi tiết.`,
+                action_url: actionUrl,
+              },
+            );
 
             await transactionalEntityManager.save(notification);
           } catch (error) {
@@ -300,14 +315,9 @@ export class StoresService {
     storeId: number,
     updateData: UpdateStoreDto,
     currentUserId: number,
+    isSuperAdmin: boolean = false,
   ) {
-    const currentUser = await this.userRepository.findOne({
-      where: { user_id: currentUserId },
-    });
-
-    if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('Bạn không có quyền cập nhật cửa hàng này');
-    }
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
 
     const store = await this.storeRepository.findOne({
       where: { id: storeId },
@@ -318,14 +328,18 @@ export class StoresService {
     }
 
     // Track if notification_cron was updated
-    const wasNotificationCronUpdated = updateData.notification_cron !== undefined;
+    const wasNotificationCronUpdated =
+      updateData.notification_cron !== undefined;
 
     Object.assign(store, updateData);
-    const updatedStore = (await this.storeRepository.save(store)) as Store;
+    const updatedStore = await this.storeRepository.save(store);
 
     // Register the notification job if cron was updated
     if (wasNotificationCronUpdated && updatedStore.notification_cron) {
-      this.notificationScheduler.registerStoreJob(storeId, updatedStore.notification_cron);
+      this.notificationScheduler.registerStoreJob(
+        storeId,
+        updatedStore.notification_cron,
+      );
     }
 
     return {
@@ -338,14 +352,9 @@ export class StoresService {
     storeId: number,
     cronExpression: string | null,
     currentUserId: number,
+    isSuperAdmin: boolean = false,
   ) {
-    const currentUser = await this.userRepository.findOne({
-      where: { user_id: currentUserId },
-    });
-
-    if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('Bạn không có quyền cập nhật cửa hàng này');
-    }
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
 
     const store = await this.storeRepository.findOne({
       where: { id: storeId },
@@ -368,16 +377,12 @@ export class StoresService {
     };
   }
 
-  async getStoreStaff(storeId: number, currentUserId: number) {
-    const currentUser = await this.userRepository.findOne({
-      where: { user_id: currentUserId },
-    });
-
-    if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException(
-        'Bạn không có quyền xem danh sách nhân viên của cửa hàng này',
-      );
-    }
+  async getStoreStaff(
+    storeId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
 
     const staff = await this.userRepository.find({
       where: { store_id: storeId },

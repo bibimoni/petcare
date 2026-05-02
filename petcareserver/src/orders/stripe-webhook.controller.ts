@@ -45,7 +45,9 @@ export class StripeWebhookController {
 
     const rawBody = req.rawBody;
     if (!rawBody) {
-      throw new BadRequestException('Missing raw body — ensure rawBody:true is set in NestFactory');
+      throw new BadRequestException(
+        'Missing raw body — ensure rawBody:true is set in NestFactory',
+      );
     }
 
     const event = this.stripeService.constructWebhookEvent(rawBody, signature);
