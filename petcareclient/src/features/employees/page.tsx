@@ -1,15 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
-import { Lock, Mail, Search } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Mail, Search, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 import { Sidebar } from "@/components/Sidebar";
 import { sidebarUser, getSidebarUser } from "@/lib/user";
 
-import { getStaffList } from "./api/store.api";
+import { deleteStaff, getStaffList } from "./api/store.api";
 import { InviteModal } from "./components/invite-modal";
 
 const EmployeesPage = () => {
+  const queryClient = useQueryClient();
   const { data: profile } = useQuery({
     queryKey: ["sidebar-user"],
     queryFn: getSidebarUser,
@@ -22,17 +24,26 @@ const EmployeesPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
-
   const { data, isLoading } = useQuery({
     queryKey: ["staff", storeId],
     queryFn: () => getStaffList(storeId),
     enabled: !!profile?.store_id,
   });
 
-  const staff = data?.staff || [];
+  const { mutate: handleDeleteStaff, isPending: isDeleting } = useMutation({
+    mutationFn: async (userId: number) => {
+      await deleteStaff(storeId, userId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff", storeId] });
+      toast.success("Đã xóa nhân viên thành công");
+    },
+    onError: () => {
+      toast.error("Không thể xóa nhân viên, vui lòng thử lại sau");
+    },
+  });
+
+  const staff = useMemo(() => data?.staff ?? [], [data?.staff]);
 
   const filteredStaff = useMemo(() => {
     const normalize = (str: string) =>
@@ -93,6 +104,7 @@ const EmployeesPage = () => {
             </div>
 
             <button
+              type="button"
               onClick={() => setIsInviteModalOpen(true)}
               className="flex cursor-pointer items-center gap-2 rounded-full bg-[#f27a4d] px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#e1683b] transition"
             >
@@ -110,7 +122,10 @@ const EmployeesPage = () => {
                 type="text"
                 placeholder="Tìm kiếm theo tên, email hoặc SĐT..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full rounded-full border border-[#ecdcd1] bg-[#fdfaf8] py-2.5 pl-11 pr-4 text-sm text-[#523c30] outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4]"
               />
             </div>
@@ -207,8 +222,24 @@ const EmployeesPage = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-3">
-                            <button className="text-[#9f7d67] hover:text-[#523c30] transition cursor-pointer">
-                              <Lock className="h-5 w-5" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const confirmed = window.confirm(
+                                  `Xóa nhân viên ${member.full_name}?`,
+                                );
+
+                                if (!confirmed) {
+                                  return;
+                                }
+
+                                handleDeleteStaff(member.user_id);
+                              }}
+                              disabled={isDeleting}
+                              className="cursor-pointer text-[#c65a4b] transition hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                              title="Xóa nhân viên"
+                            >
+                              <Trash2 className="h-5 w-5" />
                             </button>
                           </div>
                         </td>
@@ -230,6 +261,7 @@ const EmployeesPage = () => {
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   className="rounded-full cursor-pointer px-4 py-1.5 text-sm font-bold text-[#9f7d67] border border-[#f0e3dc] hover:bg-[#f8f1ec] disabled:opacity-50 disabled:cursor-not-allowed transition"
@@ -238,6 +270,7 @@ const EmployeesPage = () => {
                 </button>
                 {Array.from({ length: totalPages }).map((_, i) => (
                   <button
+                    type="button"
                     key={i}
                     onClick={() => setCurrentPage(i + 1)}
                     className={`h-8 w-8 cursor-pointer rounded-full text-sm font-bold transition ${
@@ -250,6 +283,7 @@ const EmployeesPage = () => {
                   </button>
                 ))}
                 <button
+                  type="button"
                   onClick={() =>
                     setCurrentPage((p) => Math.min(totalPages, p + 1))
                   }

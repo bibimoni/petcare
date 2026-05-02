@@ -45,6 +45,13 @@ export const inviteStaff = async (
   await apiClient.post(`/stores/${storeId}/invite`, data);
 };
 
+export const deleteStaff = async (
+  storeId: number,
+  userId: number,
+): Promise<void> => {
+  await apiClient.delete(`/stores/${storeId}/staff/${userId}`);
+};
+
 export type User = {
   email: string;
   phone?: string;
