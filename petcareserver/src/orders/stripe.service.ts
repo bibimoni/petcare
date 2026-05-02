@@ -134,7 +134,7 @@ export class StripeService {
       const paymentIntentId =
         typeof session.payment_intent === 'string'
           ? session.payment_intent
-          : session.payment_intent?.id ?? null;
+          : (session.payment_intent?.id ?? null);
 
       return {
         checkout_url: session.url,

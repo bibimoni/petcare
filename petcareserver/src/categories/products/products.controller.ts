@@ -20,12 +20,19 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { CurrentUser, PermissionsGuard, RequirePermissions } from 'src/common';
+import {
+  CurrentUser,
+  PermissionsGuard,
+  RequirePermissions,
+  isSuperAdmin,
+} from 'src/common';
 import { STORE_PERMISSIONS } from 'src/common/permissions';
 import { UpdateProductDto } from '../dto/update-product.dto';
+import { ProductStatus } from '../entities/product.entity';
 
 @ApiTags('Products Management')
 @Controller({ path: '/products', version: '1' })
@@ -33,6 +40,33 @@ import { UpdateProductDto } from '../dto/update-product.dto';
 @ApiBearerAuth()
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
+
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.PRODUCT_VIEW)
+  @ApiOperation({ summary: 'Get all products with optional filters' })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'category_id', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: ProductStatus })
+  @ApiQuery({ name: 'low_stock', required: false, type: Boolean })
+  async getAllProducts(
+    @CurrentUser() user: any,
+    @Query('search') search?: string,
+    @Query('category_id') category_id?: string,
+    @Query('status') status?: ProductStatus,
+    @Query('low_stock') low_stock?: string,
+  ) {
+    const admin = isSuperAdmin(user);
+    const storeId = admin ? null : user.store_id;
+    const categoryIdNum = category_id ? parseInt(category_id, 10) : undefined;
+    return this.productsService.findAll(storeId, admin, {
+      search,
+      category_id:
+        categoryIdNum && !isNaN(categoryIdNum) ? categoryIdNum : undefined,
+      status,
+      low_stock: low_stock === 'true',
+    });
+  }
 
   @Get('/alerts')
   @HttpCode(HttpStatus.OK)

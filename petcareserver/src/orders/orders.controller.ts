@@ -33,6 +33,7 @@ import {
   JwtAuthGuard,
   PermissionsGuard,
   RequirePermissions,
+  isSuperAdmin,
 } from 'src/common';
 import { STORE_PERMISSIONS } from 'src/common/permissions';
 
@@ -125,22 +126,58 @@ export class OrdersController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.ORDER_VIEW)
-  @ApiOperation({ summary: 'Get all orders with pagination' })
+  @ApiOperation({ summary: 'Get all orders with pagination and filters' })
   @ApiResponse({ status: 200, description: 'List of orders' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, enum: OrderStatus })
+  @ApiQuery({ name: 'date_from', required: false, type: String })
+  @ApiQuery({ name: 'date_to', required: false, type: String })
+  @ApiQuery({ name: 'min_amount', required: false, type: Number })
+  @ApiQuery({ name: 'max_amount', required: false, type: Number })
+  @ApiQuery({ name: 'customer_id', required: false, type: Number })
+  @ApiQuery({ name: 'payment_method', required: false, enum: PaymentMethod })
+  @ApiQuery({ name: 'item_type', required: false, enum: CategoryType })
   async getAllOrders(
     @CurrentUser() user: any,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('status') status?: OrderStatus,
+    @Query('date_from') date_from?: string,
+    @Query('date_to') date_to?: string,
+    @Query('min_amount') min_amount?: string,
+    @Query('max_amount') max_amount?: string,
+    @Query('customer_id') customer_id?: string,
+    @Query('payment_method') payment_method?: PaymentMethod,
+    @Query('item_type') item_type?: CategoryType,
   ) {
+    const admin = isSuperAdmin(user);
+    const storeId = admin ? null : user.store_id;
+    const minAmount = min_amount ? parseFloat(min_amount) : undefined;
+    const maxAmount = max_amount ? parseFloat(max_amount) : undefined;
+    const customerIdNum = customer_id ? parseInt(customer_id, 10) : undefined;
+    const validatedDateFrom =
+      date_from && !isNaN(new Date(date_from).getTime())
+        ? date_from
+        : undefined;
+    const validatedDateTo =
+      date_to && !isNaN(new Date(date_to).getTime()) ? date_to : undefined;
     return this.ordersService.getOrderHistory(
-      user.store_id,
+      storeId,
+      admin,
       status,
       page,
       limit,
+      {
+        date_from: validatedDateFrom,
+        date_to: validatedDateTo,
+        min_amount: minAmount && !isNaN(minAmount) ? minAmount : undefined,
+        max_amount: maxAmount && !isNaN(maxAmount) ? maxAmount : undefined,
+        customer_id:
+          customerIdNum && !isNaN(customerIdNum) ? customerIdNum : undefined,
+        payment_method,
+        item_type,
+      },
     );
   }
 
@@ -165,8 +202,14 @@ export class OrdersController {
   @Post('checkout')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.ORDER_CREATE)
-  @ApiOperation({ summary: 'Create Stripe Checkout Session — redirects to Stripe payment page' })
-  @ApiResponse({ status: 200, description: 'Checkout session created, returns checkout_url' })
+  @ApiOperation({
+    summary:
+      'Create Stripe Checkout Session — redirects to Stripe payment page',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Checkout session created, returns checkout_url',
+  })
   @ApiResponse({ status: 404, description: 'Order not found' })
   @ApiResponse({ status: 400, description: 'Order already paid or cancelled' })
   async createCheckout(

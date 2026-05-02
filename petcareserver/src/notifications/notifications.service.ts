@@ -10,7 +10,10 @@ import {
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { Product } from 'src/categories/entities/product.entity';
-import { buildNotificationProductUrl, buildInvitationUrl } from './notification.util';
+import {
+  buildNotificationProductUrl,
+  buildInvitationUrl,
+} from './notification.util';
 import { CreateInvitationNotificationDto } from './dto/create-invitation-notification.dto';
 
 @Injectable()

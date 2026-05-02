@@ -124,9 +124,19 @@ describe('OrdersController', () => {
       expect(result).toEqual(expected);
       expect(mockOrdersService.getOrderHistory).toHaveBeenCalledWith(
         10,
+        false,
         undefined,
         1,
         10,
+        {
+          customer_id: undefined,
+          date_from: undefined,
+          date_to: undefined,
+          item_type: undefined,
+          max_amount: undefined,
+          min_amount: undefined,
+          payment_method: undefined,
+        },
       );
     });
 
@@ -143,9 +153,19 @@ describe('OrdersController', () => {
 
       expect(mockOrdersService.getOrderHistory).toHaveBeenCalledWith(
         10,
+        false,
         OrderStatus.PAID,
         1,
         10,
+        {
+          customer_id: undefined,
+          date_from: undefined,
+          date_to: undefined,
+          item_type: undefined,
+          max_amount: undefined,
+          min_amount: undefined,
+          payment_method: undefined,
+        },
       );
       expect(result.data).toHaveLength(0);
     });
@@ -163,9 +183,19 @@ describe('OrdersController', () => {
 
       expect(mockOrdersService.getOrderHistory).toHaveBeenCalledWith(
         10,
+        false,
         undefined,
         3,
         5,
+        {
+          customer_id: undefined,
+          date_from: undefined,
+          date_to: undefined,
+          item_type: undefined,
+          max_amount: undefined,
+          min_amount: undefined,
+          payment_method: undefined,
+        },
       );
     });
   });

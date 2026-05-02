@@ -806,10 +806,20 @@ export class OrdersService {
   }
 
   async getOrderHistory(
-    storeId: number,
+    storeId: number | null,
+    isSuperAdmin: boolean,
     status?: OrderStatus,
     page: number = 1,
     limit: number = 10,
+    filters?: {
+      date_from?: string;
+      date_to?: string;
+      min_amount?: number;
+      max_amount?: number;
+      customer_id?: number;
+      payment_method?: PaymentMethod;
+      item_type?: CategoryType;
+    },
   ): Promise<{
     data: Order[];
     total: number;
@@ -822,15 +832,63 @@ export class OrdersService {
 
     const query = this.ordersRepository
       .createQueryBuilder('order')
-      .where('order.store_id = :storeId', { storeId })
       .leftJoinAndSelect('order.order_details', 'orderDetails')
       .leftJoinAndSelect('orderDetails.product', 'product')
       .leftJoinAndSelect('orderDetails.service', 'service')
       .leftJoinAndSelect('order.customer', 'customer')
       .orderBy('order.created_at', 'DESC');
 
+    if (!isSuperAdmin && storeId) {
+      query.where('order.store_id = :storeId', { storeId });
+    }
+
     if (status) {
       query.andWhere('order.status = :status', { status });
+    }
+
+    if (filters?.date_from) {
+      const dateFrom = new Date(filters.date_from);
+      if (!isNaN(dateFrom.getTime())) {
+        query.andWhere('order.created_at >= :dateFrom', { dateFrom });
+      }
+    }
+
+    if (filters?.date_to) {
+      const dateTo = new Date(filters.date_to);
+      if (!isNaN(dateTo.getTime())) {
+        query.andWhere('order.created_at <= :dateTo', { dateTo });
+      }
+    }
+
+    if (filters?.min_amount !== undefined) {
+      query.andWhere('order.total_amount >= :minAmount', {
+        minAmount: filters.min_amount,
+      });
+    }
+
+    if (filters?.max_amount !== undefined) {
+      query.andWhere('order.total_amount <= :maxAmount', {
+        maxAmount: filters.max_amount,
+      });
+    }
+
+    if (filters?.customer_id) {
+      query.andWhere('order.customer_id = :customerId', {
+        customerId: filters.customer_id,
+      });
+    }
+
+    if (filters?.item_type) {
+      query.andWhere('orderDetails.item_type = :itemType', {
+        itemType: filters.item_type,
+      });
+    }
+
+    if (filters?.payment_method) {
+      query.andWhere(
+        `order.order_id IN (SELECT p.order_id FROM payments p WHERE p.payment_method = :payMethod)`,
+        { payMethod: filters.payment_method },
+      );
     }
 
     const skip = (safePage - 1) * safeLimit;

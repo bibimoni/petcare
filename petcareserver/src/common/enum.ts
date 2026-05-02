@@ -53,3 +53,8 @@ export enum Currency {
   USD = 'usd',
   VND = 'vnd',
 }
+
+export enum InStoreFilter {
+  IN_STORE = 'IN_STORE',
+  NOT_IN_STORE = 'NOT_IN_STORE',
+}

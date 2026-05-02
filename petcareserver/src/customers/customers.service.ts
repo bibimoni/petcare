@@ -43,12 +43,48 @@ export class CustomersService {
     }
   }
 
-  async findAllByStore(storeId: number): Promise<Customer[]> {
-    return this.customerRepository.find({
-      where: { store_id: storeId },
-      relations: ['pets'],
-      order: { full_name: 'ASC' },
-    });
+  async findAllByStore(
+    storeId: number | null,
+    isAdmin: boolean,
+    filters?: { search?: string; date_from?: string; date_to?: string },
+  ): Promise<Customer[]> {
+    const query = this.customerRepository
+      .createQueryBuilder('customer')
+      .leftJoinAndSelect('customer.pets', 'pets')
+      .orderBy('customer.full_name', 'ASC');
+
+    if (!isAdmin && storeId) {
+      query.where('customer.store_id = :storeId', { storeId });
+    }
+
+    if (filters?.search) {
+      query.andWhere(
+        '(customer.full_name ILIKE :search OR customer.phone ILIKE :search OR customer.email ILIKE :search)',
+        {
+          search: `%${filters.search}%`,
+        },
+      );
+    }
+
+    if (filters?.date_from) {
+      const dateFrom = new Date(filters.date_from);
+      if (!isNaN(dateFrom.getTime())) {
+        query.andWhere('customer.created_at >= :dateFrom', {
+          dateFrom,
+        });
+      }
+    }
+
+    if (filters?.date_to) {
+      const dateTo = new Date(filters.date_to);
+      if (!isNaN(dateTo.getTime())) {
+        query.andWhere('customer.created_at <= :dateTo', {
+          dateTo,
+        });
+      }
+    }
+
+    return query.getMany();
   }
 
   async findByPhone(storeId: number, phone: string): Promise<Customer> {

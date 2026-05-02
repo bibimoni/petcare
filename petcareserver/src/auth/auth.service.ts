@@ -12,8 +12,13 @@ import { User } from '../users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UserStatus } from '../common/enum';
-import { ForgotPasswordDto  } from './dto/forgot-password.dto';
-import { comparePassword, generateRandomToken, hashPassword, RESET_PASSWORD_TOKEN_EXPIRATION_MINUTES } from 'src/common';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import {
+  comparePassword,
+  generateRandomToken,
+  hashPassword,
+  RESET_PASSWORD_TOKEN_EXPIRATION_MINUTES,
+} from 'src/common';
 import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
@@ -53,7 +58,10 @@ export class AuthService {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
-    const isPasswordValid = await comparePassword(loginDto.password, user.password_hash);
+    const isPasswordValid = await comparePassword(
+      loginDto.password,
+      user.password_hash,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
@@ -132,69 +140,81 @@ export class AuthService {
     } catch (error) {
       if (error instanceof QueryFailedError) {
         const errorMessage = error.message.toLowerCase();
-        
+
         if (errorMessage.includes('email')) {
           throw new ConflictException('Email đã được sử dụng');
         }
-        
+
         if (errorMessage.includes('phone')) {
           throw new ConflictException('Số điện thoại đã được sử dụng');
         }
-        
+
         throw new ConflictException('Dữ liệu đã tồn tại trong hệ thống');
       }
-      
+
       console.error('Registration error:', error);
-      throw new InternalServerErrorException('Đã xảy ra lỗi khi đăng ký tài khoản');
+      throw new InternalServerErrorException(
+        'Đã xảy ra lỗi khi đăng ký tài khoản',
+      );
     }
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
- 		const user = await this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: { email: forgotPasswordDto.email },
-		});
-	  if (!user) {
-	  	throw new UnauthorizedException('Email không tồn tại trong hệ thống');
-	  }
+    });
+    if (!user) {
+      throw new UnauthorizedException('Email không tồn tại trong hệ thống');
+    }
 
-		if (user.reset_password_expires_at && user.reset_password_expires_at >= new Date() && user.reset_password_token) {
-			throw new ConflictException('Yêu cầu đặt lại mật khẩu đã được gửi, vui lòng kiểm tra email');
-		}
+    if (
+      user.reset_password_expires_at &&
+      user.reset_password_expires_at >= new Date() &&
+      user.reset_password_token
+    ) {
+      throw new ConflictException(
+        'Yêu cầu đặt lại mật khẩu đã được gửi, vui lòng kiểm tra email',
+      );
+    }
 
-		const token = generateRandomToken()
-		user.reset_password_token = token;
-		user.reset_password_expires_at = new Date(Date.now() + RESET_PASSWORD_TOKEN_EXPIRATION_MINUTES * 60 * 1000);
+    const token = generateRandomToken();
+    user.reset_password_token = token;
+    user.reset_password_expires_at = new Date(
+      Date.now() + RESET_PASSWORD_TOKEN_EXPIRATION_MINUTES * 60 * 1000,
+    );
 
-		await this.userRepository.save(user);
-		await this.mailService.sendResetPasswordEmail(user.email, token);
+    await this.userRepository.save(user);
+    await this.mailService.sendResetPasswordEmail(user.email, token);
 
-		return {
-			message: 'Link đặt lại mật khẩu đã được gửi đến email của bạn',
-		};
+    return {
+      message: 'Link đặt lại mật khẩu đã được gửi đến email của bạn',
+    };
   }
 
   async resetPassword(token: string, newPassword: string) {
-		const user = await this.userRepository.findOne({
-			where: { reset_password_token: token },
-		});
+    const user = await this.userRepository.findOne({
+      where: { reset_password_token: token },
+    });
 
-		if (!user) {
-	    throw new UnauthorizedException('Đường dẫn không hợp lệ');
-	  }
+    if (!user) {
+      throw new UnauthorizedException('Đường dẫn không hợp lệ');
+    }
 
-	  if (!user.reset_password_expires_at) {
-	    throw new UnauthorizedException('Đường dẫn không hợp lệ');
-	  }
+    if (!user.reset_password_expires_at) {
+      throw new UnauthorizedException('Đường dẫn không hợp lệ');
+    }
 
-	  if (user.reset_password_expires_at < new Date()) {
-	    throw new UnauthorizedException('Đường dẫn đã hết hạn, vui lòng yêu cầu đặt lại mật khẩu mới');
-	  }
-		user.password_hash = await hashPassword(newPassword);
-		user.reset_password_token = null;
-		user.reset_password_expires_at = null;
+    if (user.reset_password_expires_at < new Date()) {
+      throw new UnauthorizedException(
+        'Đường dẫn đã hết hạn, vui lòng yêu cầu đặt lại mật khẩu mới',
+      );
+    }
+    user.password_hash = await hashPassword(newPassword);
+    user.reset_password_token = null;
+    user.reset_password_expires_at = null;
 
-		await this.userRepository.save(user);
+    await this.userRepository.save(user);
 
-		return { message: 'Đặt lại mật khẩu thành công' };
+    return { message: 'Đặt lại mật khẩu thành công' };
   }
 }

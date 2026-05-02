@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build & Test
+    name: Build & E2E Tests
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     defaults:
@@ -31,9 +31,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run tests
+      - name: Run e2e tests
         run: npm run test:e2e
 
+      - name: Run permission tests
+        run: npx jest --config ./test/jest-e2e.json test/test-permissions.e2e-spec.ts --forceExit
 
   deploy:
     name: Deploy to Render
