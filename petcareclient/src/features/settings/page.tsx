@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { Sidebar } from "@/components/Sidebar";
 import { AlertDialog } from "@/components/ui/alert-dialog";
-import { sidebarUser, getSidebarUser } from "@/lib/user";
+import { getSidebarUser } from "@/lib/user";
 
 import {
   leaveStore,
@@ -128,7 +128,7 @@ const SettingsPage = () => {
   if (isLoadingProfile) {
     return (
       <div className="flex h-screen w-full overflow-hidden">
-        <Sidebar userInfo={sidebarUser} />
+        <Sidebar />
         <main className="flex flex-1 items-center justify-center bg-[#faf7f5]">
           <div className="flex flex-col items-center gap-4">
             <div className="animate-spin">
@@ -144,7 +144,7 @@ const SettingsPage = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
         <header className="sticky top-0 z-10 flex flex-col gap-4 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-8 py-6 backdrop-blur-sm">

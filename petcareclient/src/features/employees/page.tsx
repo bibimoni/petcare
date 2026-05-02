@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Sidebar } from "@/components/Sidebar";
-import { sidebarUser, getSidebarUser } from "@/lib/user";
+import { getSidebarUser } from "@/lib/user";
 
 import { deleteStaff, getStaffList } from "./api/store.api";
 import { InviteModal } from "./components/invite-modal";
@@ -76,7 +76,7 @@ const EmployeesPage = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
         <header className="sticky top-0 z-10 flex flex-col gap-4 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-8 py-6 backdrop-blur-sm">
