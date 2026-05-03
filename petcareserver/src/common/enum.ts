@@ -51,6 +51,7 @@ export enum PaymentMethod {
 
 export enum Currency {
   VND = 'vnd',
+  USD = 'usd',
 }
 
 export enum InStoreFilter {
