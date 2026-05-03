@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, DeepPartial } from 'typeorm';
+import { parseDateInAppTimezone } from '../common/utils/timezone';
 import { Order } from './entities/order.entity';
 import { OrderDetail } from './entities/order-detail.entity';
 import { Payment } from './entities/payment.entity';
@@ -197,7 +198,7 @@ export class OrdersService {
   async createPaymentIntent(
     orderId: number,
     storeId: number,
-    currency: string = 'usd',
+    currency: string = 'vnd',
   ): Promise<{
     client_secret: string;
     payment_intent_id: string;
@@ -273,7 +274,7 @@ export class OrdersService {
   async createCheckoutSession(
     orderId: number,
     storeId: number,
-    currency: string = 'usd',
+    currency: string = 'vnd',
     successUrl?: string,
     cancelUrl?: string,
   ): Promise<{
@@ -744,14 +745,14 @@ export class OrdersService {
     }
 
     if (filters?.date_from) {
-      const dateFrom = new Date(filters.date_from);
+      const dateFrom = parseDateInAppTimezone(filters.date_from);
       if (!isNaN(dateFrom.getTime())) {
         query.andWhere('order.created_at >= :dateFrom', { dateFrom });
       }
     }
 
     if (filters?.date_to) {
-      const dateTo = new Date(filters.date_to);
+      const dateTo = parseDateInAppTimezone(filters.date_to);
       if (!isNaN(dateTo.getTime())) {
         query.andWhere('order.created_at <= :dateTo', { dateTo });
       }

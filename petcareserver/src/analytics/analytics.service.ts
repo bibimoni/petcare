@@ -9,6 +9,15 @@ import { Customer } from '../customers/entities/customer.entity';
 import { Notification } from '../notifications/entities/notification.entity';
 import { CategoryType, OrderStatus } from '../common/enum';
 import {
+  appNow,
+  appDateFromParts,
+  appDateParts,
+  appStartOfDay,
+  parseDateInAppTimezone,
+  appPeriodKey,
+  tzInterval,
+} from '../common/utils/timezone';
+import {
   ProfitGranularity,
   ProfitQueryDto,
   OrderStatsQueryDto,
@@ -122,10 +131,11 @@ export class AnalyticsService {
     storeId: number | null,
     isSuperAdmin: boolean,
   ): Promise<GrowthMetric> {
-    const now = new Date();
-    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    const now = appNow();
+    const { year, month } = appDateParts(now);
+    const startOfThisMonth = appDateFromParts(year, month, 1);
+    const startOfLastMonth = appDateFromParts(year, month - 1, 1);
+    const endOfLastMonth = appDateFromParts(year, month, 0);
 
     const buildCountQuery = (from: Date, to: Date) => {
       const q = this.petRepository
@@ -164,12 +174,8 @@ export class AnalyticsService {
     storeId: number | null,
     isSuperAdmin: boolean,
   ): Promise<TodayBookings> {
-    const now = new Date();
-    const startOfDay = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    );
+    const now = appNow();
+    const startOfDay = appStartOfDay(now);
 
     const buildBookingQuery = (itemType: CategoryType) => {
       const q = this.orderDetailRepository
@@ -199,12 +205,9 @@ export class AnalyticsService {
     storeId: number | null,
     isSuperAdmin: boolean,
   ): Promise<TodayProfit> {
-    const now = new Date();
-    const startOfDay = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    );
+    const now = appNow();
+    const { year, month, day } = appDateParts(now);
+    const startOfDay = appDateFromParts(year, month, day);
 
     const todayRevenue = await this.calculateRevenue(
       startOfDay,
@@ -219,16 +222,8 @@ export class AnalyticsService {
       isSuperAdmin,
     );
 
-    const yesterdayStart = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - 1,
-    );
-    const yesterdayEnd = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    );
+    const yesterdayStart = appDateFromParts(year, month, day - 1);
+    const yesterdayEnd = appDateFromParts(year, month, day);
     const yesterdayProfit = await this.calculateProfit(
       yesterdayStart,
       yesterdayEnd,
@@ -252,7 +247,7 @@ export class AnalyticsService {
     storeId: number | null,
     isSuperAdmin: boolean,
   ): Promise<StorageWarnings> {
-    const now = new Date();
+    const now = appNow();
     const soon = new Date();
     soon.setDate(now.getDate() + 30);
 
@@ -404,9 +399,11 @@ export class AnalyticsService {
     query: OrderStatsQueryDto,
   ): Promise<OrderStatsResponse> {
     const dateFrom = query.date_from
-      ? new Date(query.date_from)
-      : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const dateTo = query.date_to ? new Date(query.date_to) : new Date();
+      ? parseDateInAppTimezone(query.date_from)
+      : (() => { const { year, month } = appDateParts(); return appDateFromParts(year, month, 1); })();
+    const dateTo = query.date_to
+      ? parseDateInAppTimezone(query.date_to)
+      : appNow();
 
     const revenue = await this.calculateRevenue(
       dateFrom,
@@ -460,9 +457,11 @@ export class AnalyticsService {
     query: ProfitQueryDto,
   ): Promise<ProfitDataPoint[]> {
     const dateFrom = query.date_from
-      ? new Date(query.date_from)
-      : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const dateTo = query.date_to ? new Date(query.date_to) : new Date();
+      ? parseDateInAppTimezone(query.date_from)
+      : (() => { const { year, month } = appDateParts(); return appDateFromParts(year, month, 1); })();
+    const dateTo = query.date_to
+      ? parseDateInAppTimezone(query.date_to)
+      : appNow();
     const granularity = query.granularity || ProfitGranularity.DAY;
 
     const ALLOWED_TRUNC_FNS = ['day', 'week', 'month'] as const;
@@ -481,14 +480,14 @@ export class AnalyticsService {
 
     const revenueQuery = this.orderRepository
       .createQueryBuilder('order')
-      .select(`DATE_TRUNC('${truncFn}', order.created_at)`, 'period')
+      .select(`DATE_TRUNC('${truncFn}', order.created_at + INTERVAL '${tzInterval()}')`, 'period')
       .addSelect('COALESCE(SUM(order.total_amount), 0)', 'revenue')
       .where('order.status = :status', { status: OrderStatus.PAID })
       .andWhere('order.created_at BETWEEN :dateFrom AND :dateTo', {
         dateFrom,
         dateTo,
       })
-      .groupBy(`DATE_TRUNC('${truncFn}', order.created_at)`)
+      .groupBy(`DATE_TRUNC('${truncFn}', order.created_at + INTERVAL '${tzInterval()}')`)
       .orderBy('period', 'ASC');
 
     if (!isSuperAdmin && storeId) {
@@ -503,11 +502,11 @@ export class AnalyticsService {
         'order.status = :status AND order.created_at BETWEEN :dateFrom AND :dateTo',
         { status: OrderStatus.PAID, dateFrom, dateTo },
       )
-      .select(`DATE_TRUNC('${truncFn}', order.created_at)`, 'period')
+      .select(`DATE_TRUNC('${truncFn}', order.created_at + INTERVAL '${tzInterval()}')`, 'period')
       .addSelect('od.item_type', 'item_type')
       .addSelect('SUM(od.subtotal)', 'subtotal_sum')
       .addSelect('SUM(od.original_cost)', 'original_cost_sum')
-      .groupBy(`DATE_TRUNC('${truncFn}', order.created_at)`)
+      .groupBy(`DATE_TRUNC('${truncFn}', order.created_at + INTERVAL '${tzInterval()}')`)
       .addGroupBy('od.item_type')
       .orderBy('period', 'ASC');
 
@@ -522,13 +521,13 @@ export class AnalyticsService {
 
     const revenueByPeriod = new Map<string, number>();
     for (const row of revenueRows) {
-      const key = new Date(row.period).toISOString();
+      const key = appPeriodKey(row.period);
       revenueByPeriod.set(key, Number(row.revenue) || 0);
     }
 
     const profitByPeriod = new Map<string, number>();
     for (const row of profitRows) {
-      const key = new Date(row.period).toISOString();
+      const key = appPeriodKey(row.period);
       const subtotal = Number(row.subtotal_sum) || 0;
       const originalCost = Number(row.original_cost_sum) || 0;
       const itemProfit =
@@ -546,25 +545,13 @@ export class AnalyticsService {
     const intervals = this.generateIntervals(dateFrom, dateTo, granularity);
     const intervalMap = new Map<string, string>();
     for (const interval of intervals) {
-      const periodDate = granularity === ProfitGranularity.WEEK
-        ? interval.start
-        : interval.start;
-      const key = new Date(
-        periodDate.getFullYear(),
-        periodDate.getMonth(),
-        periodDate.getDate(),
-      ).toISOString();
+      const key = appPeriodKey(interval.start);
       intervalMap.set(key, interval.label);
     }
 
     const results: ProfitDataPoint[] = [];
     for (const periodKey of Array.from(allPeriods).sort()) {
-      const periodDate = new Date(periodKey);
-      const lookupKey = new Date(
-        periodDate.getFullYear(),
-        periodDate.getMonth(),
-        periodDate.getDate(),
-      ).toISOString();
+      const lookupKey = appPeriodKey(periodKey);
       const label = intervalMap.get(lookupKey) || periodKey.split('T')[0];
       results.push({
         date: label,
@@ -580,7 +567,7 @@ export class AnalyticsService {
     storeId: number | null,
     isSuperAdmin: boolean,
   ): Promise<Product[]> {
-    const now = new Date();
+    const now = appNow();
     const soon = new Date();
     soon.setDate(now.getDate() + 30);
 
@@ -674,20 +661,17 @@ export class AnalyticsService {
     while (current < end) {
       let next: Date;
       let label: string;
+      const { year, month, day } = appDateParts(current);
 
       if (granularity === ProfitGranularity.DAY) {
-        next = new Date(
-          current.getFullYear(),
-          current.getMonth(),
-          current.getDate() + 1,
-        );
-        label = current.toISOString().split('T')[0];
+        next = appDateFromParts(year, month, day + 1);
+        label = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       } else if (granularity === ProfitGranularity.WEEK) {
         next = new Date(current.getTime() + 7 * 24 * 60 * 60 * 1000);
-        label = `W${current.toISOString().split('T')[0]}`;
+        label = `W${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       } else {
-        next = new Date(current.getFullYear(), current.getMonth() + 1, 1);
-        label = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+        next = appDateFromParts(year, month + 1, 1);
+        label = `${year}-${String(month + 1).padStart(2, '0')}`;
       }
 
       if (next > end) next = new Date(end);

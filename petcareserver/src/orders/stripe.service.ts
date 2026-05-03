@@ -48,7 +48,7 @@ export class StripeService {
   async createPaymentIntent(
     orderId: number,
     amount: number,
-    currency: string = 'usd',
+    currency: string = 'vnd',
     description?: string,
   ): Promise<{
     client_secret: string;
@@ -92,7 +92,7 @@ export class StripeService {
   async createCheckoutSession(
     orderId: number,
     amount: number,
-    currency: string = 'usd',
+    currency: string = 'vnd',
     successUrl: string,
     cancelUrl: string,
   ): Promise<{

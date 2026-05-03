@@ -132,7 +132,7 @@ export class OrdersController {
     @CurrentUser() user: any,
     @Body() createPaymentIntentDto: CreatePaymentIntentDto,
   ) {
-    const currency = createPaymentIntentDto.currency ?? Currency.USD;
+    const currency = createPaymentIntentDto.currency ?? Currency.VND;
     return this.ordersService.createPaymentIntent(
       createPaymentIntentDto.order_id,
       user.store_id,
@@ -157,7 +157,7 @@ export class OrdersController {
     @Body() dto: CreateCheckoutDto,
     @CurrentUser() user: any,
   ) {
-    const currency = dto.currency ?? Currency.USD;
+    const currency = dto.currency ?? Currency.VND;
     return this.ordersService.createCheckoutSession(
       dto.order_id,
       user.store_id,
