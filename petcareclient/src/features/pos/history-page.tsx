@@ -103,18 +103,48 @@ const mapOrderToHistoryTransaction = (
 
 const PosHistoryPage = () => {
   const navigate = useNavigate();
-  const [fromDate, setFromDate] = useState("10/01/2023");
-  const [toDate, setToDate] = useState("10/31/2023");
+  const [fromDate, setFromDate] = useState<string | null>(null);
+  const [toDate, setToDate] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [currentTime, setCurrentTime] = useState(() => new Date());
   const [selectedTx, setSelectedTx] = useState<HistoryTransaction | null>(null);
-  console.log("🚀 ~ PosHistoryPage ~ selectedTx:", selectedTx);
   const pageSize = 10;
 
+  const formatDateForApi = (input: string | null | undefined) => {
+    if (!input) return undefined;
+    const parsed = new Date(String(input));
+    if (Number.isNaN(parsed.getTime())) return undefined;
+    return parsed.toISOString().split("T")[0];
+  };
+
+  const formattedFrom = formatDateForApi(fromDate);
+  const formattedTo = formatDateForApi(toDate);
+
+  const handleClearFilters = () => {
+    setFromDate(null);
+    setToDate(null);
+    setStatusFilter("");
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
+
   const { data: ordersResponse, isLoading } = useQuery({
-    queryKey: ["pos-orders", currentPage, pageSize],
-    queryFn: () => getOrders(currentPage, pageSize),
+    queryKey: [
+      "pos-orders",
+      currentPage,
+      pageSize,
+      formattedFrom,
+      formattedTo,
+      statusFilter,
+    ],
+    queryFn: () =>
+      getOrders(currentPage, pageSize, {
+        status: statusFilter,
+        date_from: formattedFrom,
+        date_to: formattedTo,
+      }),
   });
 
   useEffect(() => {
@@ -168,6 +198,29 @@ const PosHistoryPage = () => {
         tx.pet.toLowerCase().includes(keyword),
     );
   }, [ordersResponse?.data, searchTerm]);
+
+  const getUniqueCustomersCount = (orders: OrderListItemDto[] | undefined) => {
+    const set = new Set<number>();
+    (orders ?? []).forEach((o) => {
+      const cid = (o.customer as any)?.customer_id ?? (o as any).customer_id;
+      if (cid != null) set.add(Number(cid));
+    });
+    return set.size;
+  };
+
+  const getUniquePetsCount = (orders: OrderListItemDto[] | undefined) => {
+    const set = new Set<number>();
+    (orders ?? []).forEach((o) => {
+      (o.order_details ?? []).forEach((d: any) => {
+        const pid = d?.pet_id ?? null;
+        if (pid != null) set.add(Number(pid));
+      });
+    });
+    return set.size;
+  };
+
+  const uniqueCustomers = getUniqueCustomersCount(ordersResponse?.data);
+  const uniquePets = getUniquePetsCount(ordersResponse?.data);
 
   const totalPages = ordersResponse?.pages ?? 1;
   const totalOrders = ordersResponse?.total ?? 0;
@@ -240,17 +293,6 @@ const PosHistoryPage = () => {
             </h1>
           </div>
 
-          <div className="relative w-full max-w-xl">
-            <span className="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#be9477]">
-              search
-            </span>
-            <input
-              type="text"
-              placeholder="Tìm theo mã hóa đơn hoặc SĐT khách hàng..."
-              className="h-10 w-full rounded-full border border-[#ecdcd1] bg-[#fdfaf8] pl-12 pr-4 text-sm text-[#523c30] outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4]"
-            />
-          </div>
-
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -301,14 +343,12 @@ const PosHistoryPage = () => {
                     </span>
                     <div className="flex items-center gap-2">
                       <input
-                        type="text"
-                        value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
-                        className="w-24 text-sm font-bold text-[#2f231d] outline-none"
+                        type="date"
+                        value={fromDate ?? ""}
+                        onChange={(e) => setFromDate(e.target.value || null)}
+                        placeholder="Chọn ngày bắt đầu"
+                        className="w-30 text-sm font-bold text-[#2f231d] outline-none"
                       />
-                      <span className="material-symbols-outlined text-[18px] text-[#2f231d]">
-                        calendar_today
-                      </span>
                     </div>
                   </div>
                   <div className="w-[1px] bg-[#f0e6df]" />
@@ -318,26 +358,40 @@ const PosHistoryPage = () => {
                     </span>
                     <div className="flex items-center gap-2">
                       <input
-                        type="text"
-                        value={toDate}
-                        onChange={(e) => setToDate(e.target.value)}
-                        className="w-24 text-sm font-bold text-[#2f231d] outline-none"
+                        type="date"
+                        value={toDate ?? ""}
+                        onChange={(e) => setToDate(e.target.value || null)}
+                        placeholder="Chọn ngày kết thúc"
+                        className="w-30 text-sm font-bold text-[#2f231d] outline-none"
                       />
-                      <span className="material-symbols-outlined text-[18px] text-[#2f231d]">
-                        calendar_today
-                      </span>
                     </div>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-orange-600/80 px-6 text-sm font-bold text-white transition hover:bg-orange-600/60 shadow-[0_4px_12px_rgba(245,168,130,0.3)]"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    filter_alt
-                  </span>
-                  Lọc dữ liệu
-                </button>
+
+                <div className="flex items-center gap-3">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="h-10 rounded-md border border-[#ecdcd1] bg-white px-3 text-sm text-[#523c30] outline-none"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="PAID">Đã thanh toán</option>
+                    <option value="PENDING">Chờ thanh toán</option>
+                    <option value="CANCELLED">Đã hủy</option>
+                    <option value="REFUNDED">Đã hoàn tiền</option>
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-orange-600/80 px-4 text-sm font-bold text-white transition hover:bg-orange-600/60"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      filter_alt
+                    </span>
+                    Xoá bộ lọc
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -345,42 +399,29 @@ const PosHistoryPage = () => {
           <div className="mb-8 grid grid-cols-4 gap-4">
             <div className="rounded-2xl bg-white p-5 shadow-sm relative overflow-hidden">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
-                TỔNG DOANH THU THÁNG
+                TỔNG DOANH THU
               </p>
               <p className="mt-2 text-2xl font-black text-[#2f231d]">
                 128.450.000đ
               </p>
-              <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-[#e6f7f1] px-2 py-0.5 text-xs font-bold text-[#1f8c6e]">
-                <span className="material-symbols-outlined text-[14px]">
-                  trending_up
-                </span>
-                +12.5%
-              </div>
-              <span className="material-symbols-outlined absolute -right-2 -bottom-2 text-[80px] text-[#f7f3f1] opacity-50">
-                payments
-              </span>
             </div>
 
             <div className="rounded-2xl bg-white p-5 shadow-sm relative overflow-hidden">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
-                TỔNG SỐ HÓA ĐƠN
+                TỔNG SỐ HÓA ĐƠN ĐÃ THANH TOÁN
               </p>
               <p className="mt-2 text-2xl font-black text-[#2f231d]">
                 {totalOrders}
               </p>
-              <p className="mt-3 text-xs text-[#9f7d67]">
-                Trung bình 14 đơn/ngày
-              </p>
-              <span className="material-symbols-outlined absolute -right-2 -bottom-2 text-[80px] text-[#f7f3f1] opacity-50">
-                receipt_long
-              </span>
             </div>
 
             <div className="rounded-2xl bg-white p-5 shadow-sm relative overflow-hidden">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
                 LƯỢT THÚ CƯNG
               </p>
-              <p className="mt-2 text-2xl font-black text-[#2f231d]">386</p>
+              <p className="mt-2 text-2xl font-black text-[#2f231d]">
+                {uniquePets}
+              </p>
               <span className="material-symbols-outlined absolute -right-2 -bottom-2 text-[80px] text-[#f7f3f1] opacity-50">
                 pets
               </span>
@@ -388,18 +429,11 @@ const PosHistoryPage = () => {
 
             <div className="rounded-2xl bg-[#e6f4f1] p-5 shadow-sm relative overflow-hidden">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#407a68]">
-                KHÁCH HÀNG MỚI
+                LƯỢT KHÁCH HÀNG
               </p>
-              <p className="mt-2 text-2xl font-black text-[#1e5c4a]">48</p>
-              <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/60 px-2 py-0.5 text-xs font-bold text-[#1e5c4a]">
-                <span className="material-symbols-outlined text-[14px]">
-                  add_circle
-                </span>
-                Tháng này
-              </div>
-              <span className="material-symbols-outlined absolute -right-2 -bottom-2 text-[80px] text-[#c9e8df] opacity-50">
-                star
-              </span>
+              <p className="mt-2 text-2xl font-black text-[#1e5c4a]">
+                {uniqueCustomers}
+              </p>
             </div>
           </div>
 

@@ -277,9 +277,24 @@ export const getOrderDetail = async (orderId: number | string) => {
 export const getOrders = async (
   page = 1,
   limit = 10,
+  filters?: { status?: string; date_from?: string; date_to?: string },
 ): Promise<OrdersListResponseDto> => {
+  const params: Record<string, any> = { page, limit };
+
+  if (filters) {
+    if (typeof filters.status === "string" && filters.status !== "") {
+      params.status = filters.status;
+    }
+    if (typeof filters.date_from === "string" && filters.date_from.trim()) {
+      params.date_from = filters.date_from;
+    }
+    if (typeof filters.date_to === "string" && filters.date_to.trim()) {
+      params.date_to = filters.date_to;
+    }
+  }
+
   const response = (await axiosClient.get("/orders", {
-    params: { page, limit },
+    params,
   })) as { data: OrdersListResponseDto };
 
   return response.data;
