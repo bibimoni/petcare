@@ -46,12 +46,17 @@ const SettingsPage = () => {
 
   // Update form when profile loads
   useEffect(() => {
-    if (profile?.full_name || profile?.email || profile?.phone) {
+    if (
+      profile?.full_name ||
+      profile?.email ||
+      profile?.phone ||
+      profile?.address
+    ) {
       setFormData((prevData) => ({
         full_name: profile.full_name || prevData.full_name || "",
         email: profile.email || prevData.email || "",
         phone: profile.phone || prevData.phone || "",
-        address: prevData.address || "",
+        address: profile.address || prevData.address || "",
       }));
     }
   }, [profile]);
@@ -227,11 +232,9 @@ const SettingsPage = () => {
                     <input
                       type="email"
                       value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
+                      disabled
                       placeholder="Nhập email"
-                      className="w-full rounded-lg border border-[#e7d6cf] px-4 py-2 text-[#1b110d] placeholder:text-[#9a624c] focus:outline-none focus:ring-2 focus:ring-[#ed5012]/20 focus:border-[#ed5012] transition-colors text-sm"
+                      className="w-full rounded-lg border border-[#e7d6cf] bg-gray-100 px-4 py-2 text-gray-500 cursor-not-allowed focus:outline-none transition-colors text-sm"
                     />
                   </div>
 

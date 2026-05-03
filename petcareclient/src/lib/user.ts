@@ -3,6 +3,7 @@ import api from "@/lib/api";
 export type SidebarUser = {
   email: string;
   phone: string;
+  address: string;
   store_id: number;
   full_name: string;
   role: {
@@ -18,6 +19,7 @@ type StoredUser = Record<string, unknown> & {
   email?: string;
   phone?: string;
   role?: unknown;
+  address?: string;
   fullName?: string;
   full_name?: string;
   role_id?: number | null;
@@ -29,6 +31,7 @@ const USER_STORAGE_KEY = "user";
 const emptySidebarUser: SidebarUser = {
   role: null,
   email: "",
+  address: "",
   phone: "",
   store_id: 0,
   full_name: "",
@@ -107,6 +110,7 @@ export const buildSidebarUser = (
     role,
     email: String(profile?.email ?? fallback?.email ?? ""),
     phone: String(profile?.phone ?? fallback?.phone ?? ""),
+    address: String(profile?.address ?? fallback?.address ?? ""),
     store_id: storeId,
     full_name: String(
       profile?.full_name ??
