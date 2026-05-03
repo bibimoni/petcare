@@ -260,14 +260,16 @@ export default function RegisterForm() {
           >
             Tôi đồng ý với{" "}
             <a
-              href="#"
+              href="/term-and-service"
+              target="_blank"
               className="font-semibold text-[#f17341] hover:text-[#d95d2e] hover:underline"
             >
               Điều khoản sử dụng
             </a>{" "}
             và{" "}
             <a
-              href="#"
+              href="/privacy-policy"
+              target="_blank"
               className="font-semibold text-[#f17341] hover:text-[#d95d2e] hover:underline"
             >
               Chính sách bảo mật

@@ -16,7 +16,7 @@ export const NavMenu = (props: ComponentProps<typeof NavigationMenu>) => (
           asChild
           className={`${navigationMenuTriggerStyle()} hover:text-orange-500`}
         >
-          <a href="#introduction">Giới thiệu</a>
+          <a href="/#introduction">Giới thiệu</a>
         </NavigationMenuLink>
       </NavigationMenuItem>
       <NavigationMenuItem>
@@ -24,7 +24,7 @@ export const NavMenu = (props: ComponentProps<typeof NavigationMenu>) => (
           asChild
           className={`${navigationMenuTriggerStyle()} hover:text-orange-500`}
         >
-          <a href="#features">Tính năng</a>
+          <a href="/#features">Tính năng</a>
         </NavigationMenuLink>
       </NavigationMenuItem>
       <NavigationMenuItem>
@@ -32,7 +32,7 @@ export const NavMenu = (props: ComponentProps<typeof NavigationMenu>) => (
           asChild
           className={`${navigationMenuTriggerStyle()} hover:text-orange-500`}
         >
-          <a href="#cta">Dùng thử</a>
+          <a href="/#cta">Dùng thử</a>
         </NavigationMenuLink>
       </NavigationMenuItem>
     </NavigationMenuList>
