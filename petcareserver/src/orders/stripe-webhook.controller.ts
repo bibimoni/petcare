@@ -62,7 +62,10 @@ export class StripeWebhookController {
           typeof paymentIntent.latest_charge === 'string'
             ? paymentIntent.latest_charge
             : (paymentIntent.latest_charge?.id ?? null),
-          paymentIntent.amount / 100,
+          this.stripeService.fromStripeAmount(
+            paymentIntent.amount,
+            paymentIntent.currency,
+          ),
         );
         break;
       }

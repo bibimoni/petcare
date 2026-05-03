@@ -485,7 +485,7 @@ export class OrdersService {
               typeof session.payment_intent === 'string'
                 ? session.payment_intent
                 : session.payment_intent.id;
-                
+
             payment.stripe_payment_intent_id = paymentIntentId;
           }
         }
@@ -555,7 +555,7 @@ export class OrdersService {
       return;
     }
 
-    // We don't return early here if COMPLETED because we might still need to 
+    // We don't return early here if COMPLETED because we might still need to
     // update stripe_charge_id and stripe_receipt_url that arrived with this webhook.
 
     // Fetch receipt URL (best-effort, don't block)
@@ -604,7 +604,8 @@ export class OrdersService {
         return;
       }
 
-      const isAlreadyCompleted = lockedPayment.status === PaymentStatus.COMPLETED;
+      const isAlreadyCompleted =
+        lockedPayment.status === PaymentStatus.COMPLETED;
 
       lockedPayment.status = PaymentStatus.COMPLETED;
       if (chargeId) {
@@ -1117,7 +1118,13 @@ export class OrdersService {
     }
 
     try {
-      await this.stripeService.refundCharge(payment.stripe_charge_id!);
+      const chargeDetails = await this.stripeService.getChargeDetails(
+        payment.stripe_charge_id!,
+      );
+      await this.stripeService.refundCharge(
+        payment.stripe_charge_id!,
+        chargeDetails.currency,
+      );
     } catch (err) {
       console.error(
         `[CRITICAL] DB updated but Stripe refund failed for order ${orderId}:`,

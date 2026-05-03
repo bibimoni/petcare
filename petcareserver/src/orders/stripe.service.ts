@@ -20,6 +20,16 @@ export class StripeService {
     });
   }
 
+  private toStripeAmount(amount: number, currency: string): number {
+    return currency.toLowerCase() === 'vnd'
+      ? Math.round(amount)
+      : Math.round(amount * 100);
+  }
+
+  fromStripeAmount(stripeAmount: number, currency: string): number {
+    return currency.toLowerCase() === 'vnd' ? stripeAmount : stripeAmount / 100;
+  }
+
   constructWebhookEvent(
     rawBody: Buffer,
     signature: string,
@@ -58,7 +68,7 @@ export class StripeService {
   }> {
     try {
       const paymentIntent = await this.stripe.paymentIntents.create({
-        amount: Math.round(amount * 100),
+        amount: this.toStripeAmount(amount, currency),
         currency: currency.toLowerCase(),
         description: description || `Order #${orderId} payment`,
         metadata: {
@@ -112,7 +122,7 @@ export class StripeService {
                 name: `Order #${orderId}`,
                 description: `Payment for order #${orderId}`,
               },
-              unit_amount: Math.round(amount * 100),
+              unit_amount: this.toStripeAmount(amount, currency),
             },
             quantity: 1,
           },
@@ -207,7 +217,10 @@ export class StripeService {
           status: paymentIntent.status,
           payment_intent_id: paymentIntent.id,
           charge_id: chargeId,
-          amount: paymentIntent.amount / 100,
+          amount: this.fromStripeAmount(
+            paymentIntent.amount,
+            paymentIntent.currency,
+          ),
         };
       }
 
@@ -252,13 +265,17 @@ export class StripeService {
     }
   }
 
-  async refundCharge(chargeId: string, amount?: number): Promise<any> {
+  async refundCharge(
+    chargeId: string,
+    currency: string,
+    amount?: number,
+  ): Promise<any> {
     try {
-      // Bỏ type annotation Stripe.Refund*Params vì tên type thay đổi tuỳ SDK version.
-      // Dùng object trực tiếp — TypeScript tự infer type từ this.stripe.refunds.create().
       return await this.stripe.refunds.create({
         charge: chargeId,
-        ...(amount ? { amount: Math.round(amount * 100) } : {}),
+        ...(amount !== undefined
+          ? { amount: this.toStripeAmount(amount, currency) }
+          : {}),
       });
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
