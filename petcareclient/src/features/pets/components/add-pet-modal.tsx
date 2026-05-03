@@ -2,7 +2,6 @@ import { X, Save, Upload, Trash2, PawPrint } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
-import { handleApiError } from "@/lib/api";
 import { CustomerService } from "@/lib/customers";
 import { PetService } from "@/lib/pets";
 
@@ -89,7 +88,7 @@ export default function AddPetModal({ open, onClose, onCreated }: Props) {
         const customerRes = await CustomerService.getAll();
         setCustomers(normalizeCustomers(customerRes));
       } catch (err) {
-        handleApiError(err);
+        // API error is handled globally
       }
     };
 
@@ -169,7 +168,7 @@ export default function AddPetModal({ open, onClose, onCreated }: Props) {
       toast.success("Thêm thú cưng thành công");
       await onCreated?.();
     } catch (err) {
-      handleApiError(err);
+      // API error is handled globally
     } finally {
       setLoading(false);
     }

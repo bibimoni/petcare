@@ -16,6 +16,7 @@ import ForgotPasswordPage from "./features/auth-page/forgot-password-page";
 import ResetPasswordPage from "./features/auth-page/reset-password-page";
 import CustomersPage from "./features/customer/customer-page";
 import { DashboardPage } from "./features/dashboard";
+import EmployeesPage from "./features/employees/page";
 import FaqPage from "./features/faq/page";
 import ExpiringSoonPage from "./features/inventory/expiring-soon-page";
 import InventoryPage from "./features/inventory/inventory-page";
@@ -25,6 +26,7 @@ import InvitationPage from "./features/invitation/invitation-page";
 import NotAuthenticatedPage from "./features/not-authenticated/page";
 import PetListPage from "./features/pets/pet-list-page";
 import AllProductsPage from "./features/pos/components/all-products";
+import PaymentSuccessPage from "./features/pos/components/payment-success";
 import PosHistoryPage from "./features/pos/history-page";
 import PosPage from "./features/pos/pos-page";
 import PrivacyPolicyPage from "./features/privacy-policy/page";
@@ -32,6 +34,7 @@ import CustomerProfilePage from "./features/profile/customer";
 import PetProfile from "./features/profile/pets";
 import ProfilePage from "./features/profile/profile";
 import ServicesPage from "./features/service/components/service-page";
+import SettingsPage from "./features/settings/page";
 import CreateStorePage from "./features/store/create-store-page";
 import TermAndServicePage from "./features/term-and-service/page";
 import { queryClient } from "./lib/query-client";
@@ -69,6 +72,14 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/not-authenticated" element={<NotAuthenticatedPage />} />
+          <Route
+            path="/employees"
+            element={
+              <RoleRoute allowedRoles={["ADMIN"]}>
+                <EmployeesPage />
+              </RoleRoute>
+            }
+          />
           <Route
             path="/pets"
             element={
@@ -158,6 +169,14 @@ createRoot(document.getElementById("root")!).render(
             }
           />
           <Route
+            path="/orders/:orderId/success"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <PaymentSuccessPage />
+              </RoleRoute>
+            }
+          />
+          <Route
             path="/dashboard"
             element={
               <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
@@ -188,6 +207,14 @@ createRoot(document.getElementById("root")!).render(
               <ProtectedRoute>
                 <ProfilePage />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <SettingsPage />
+              </RoleRoute>
             }
           />
           <Route path="*" element={<NotFound />} />

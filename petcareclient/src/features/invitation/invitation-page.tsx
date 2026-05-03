@@ -11,7 +11,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import axiosClient from "@/lib/api";
-import { sidebarUser } from "@/lib/user";
 
 type NotificationItem = {
   type: string;
@@ -155,7 +154,7 @@ export default function InvitationPage() {
       }}
     >
       <div className="flex min-h-screen bg-[#fdf9f6]">
-        <Sidebar userInfo={sidebarUser} />
+        <Sidebar />
         <main className="flex-1 flex flex-col">
           {/* Header */}
           <div className="bg-white border-b px-10 py-6 flex items-start justify-between shadow-sm">

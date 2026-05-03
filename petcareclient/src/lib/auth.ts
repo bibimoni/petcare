@@ -1,4 +1,4 @@
-import axiosClient, { handleApiError } from "@/lib/api";
+import axiosClient from "@/lib/api";
 
 export interface LoginPayload {
   email: string;
@@ -23,38 +23,19 @@ export interface ResetPasswordPayload {
 }
 
 export const login = async (payload: LoginPayload) => {
-  try {
-    return await axiosClient.post(`/auth/login`, payload);
-  } catch (error) {
-    handleApiError(error);
-  }
+  return await axiosClient.post(`/auth/login`, payload);
 };
 
 export const register = async (payload: RegisterPayload) => {
-  try {
-    return await axiosClient.post(`/auth/register`, payload);
-  } catch (error) {
-    handleApiError(error);
-  }
+  return await axiosClient.post(`/auth/register`, payload);
 };
 
 export const forgotPassword = async (payload: ForgotPasswordPayload) => {
-  try {
-    return await axiosClient.post(`/auth/forgot-password`, payload);
-  } catch (error) {
-    handleApiError(error);
-  }
+  return await axiosClient.post(`/auth/forgot-password`, payload);
 };
 
 export const resetPassword = async (payload: ResetPasswordPayload) => {
-  try {
-    return await axiosClient.post(
-      `/auth/reset-password?token=${payload.token}`,
-      {
-        new_password: payload.newPassword,
-      },
-    );
-  } catch (error) {
-    handleApiError(error);
-  }
+  return await axiosClient.post(`/auth/reset-password?token=${payload.token}`, {
+    new_password: payload.newPassword,
+  });
 };

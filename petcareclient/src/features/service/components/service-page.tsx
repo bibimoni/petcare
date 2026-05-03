@@ -22,7 +22,6 @@ import { toast } from "sonner";
 import { Sidebar } from "@/components/Sidebar";
 import api from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
-import { sidebarUser } from "@/lib/user";
 
 import { getServicePageData } from "../api/service.api";
 
@@ -333,7 +332,7 @@ export default function ServicesPage() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#fcfaf8] text-[#1b110d]">
         <div className="flex-1 overflow-y-auto">

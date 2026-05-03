@@ -115,8 +115,6 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
   const isLoadingUserInfo = userQuery.isPending;
 
   const roleName = resolvedUserInfo.role?.name?.toUpperCase();
-  console.log("🚀 ~ Sidebar ~ resolvedUserInfo:", resolvedUserInfo);
-  console.log("🚀 ~ Sidebar ~ roleName:", roleName);
   const isAdmin = roleName === "ADMIN";
   const isStaff = roleName === "STAFF";
   const isLimited = !isAdmin && !isStaff;
@@ -264,6 +262,7 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
         className={`border-t border-gray-100 dark:border-gray-800 ${footerPaddingClass}`}
       >
         <button
+          onClick={() => handleNavigation("/settings")}
           className={`group flex w-full cursor-pointer items-center gap-3 rounded-xl py-3 font-medium text-gray-500 transition-all dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 ${navItemLayoutClass}`}
           type="button"
           title={isCollapsed ? "Cài đặt" : undefined}

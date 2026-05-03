@@ -12,7 +12,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { CustomerApi } from "@/features/customer/api/customer-api";
-import { handleApiError } from "@/lib/api";
 
 type EditableCustomer = {
   notes?: string;
@@ -120,8 +119,8 @@ export default function EditCustomerModal({
       await onUpdated();
       toast.success("Cập nhật khách hàng thành công");
       onOpenChange(false);
-    } catch (error) {
-      handleApiError(error);
+    } catch (_error) {
+      // API error is handled globally
     } finally {
       setIsSubmitting(false);
     }

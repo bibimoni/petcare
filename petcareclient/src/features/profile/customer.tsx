@@ -6,7 +6,6 @@ import type { Pet, Order, Customer } from "@/lib/profile";
 
 import { Sidebar } from "@/components/Sidebar";
 import { profileService } from "@/lib/profile";
-import { sidebarUser } from "@/lib/user";
 
 export default function CustomerProfilePage() {
   const navigate = useNavigate();
@@ -185,7 +184,7 @@ export default function CustomerProfilePage() {
   if (!loading && !customer && !phoneFromUrl) {
     return (
       <div className="flex w-full overflow-hidden min-h-screen bg-gradient-to-br from-orange-50 to-gray-100">
-        <Sidebar userInfo={sidebarUser} />
+        <Sidebar />
         <div className="flex-1 flex flex-col">
           {/* Header */}
           <div className="bg-white border-b shadow-sm">

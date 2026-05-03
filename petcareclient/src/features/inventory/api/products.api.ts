@@ -74,7 +74,7 @@ const normalizeProducts = (payload: unknown): ProductDto[] => {
 };
 
 export const getProductCategories = async (): Promise<CategoryDto[]> => {
-  const response = await api.get("/categories?type=PRODUCT");
+  const response = await api.get("/categories?categoryType=PRODUCT");
   return normalizeCategories(response);
 };
 

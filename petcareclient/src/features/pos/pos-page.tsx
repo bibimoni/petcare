@@ -4,17 +4,107 @@ import { useNavigate } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
 import {
+  getOrders,
   type PosProduct,
   type PosService,
   getPosCatalogOverview,
-} from "@/features/pos/api/pos.api";
-import { sidebarUser, getSidebarUser } from "@/lib/user";
+  type OrderListItemDto,
+} from "@/features/pos/api";
+import { getSidebarUser } from "@/lib/user";
 
 import { CancelledOrderModal } from "./cancelled-order-modal";
 import { OrderDetailModal } from "./completed-order-modal";
 import { ServiceDetailModal } from "./components/service-detail-modal";
-import { historyTransactions, type HistoryTransaction } from "./mock-data";
 import { PendingOrderModal } from "./pending-order-modal";
+import { RefundedOrderModal } from "./refunded-order-modal";
+
+export type OrderItem = {
+  id: string;
+  name: string;
+  price: string;
+  cartKey?: string;
+  quantity: number;
+  numericPrice: number;
+  type: "service" | "product";
+};
+
+type HistoryTransaction = {
+  id: string;
+  pet: string;
+  date: string;
+  time: string;
+  total: string;
+  numericId: number;
+  customerName: string;
+  customerPhone: string;
+  cancel_reason?: string;
+  customerInitials: string;
+  status: "PAID" | "CANCELLED" | "PENDING" | "REFUNDED";
+};
+
+const formatVND = (value: string | number) =>
+  `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(Number(value))}đ`;
+
+const toDateParts = (dateString: string) => {
+  const date = new Date(dateString);
+  return {
+    date: date.toLocaleDateString("vi-VN"),
+    time: date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }),
+  };
+};
+
+const getCustomerInitials = (fullName: string) => {
+  const trimmed = fullName.trim();
+  if (!trimmed) return "KL";
+  return trimmed
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+};
+
+const summarizeOrderItems = (
+  orderDetails: OrderListItemDto["order_details"],
+) => {
+  if (orderDetails.length === 0) return "Không có mặt hàng";
+  const firstItem = orderDetails[0];
+  const firstName =
+    firstItem.item_type === "SERVICE"
+      ? (firstItem.service?.combo_name ?? "Dịch vụ")
+      : (firstItem.product?.name ?? "Sản phẩm");
+  if (orderDetails.length === 1) {
+    return `${firstName} x${firstItem.quantity}`;
+  }
+  return `${firstName} x${firstItem.quantity} +${orderDetails.length - 1} mục khác`;
+};
+
+const mapOrderToHistoryTransaction = (
+  order: OrderListItemDto,
+): HistoryTransaction => {
+  const customerName = order.customer?.full_name ?? "Khách lẻ";
+  const phone = order.customer?.phone ?? "--";
+  const { date, time } = toDateParts(order.created_at);
+  return {
+    customerInitials: getCustomerInitials(customerName),
+    customerName,
+    customerPhone: phone,
+    date,
+    id: `POS-${String(order.order_id).padStart(4, "0")}`,
+    numericId: order.order_id,
+    pet: summarizeOrderItems(order.order_details),
+    status:
+      order.status === "CANCELLED" && order.cancel_reason === "Refunded"
+        ? "REFUNDED"
+        : (order.status as "PAID" | "CANCELLED" | "PENDING"),
+    time,
+    total: formatVND(order.total_amount),
+  };
+};
 
 const PosPage = () => {
   const navigate = useNavigate();
@@ -44,6 +134,10 @@ const PosPage = () => {
   const services = catalogData?.services ?? [];
   const hotProducts = catalogData?.products ?? [];
   const [selectedTx, setSelectedTx] = useState<HistoryTransaction | null>(null);
+  const { data: recentOrdersData } = useQuery({
+    queryKey: ["pos-recent-orders"],
+    queryFn: () => getOrders(1, 4),
+  });
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -111,20 +205,6 @@ const PosPage = () => {
     );
   }, [searchTerm, hotProducts]);
 
-  const filteredTransactions = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return historyTransactions;
-    }
-    const keyword = searchTerm.toLowerCase();
-    return historyTransactions.filter(
-      (tx) =>
-        tx.id.toLowerCase().includes(keyword) ||
-        tx.customerPhone.toLowerCase().includes(keyword) ||
-        tx.customerName.toLowerCase().includes(keyword) ||
-        tx.pet.toLowerCase().includes(keyword),
-    );
-  }, [searchTerm]);
-
   const servicePages = useMemo(() => {
     if (filteredServices.length === 0) {
       return [];
@@ -161,6 +241,10 @@ const PosPage = () => {
     return pages;
   }, [filteredProducts]);
 
+  const recentTransactions = useMemo(() => {
+    const orders = recentOrdersData?.data ?? [];
+    return orders.map(mapOrderToHistoryTransaction);
+  }, [recentOrdersData?.data]);
   const activePage =
     selectedCatalogTab === "service" ? servicePage : productPage;
   const activePages =
@@ -201,9 +285,18 @@ const PosPage = () => {
     setIsServiceDetailOpen(true);
   };
 
+  const handleAddItem = (
+    item: PosService | PosProduct,
+    type: "service" | "product",
+  ) => {
+    navigate("/pos/all-products", {
+      state: { addedItem: { item, type } },
+    });
+  };
+
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-6 backdrop-blur-sm">
@@ -258,6 +351,11 @@ const PosPage = () => {
               </p>
 
               <button
+                onClick={() =>
+                  navigate("/pos/all-products", {
+                    state: { openCreateOrder: true },
+                  })
+                }
                 type="button"
                 className="group relative mt-2 flex h-32 w-[260px] cursor-pointer flex-col items-center justify-center rounded-[22px] border border-[#b8e5d5] bg-[#a9e4d1] text-[#1f5a4b] shadow-[0_8px_24px_rgba(61,181,148,0.2)] transition hover:-translate-y-0.5"
               >
@@ -392,6 +490,9 @@ const PosPage = () => {
                                       </button>
 
                                       <button
+                                        onClick={() =>
+                                          handleAddItem(service, "service")
+                                        }
                                         type="button"
                                         className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
                                       >
@@ -436,8 +537,11 @@ const PosPage = () => {
                                       {product.price}
                                     </p>
                                     <button
+                                      onClick={() =>
+                                        handleAddItem(product, "product")
+                                      }
                                       type="button"
-                                      className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
+                                      className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#f7f3f1] text-lg text-[#9f7f6b] transition hover:bg-[#efe5df]"
                                     >
                                       +
                                     </button>
@@ -527,7 +631,7 @@ const PosPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTransactions.slice(0, 4).map((transaction) => (
+                    {recentTransactions.map((transaction) => (
                       <tr
                         key={transaction.id}
                         onClick={() => setSelectedTx(transaction)}
@@ -546,8 +650,7 @@ const PosPage = () => {
                           {transaction.total}
                         </td>
                         <td className="px-6 py-4">
-                          {/* Map status qua Badge */}
-                          {transaction.status === "COMPLETED" && (
+                          {transaction.status === "PAID" && (
                             <div className="inline-flex items-center gap-1.5 rounded-full bg-[#e6f7f1] px-2.5 py-1 text-[10px] font-bold text-[#1f8c6e]">
                               <span className="h-1.5 w-1.5 rounded-full bg-[#1f8c6e]"></span>
                               Đã thanh toán
@@ -557,6 +660,12 @@ const PosPage = () => {
                             <div className="inline-flex items-center gap-1.5 rounded-full bg-yellow-50 border border-yellow-100 px-2.5 py-1 text-[10px] font-bold text-yellow-600">
                               <span className="h-1.5 w-1.5 rounded-full bg-yellow-500"></span>
                               Chờ thanh toán
+                            </div>
+                          )}
+                          {transaction.status === "REFUNDED" && (
+                            <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-600">
+                              <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                              Đã hoàn tiền
                             </div>
                           )}
                           {transaction.status === "CANCELLED" && (
@@ -600,9 +709,8 @@ const PosPage = () => {
           }
         />
 
-        {/* --- KHU VỰC CHỨA CÁC MODALS TRẠNG THÁI --- */}
         <OrderDetailModal
-          isOpen={selectedTx?.status === "COMPLETED"}
+          isOpen={selectedTx?.status === "PAID"}
           orderId={selectedTx?.numericId || null}
           onClose={() => setSelectedTx(null)}
           onStatusChange={() => {}}
@@ -617,6 +725,12 @@ const PosPage = () => {
 
         <CancelledOrderModal
           isOpen={selectedTx?.status === "CANCELLED"}
+          orderId={selectedTx?.numericId || null}
+          onClose={() => setSelectedTx(null)}
+        />
+
+        <RefundedOrderModal
+          isOpen={selectedTx?.status === "REFUNDED"}
           orderId={selectedTx?.numericId || null}
           onClose={() => setSelectedTx(null)}
         />

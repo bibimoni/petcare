@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 import { Sidebar } from "@/components/Sidebar";
-import { sidebarUser } from "@/lib/user";
 
 import { InventoryStats } from "./components/inventory-stats";
 import { InventoryTable } from "./components/inventory-table";
@@ -13,7 +12,7 @@ export default function InventoryPage() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background-light">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       <main className="flex-1 overflow-y-auto p-8">
         <div className="mx-auto max-w-7xl">

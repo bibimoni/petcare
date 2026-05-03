@@ -1,42 +1,31 @@
-import { useQueryClient } from "@tanstack/react-query";
 import {
-  Ban,
   Phone,
   MapPin,
   Package,
   X as Close,
-  CheckCircle,
   ShoppingBag,
+  ReceiptIcon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
-
-import { AlertDialog } from "@/components/ui/alert-dialog";
 
 import type { Order } from "./type";
 
-import { refundOrder, getOrderDetail } from "./api";
+import { getOrderDetail } from "./api";
 
-interface OrderDetailModalProps {
+interface RefundedOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   orderId: number | null;
-  onStatusChange: () => void;
 }
 
-export const OrderDetailModal = ({
+export const RefundedOrderModal = ({
   orderId,
   isOpen,
   onClose,
-  onStatusChange,
-}: OrderDetailModalProps) => {
+}: RefundedOrderModalProps) => {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showRefundConfirm, setShowRefundConfirm] = useState(false);
-  const [isRefunding, setIsRefunding] = useState(false);
-  const queryClient = useQueryClient();
 
-  // Tải chi tiết đơn hàng
   useEffect(() => {
     if (!isOpen || !orderId) return;
 
@@ -47,8 +36,6 @@ export const OrderDetailModal = ({
         if (detail) {
           setOrder(detail);
         }
-      } catch (_error) {
-        toast.error("Không tải được chi tiết đơn hàng");
       } finally {
         setIsLoading(false);
       }
@@ -57,34 +44,14 @@ export const OrderDetailModal = ({
     fetchOrder();
   }, [orderId, isOpen]);
 
-  // Xử lý refund đơn
-  const handleRefund = async () => {
-    setIsRefunding(true);
-    try {
-      await refundOrder(orderId ?? order?.order_id ?? 0);
-      toast.success(
-        "Hoàn tiền thành công, vui lòng kiểm tra tài khoản ngân hàng của bạn",
-      );
-      onStatusChange();
-      onClose();
-      queryClient.invalidateQueries({ queryKey: ["pos-orders-all"] });
-    } catch (_error) {
-      // global error
-    } finally {
-      setIsRefunding(false);
-    }
-  };
-
   if (!isOpen || !order) return null;
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm z-30 transition-opacity"
         onClick={onClose}
       ></div>
-
       {/* Modal Content */}
       <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-[0_10px_40px_-5px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(0,0,0,0.05)] w-full max-w-5xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -93,9 +60,9 @@ export const OrderDetailModal = ({
             <div className="flex items-center gap-4">
               {/* Icon Trạng thái */}
               <div
-                className={`size-11 rounded-full flex items-center justify-center border shadow-sm ${"bg-green-50 text-green-600 border-green-100"}`}
+                className={`size-11 rounded-full flex items-center justify-center border shadow-sm ${"bg-blue-50 text-blue-600 border-blue-100"}`}
               >
-                <CheckCircle className="w-6 h-6" />
+                <ReceiptIcon className="w-6 h-6" />
               </div>
               <div>
                 <h2 className="text-xl font-bold font-['Plus_Jakarta_Sans'] text-[#1b110d] leading-tight">
@@ -111,12 +78,12 @@ export const OrderDetailModal = ({
                   <span className="text-gray-300">|</span>
                   {/* Badge Trạng thái */}
                   <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold border ${"bg-green-50 text-green-700 border-green-100"}`}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold border ${"bg-blue-50 text-blue-700 border-blue-100"}`}
                   >
                     <span
-                      className={`size-1.5 rounded-full ${"bg-green-500"}`}
+                      className={`size-1.5 rounded-full ${"bg-blue-500"}`}
                     ></span>
-                    Hoàn thành
+                    Đã hoàn
                   </span>
                 </div>
               </div>
@@ -285,7 +252,7 @@ export const OrderDetailModal = ({
                     <div className="px-5 py-4 bg-gray-50/50 border-t border-[#f3ebe7] flex flex-col gap-2 shrink-0 mt-auto">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-[#9a624c]">
-                          Tổng tiền hàng
+                          Tổng đã thanh toán
                         </span>
                         <span className="text-sm font-medium text-[#1b110d]">
                           {Number(order.total_amount).toLocaleString("vi-VN")}đ
@@ -294,7 +261,7 @@ export const OrderDetailModal = ({
                       <div className="border-t border-dashed border-[#f3ebe7] my-1"></div>
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-[#1b110d]">
-                          Tổng thanh toán
+                          Tổng tiền hoàn
                         </span>
                         <span className="font-bold text-[#9a624c] text-xl">
                           {Number(order.total_amount).toLocaleString("vi-VN")}đ
@@ -306,45 +273,21 @@ export const OrderDetailModal = ({
               </div>
             )}
           </div>
-
           {/* Footer Actions */}
           {!isLoading && (
-            <div className="p-6 border-t border-[#f3ebe7] bg-white shrink-0 z-10 flex flex-col md:flex-row gap-4 items-center">
-              <button
-                type="button"
-                onClick={() => setShowRefundConfirm(true)}
-                disabled={isRefunding}
-                className="w-full md:w-1/3 bg-white cursor-pointer hover:bg-red-50 text-[#9a624c] hover:text-red-600 font-semibold py-3.5 px-6 rounded-xl border border-gray-200 hover:border-red-200 transition-all flex items-center justify-center gap-2 order-2 md:order-1 disabled:opacity-50"
-              >
-                <Ban className="w-5 h-5" />
-                Hoàn tiền
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full md:w-2/3 bg-[#A8E6CF] cursor-pointer hover:bg-[#8addb6] text-emerald-900 font-bold py-3.5 px-6 rounded-xl shadow-[0_0_20px_-5px_rgba(168,230,207,0.5)] hover:shadow-lg hover:shadow-[#A8E6CF]/30 transition-all flex items-center justify-center gap-2 group order-1 md:order-2 disabled:opacity-50"
-              >
-                <Close className="w-[22px] h-[22px] group-hover:scale-110 transition-transform" />
-                <span className="text-base">Đóng</span>
-              </button>
+            <div className="px-6 py-4 border-t border-[#f3ebe7] bg-gray-50 flex items-center justify-between shrink-0 rounded-b-3xl">
+              <div className="gap-3">
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2 cursor-pointer bg-[#1b110d] text-white font-medium rounded-lg hover:bg-black transition-all shadow-lg shadow-gray-200 text-sm"
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* Alert Dialog */}
-      <AlertDialog
-        open={showRefundConfirm}
-        onOpenChange={setShowRefundConfirm}
-        title="Hoàn đơn"
-        description="Bạn có chắc chắn muốn hoàn tiền? Hành động này không thể hoàn tác."
-        actionLabel="Hoàn tiền"
-        cancelLabel="Đóng"
-        onConfirm={() => {
-          setShowRefundConfirm(false);
-          handleRefund();
-        }}
-      />
     </>
   );
 };
