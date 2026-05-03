@@ -48,9 +48,16 @@ const PaymentSuccessPage = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (!orderId) return;
+    if (!orderId || hasConfirmedRef.current) return;
 
-    const fetchPayment = async () => {
+    hasConfirmedRef.current = true;
+
+    const confirmAndFetch = async () => {
+      try {
+        await confirmOrder(Number(orderId));
+      } catch (_error) {
+        // global error
+      }
       try {
         const payment = await getOrderPayment(Number(orderId));
         setResult(payment ?? null);
@@ -59,23 +66,7 @@ const PaymentSuccessPage = () => {
       }
     };
 
-    void fetchPayment();
-  }, [orderId]);
-
-  useEffect(() => {
-    if (!orderId || hasConfirmedRef.current) return;
-
-    hasConfirmedRef.current = true;
-
-    const confirm = async () => {
-      try {
-        await confirmOrder(Number(orderId));
-      } catch (_error) {
-        // global error
-      }
-    };
-
-    void confirm();
+    void confirmAndFetch();
   }, [orderId]);
 
   const handleGoBackNow = () => {

@@ -15,7 +15,12 @@ import { AlertDialog } from "@/components/ui/alert-dialog";
 
 import type { Order } from "./type";
 
-import { refundOrder, getOrderDetail } from "./api";
+import {
+  refundOrder,
+  getOrderDetail,
+  getOrderPayment,
+  type OrderPaymentDto,
+} from "./api";
 
 interface OrderDetailModalProps {
   isOpen: boolean;
@@ -31,6 +36,8 @@ export const OrderDetailModal = ({
   onStatusChange,
 }: OrderDetailModalProps) => {
   const [order, setOrder] = useState<Order | null>(null);
+  const [payment, setPayment] = useState<OrderPaymentDto | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
   const [showRefundConfirm, setShowRefundConfirm] = useState(false);
   const [isRefunding, setIsRefunding] = useState(false);
@@ -57,6 +64,19 @@ export const OrderDetailModal = ({
     fetchOrder();
   }, [orderId, isOpen]);
 
+  useEffect(() => {
+    if (!isOpen || !orderId) return;
+    const fetchPayment = async () => {
+      try {
+        const result = await getOrderPayment(Number(orderId));
+        setPayment(result ?? null);
+      } catch {
+        setPayment(null);
+      }
+    };
+    fetchPayment();
+  }, [orderId, isOpen]);
+
   // Xử lý refund đơn
   const handleRefund = async () => {
     setIsRefunding(true);
@@ -67,7 +87,10 @@ export const OrderDetailModal = ({
       );
       onStatusChange();
       onClose();
-      queryClient.invalidateQueries({ queryKey: ["pos-orders-all"] });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0].toString().startsWith("pos-orders"),
+      });
     } catch (_error) {
       // global error
     } finally {
@@ -309,24 +332,40 @@ export const OrderDetailModal = ({
 
           {/* Footer Actions */}
           {!isLoading && (
-            <div className="p-6 border-t border-[#f3ebe7] bg-white shrink-0 z-10 flex flex-col md:flex-row gap-4 items-center">
-              <button
-                type="button"
-                onClick={() => setShowRefundConfirm(true)}
-                disabled={isRefunding}
-                className="w-full md:w-1/3 bg-white cursor-pointer hover:bg-red-50 text-[#9a624c] hover:text-red-600 font-semibold py-3.5 px-6 rounded-xl border border-gray-200 hover:border-red-200 transition-all flex items-center justify-center gap-2 order-2 md:order-1 disabled:opacity-50"
-              >
-                <Ban className="w-5 h-5" />
-                Hoàn tiền
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full md:w-2/3 bg-[#A8E6CF] cursor-pointer hover:bg-[#8addb6] text-emerald-900 font-bold py-3.5 px-6 rounded-xl shadow-[0_0_20px_-5px_rgba(168,230,207,0.5)] hover:shadow-lg hover:shadow-[#A8E6CF]/30 transition-all flex items-center justify-center gap-2 group order-1 md:order-2 disabled:opacity-50"
-              >
-                <Close className="w-[22px] h-[22px] group-hover:scale-110 transition-transform" />
-                <span className="text-base">Đóng</span>
-              </button>
+            <div className="p-6 border-t border-[#f3ebe7] bg-white shrink-0 z-10 flex flex-row items-center justify-between gap-4">
+              {/* Left: Xem hoá đơn */}
+              {payment?.stripe_receipt_url ? (
+                <a
+                  href={payment.stripe_receipt_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="min-w-[140px] px-6 py-3.5 cursor-pointer bg-[#f27a4d] text-white font-semibold rounded-xl hover:bg-[#e86c42] transition-all shadow-lg shadow-gray-200 text-sm flex items-center justify-center"
+                >
+                  Xem hoá đơn
+                </a>
+              ) : (
+                <div />
+              )}
+              {/* Right: Refund & Close */}
+              <div className="flex flex-row gap-4 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => setShowRefundConfirm(true)}
+                  disabled={isRefunding}
+                  className="min-w-[140px] bg-white cursor-pointer hover:bg-red-50 text-[#9a624c] hover:text-red-600 font-semibold py-3.5 px-6 rounded-xl border border-gray-200 hover:border-red-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <Ban className="w-5 h-5" />
+                  Hoàn tiền
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="min-w-[140px] bg-[#A8E6CF] cursor-pointer hover:bg-[#8addb6] text-emerald-900 font-bold py-3.5 px-6 rounded-xl shadow-[0_0_20px_-5px_rgba(168,230,207,0.5)] hover:shadow-lg hover:shadow-[#A8E6CF]/30 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+                >
+                  <Close className="w-[22px] h-[22px] group-hover:scale-110 transition-transform" />
+                  <span className="text-base">Đóng</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
