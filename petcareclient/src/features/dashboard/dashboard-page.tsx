@@ -6,8 +6,8 @@ import { Sidebar } from "@/components/Sidebar";
 import {
   type StatsData,
   type RevenueData,
-  type ProfitPeriod,
   getDashboardStats,
+  type ProfitPeriod,
   getDashboardRevenue,
   type ActivityFeedData,
   getDashboardActivities,
@@ -24,7 +24,10 @@ export const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [revenuePeriod, setRevenuePeriod] = useState<ProfitPeriod>("day");
+  const [revenuePeriod, setRevenuePeriod] = useState<ProfitPeriod>("this_week");
+  const [selectedYear, setSelectedYear] = useState<number>(
+    new Date().getFullYear(),
+  );
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -51,21 +54,14 @@ export const DashboardPage = () => {
 
   useEffect(() => {
     const fetchRevenue = async () => {
-      const revenueData = await getDashboardRevenue(revenuePeriod);
+      const revenueData = await getDashboardRevenue(
+        revenuePeriod,
+        selectedYear,
+      );
       setRevenue(revenueData);
     };
     fetchRevenue();
-  }, [revenuePeriod]);
-
-  const handleSearch = (query: string) => {
-    console.log("Search query:", query);
-    // TODO: Implement search functionality
-  };
-
-  const handleQuickAdd = () => {
-    console.log("Quick add clicked");
-    // TODO: Implement quick add modal
-  };
+  }, [revenuePeriod, selectedYear]);
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
@@ -75,7 +71,7 @@ export const DashboardPage = () => {
       {/* Main Content */}
       <main className="flex flex-1 flex-col overflow-hidden relative">
         {/* Header */}
-        <Header onSearch={handleSearch} onQuickAdd={handleQuickAdd} />
+        <Header />
 
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-8 scroll-smooth">
@@ -100,14 +96,29 @@ export const DashboardPage = () => {
 
             {/* Loading State */}
             {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="animate-spin">
-                    <span className="material-symbols-outlined text-4xl text-primary">
-                      loading
-                    </span>
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400">
+              <div className="flex h-64 items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                  <svg
+                    className="h-10 w-10 animate-spin text-primary"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                     Đang tải dữ liệu...
                   </p>
                 </div>
@@ -123,16 +134,16 @@ export const DashboardPage = () => {
 
                 {/* Charts and Activity Feed Grid */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                  {/* Revenue Chart - Takes up 2 columns */}
                   {revenue && (
                     <RevenueChart
                       data={revenue}
                       period={revenuePeriod}
                       onPeriodChange={setRevenuePeriod}
+                      selectedYear={selectedYear}
+                      onYearChange={setSelectedYear}
                     />
                   )}
 
-                  {/* Activity Feed - Takes up 1 column */}
                   {activities && <ActivityFeed data={activities} />}
                 </div>
               </>

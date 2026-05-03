@@ -1,27 +1,47 @@
-// Mock Chart
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 import { type RevenueData, type ProfitPeriod } from "../api/dashboard-api";
 
 interface RevenueChartProps {
   data: RevenueData;
   period: ProfitPeriod;
+  selectedYear: number;
+  onYearChange: (year: number) => void;
   onPeriodChange: (period: ProfitPeriod) => void;
 }
 
-export const RevenueChart = ({ data, period, onPeriodChange }: RevenueChartProps) => {
+export const RevenueChart = ({
+  data,
+  period,
+  onPeriodChange,
+  selectedYear,
+  onYearChange,
+}: RevenueChartProps) => {
+  // State để theo dõi index của điểm đang được hover
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   // Calculate chart path based on values
   const maxValue = Math.max(...data.values);
+  // Tránh chia cho 0 nếu tất cả data đều là 0
+  const safeMaxValue = maxValue === 0 ? 1 : maxValue;
+
   const chartHeight = 280;
   const chartWidth = 800;
   const padding = 20;
 
   // Generate SVG path for the line chart
   const points = data.values.map((value, index) => {
+    // Tránh lỗi chia cho 0 nếu data chỉ có 1 phần tử
     const x =
-      (index / (data.values.length - 1)) * (chartWidth - padding * 2) + padding;
+      data.values.length > 1
+        ? (index / (data.values.length - 1)) * (chartWidth - padding * 2) +
+          padding
+        : chartWidth / 2; // Canh giữa đồ thị nếu chỉ có 1 điểm
+
     const y =
-      chartHeight - (value / maxValue) * (chartHeight - padding * 2) - padding;
+      chartHeight -
+      (value / safeMaxValue) * (chartHeight - padding * 2) -
+      padding;
     return { x, y, value };
   });
 
@@ -33,10 +53,14 @@ export const RevenueChart = ({ data, period, onPeriodChange }: RevenueChartProps
   // Create fill area path
   const areaPath = `${linePath} L${points[points.length - 1].x},${chartHeight} L${points[0].x},${chartHeight} Z`;
 
-  // Find the highest point for tooltip
+  // Find the highest point for default tooltip
   const highestPoint = points.reduce((prev, current) =>
     prev.value > current.value ? prev : current,
   );
+
+  // Điểm hiển thị tooltip hiện tại (ưu tiên điểm đang hover, nếu không hover thì hiện điểm cao nhất)
+  const activePoint =
+    hoveredIndex !== null ? points[hoveredIndex] : highestPoint;
 
   return (
     <div className="lg:col-span-2 rounded-2xl bg-surface-light dark:bg-surface-dark p-6 shadow-sm border border-gray-50/50 dark:border-gray-700">
@@ -52,12 +76,29 @@ export const RevenueChart = ({ data, period, onPeriodChange }: RevenueChartProps
             </span>
           </p>
         </div>
-        <div className="relative">
-          <span
-            className="inline-flex items-center rounded-lg bg-gray-50 dark:bg-gray-800 pl-3 pr-8 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors outline-none cursor-pointer"
+
+        <div className="flex items-center gap-2">
+          {period === "year" && (
+            <input
+              type="number"
+              value={selectedYear}
+              onChange={(e) => onYearChange(Number(e.target.value))}
+              className="h-8 w-20 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600 outline-none transition-colors focus:border-orange-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+              min="2000"
+              max="2100"
+              placeholder="Năm"
+            />
+          )}
+          <select
+            value={period}
+            onChange={(e) => onPeriodChange(e.target.value as ProfitPeriod)}
+            className="h-8 cursor-pointer rounded-lg border border-gray-200 bg-gray-50 pl-3 pr-8 text-xs font-medium text-gray-600 outline-none transition-colors hover:bg-gray-100 focus:border-orange-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
           >
-            Tuần này
-          </span>
+            <option value="this_week">Tuần này</option>
+            <option value="last_week">Tuần trước</option>
+            <option value="last_month">Tháng trước</option>
+            <option value="year">Năm</option>
+          </select>
         </div>
       </div>
 
@@ -130,46 +171,74 @@ export const RevenueChart = ({ data, period, onPeriodChange }: RevenueChartProps
             strokeWidth="4"
           ></path>
 
-          {/* Highlight point */}
-          <circle
-            cx={highestPoint.x}
-            cy={highestPoint.y}
-            fill="#fff"
-            r="6"
-            stroke="#f7b297"
-            strokeWidth="3"
-          ></circle>
+          {/* Render các điểm tương tác (cả điểm đang hover và điểm cao nhất) */}
+          {points.map((point, index) => {
+            const isActive =
+              hoveredIndex === index ||
+              (hoveredIndex === null && point === highestPoint);
+            return (
+              <g key={`point-${index}`}>
+                {/* Vòng tròn tàng hình to hơn để dễ hover chuột vào */}
+                <circle
+                  cx={point.x}
+                  cy={point.y}
+                  r="20"
+                  fill="transparent"
+                  className="cursor-pointer"
+                  onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                />
 
-          {/* Tooltip */}
-          <rect
-            fill="#474A53"
-            height="30"
-            rx="6"
-            width="70"
-            x={highestPoint.x - 35}
-            y={highestPoint.y - 40}
-          ></rect>
-          <text
-            fill="white"
-            fontFamily="Inter, sans-serif"
-            fontSize="12"
-            fontWeight="600"
-            textAnchor="middle"
-            x={highestPoint.x}
-            y={highestPoint.y - 18}
-          >
-            {highestPoint.value.toLocaleString("vi-VN")}
-          </text>
-          <polygon
-            fill="#474A53"
-            points={`${highestPoint.x},${highestPoint.y - 5} ${highestPoint.x - 5},${highestPoint.y - 10} ${highestPoint.x + 5},${highestPoint.y - 10}`}
-          ></polygon>
+                {/* Chỉ hiển thị chấm tròn thực sự nếu nó đang active */}
+                {isActive && (
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    fill="#fff"
+                    r="6"
+                    stroke="#f7b297"
+                    strokeWidth="3"
+                    className="pointer-events-none transition-all duration-200"
+                  />
+                )}
+              </g>
+            );
+          })}
+
+          {/* Tooltip động (Chạy theo activePoint) */}
+          {activePoint && (
+            <g className="pointer-events-none transition-all duration-200">
+              <rect
+                fill="#474A53"
+                height="30"
+                rx="6"
+                width="80"
+                x={activePoint.x - 40}
+                y={activePoint.y - 40}
+              ></rect>
+              <text
+                fill="white"
+                fontFamily="Inter, sans-serif"
+                fontSize="12"
+                fontWeight="600"
+                textAnchor="middle"
+                x={activePoint.x}
+                y={activePoint.y - 18}
+              >
+                {activePoint.value.toLocaleString("vi-VN")}
+              </text>
+              <polygon
+                fill="#474A53"
+                points={`${activePoint.x},${activePoint.y - 5} ${activePoint.x - 5},${activePoint.y - 10} ${activePoint.x + 5},${activePoint.y - 10}`}
+              ></polygon>
+            </g>
+          )}
         </svg>
       </div>
 
       <div className="mt-4 flex justify-between px-2 text-xs font-semibold text-gray-400">
-        {data.days.map((day) => (
-          <span key={day}>{day}</span>
+        {data.days.map((day, idx) => (
+          <span key={idx}>{day}</span>
         ))}
       </div>
     </div>
