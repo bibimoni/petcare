@@ -24,7 +24,7 @@ export class CreatePaymentIntentDto {
   @ApiProperty({
     enum: Currency,
     required: false,
-    example: Currency.USD,
+    example: Currency.VND,
   })
   @IsEnum(Currency)
   @IsOptional()
@@ -63,7 +63,7 @@ export class CreateCheckoutDto {
   @ApiProperty({
     enum: Currency,
     required: false,
-    example: Currency.USD,
+    example: Currency.VND,
   })
   @IsEnum(Currency)
   @IsOptional()

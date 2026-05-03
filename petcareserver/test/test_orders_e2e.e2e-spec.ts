@@ -205,6 +205,22 @@ describe('Orders E2E — Webhook Flow', () => {
     return { ...body.order, checkout_url: body.checkout_url, session_id: body.session_id };
   }
 
+  // ── Helper: tạo payment intent qua API ──
+  async function createIntent(orderId: number) {
+    mockStripeService.createPaymentIntent.mockResolvedValue({
+      client_secret: `cs_${orderId}`,
+      payment_intent_id: `pi_${orderId}`,
+      amount: 100,
+      currency: 'vnd',
+    });
+    const res = await request(app.getHttpServer())
+      .post('/v1/orders/payment/intent')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ order_id: orderId })
+      .expect(200);
+    return res.body;
+  }
+
   // ── Helper: gửi webhook event giả ──
   function sendWebhook(eventType: string, dataObject: any) {
     mockStripeService.constructWebhookEvent.mockReturnValue({

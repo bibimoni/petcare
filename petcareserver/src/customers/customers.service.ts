@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { parseDateInAppTimezone } from '../common/utils/timezone';
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
@@ -94,7 +95,7 @@ export class CustomersService {
     }
 
     if (filters?.date_from) {
-      const dateFrom = new Date(filters.date_from);
+      const dateFrom = parseDateInAppTimezone(filters.date_from);
       if (!isNaN(dateFrom.getTime())) {
         query.andWhere('customer.created_at >= :dateFrom', {
           dateFrom,
@@ -103,7 +104,7 @@ export class CustomersService {
     }
 
     if (filters?.date_to) {
-      const dateTo = new Date(filters.date_to);
+      const dateTo = parseDateInAppTimezone(filters.date_to);
       if (!isNaN(dateTo.getTime())) {
         query.andWhere('customer.created_at <= :dateTo', {
           dateTo,
