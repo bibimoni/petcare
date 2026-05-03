@@ -236,10 +236,8 @@ const AllProductsPage = () => {
     );
   };
 
-  const handleRemoveItem = (id: string) => {
-    setOrderItems((prev) =>
-      prev.filter((item) => (item.cartKey ?? item.id) !== id),
-    );
+  const handleRemoveItem = (cartKey: string) => {
+    setOrderItems((prev) => prev.filter((item) => item.cartKey !== cartKey));
   };
 
   useEffect(() => {

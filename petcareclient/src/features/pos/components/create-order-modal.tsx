@@ -315,7 +315,7 @@ export const CreateOrderModal = ({
                         <p className="text-xs text-[#9f7d67]">NV: {userName}</p>
                       </div>
                       <button
-                        onClick={() => onRemoveItem(item.id)}
+                        onClick={() => onRemoveItem(item.cartKey)}
                         className="text-[#be9477] cursor-pointer hover:text-red-500 transition"
                       >
                         <Trash2 className="h-4 w-4" />
