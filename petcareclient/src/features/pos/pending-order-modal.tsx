@@ -86,7 +86,8 @@ export const PendingOrderModal = ({
       onClose();
       queryClient.invalidateQueries({
         predicate: (query) =>
-          query.queryKey[0].toString().startsWith("pos-orders"),
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].startsWith("pos-orders"),
       });
     } catch (_error) {
       toast.error("Hủy đơn hàng thất bại");

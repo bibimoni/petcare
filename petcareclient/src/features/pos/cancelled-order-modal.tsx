@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 
 import type { Order } from "./type";
 
-import { getOrderPayment } from "./api";
+import { getOrderPayment, type OrderPaymentDto } from "./api";
 import { getOrderDetail } from "./api";
 
 interface CancelledOrderModalProps {
@@ -25,7 +25,7 @@ export const CancelledOrderModal = ({
   onClose,
 }: CancelledOrderModalProps) => {
   const [order, setOrder] = useState<Order | null>(null);
-  const [payment, setPayment] = useState(null);
+  const [payment, setPayment] = useState<OrderPaymentDto | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
