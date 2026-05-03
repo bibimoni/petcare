@@ -12,6 +12,7 @@ import {
   PackageSearch,
 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
+import { toast } from "sonner";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -129,7 +130,7 @@ export function InventoryTable({
       }
 
       await api.patch(`/products/${editingProduct.product_id}`, payload);
-      alert("Cập nhật sản phẩm thành công!");
+      toast.success("Cập nhật sản phẩm thành công!");
       setIsEditModalOpen(false);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["inventory-products"] }),
@@ -138,7 +139,7 @@ export function InventoryTable({
       ]);
     } catch (error: any) {
       console.error(error);
-      alert(
+      toast.error(
         "Lỗi cập nhật: " + (error.response?.data?.message || "Không xác định"),
       );
     } finally {
@@ -153,7 +154,7 @@ export function InventoryTable({
     setIsUpdating(true);
     try {
       await api.delete(`/products/${editingProduct.product_id}`);
-      alert("Đã xóa sản phẩm!");
+      toast.success("Đã xóa sản phẩm!");
       setIsEditModalOpen(false);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["inventory-products"] }),
@@ -161,7 +162,7 @@ export function InventoryTable({
         queryClient.invalidateQueries({ queryKey: ["inventory-alerts"] }),
       ]);
     } catch (error: any) {
-      alert(
+      toast.error(
         "Lỗi xóa sản phẩm: " +
           (error.response?.data?.message || "Không xác định"),
       );

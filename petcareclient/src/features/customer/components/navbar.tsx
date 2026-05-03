@@ -23,13 +23,6 @@ const Navbar = () => {
 
         {/* Right */}
         <div className="flex items-center gap-5">
-          {/* Notification */}
-          <button className="relative p-2 rounded-full hover:bg-gray-100">
-            <Bell size={20} />
-
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
-          </button>
-
           {/* User */}
           <div className="flex items-center gap-3 cursor-pointer">
             <img

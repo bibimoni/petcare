@@ -290,11 +290,28 @@ export const getOrders = async (
     if (typeof filters.status === "string" && filters.status !== "") {
       params.status = filters.status;
     }
+
     if (typeof filters.date_from === "string" && filters.date_from.trim()) {
-      params.date_from = filters.date_from;
+      if (filters.date_from.length === 10) {
+        // Tạo Date object là 00:00:00 theo giờ Local (GMT+7)
+        const localStart = new Date(`${filters.date_from}T00:00:00`);
+        // toISOString() sẽ tự động trừ đi 7 tiếng để ra UTC gửi xuống BE
+        // VD: "2026-05-03" -> "2026-05-02T17:00:00.000Z"
+        params.date_from = localStart.toISOString();
+      } else {
+        params.date_from = filters.date_from;
+      }
     }
+
     if (typeof filters.date_to === "string" && filters.date_to.trim()) {
-      params.date_to = filters.date_to;
+      if (filters.date_to.length === 10) {
+        // Tạo Date object là 23:59:59 theo giờ Local (GMT+7)
+        const localEnd = new Date(`${filters.date_to}T23:59:59.999`);
+        // VD: "2026-05-03" -> "2026-05-03T16:59:59.999Z"
+        params.date_to = localEnd.toISOString();
+      } else {
+        params.date_to = filters.date_to;
+      }
     }
   }
 
