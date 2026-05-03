@@ -39,7 +39,7 @@ const mockStripe = {
     client_secret: 'cs_test_123',
     payment_intent_id: 'pi_test_123',
     amount: 2500,
-    currency: 'usd',
+    currency: 'vnd',
   }),
   createCheckoutSession: jest.fn().mockResolvedValue({
     checkout_url: 'https://checkout.stripe.test/session',

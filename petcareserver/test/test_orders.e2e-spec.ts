@@ -244,14 +244,14 @@ describe('OrdersController', () => {
         client_secret: 'cs_test_123',
         payment_intent_id: 'pi_test_123',
         amount: 51,
-        currency: 'usd',
+        currency: 'vnd',
       };
       mockOrdersService.createPaymentIntent.mockResolvedValue(expected);
 
       const result = await controller.createPaymentIntent(
         TEST_USER,
         { order_id: 1 },
-        'usd',
+        'vnd',
       );
 
       expect(result.client_secret).toBe('cs_test_123');
@@ -259,7 +259,7 @@ describe('OrdersController', () => {
       expect(mockOrdersService.createPaymentIntent).toHaveBeenCalledWith(
         1,
         10,
-        'usd',
+        'vnd',
       );
     });
 
@@ -268,19 +268,19 @@ describe('OrdersController', () => {
         client_secret: 'cs_existing',
         payment_intent_id: 'pi_existing',
         amount: 51,
-        currency: 'usd',
+        currency: 'vnd',
       };
       mockOrdersService.createPaymentIntent.mockResolvedValue(intent);
 
       const r1 = await controller.createPaymentIntent(
         TEST_USER,
         { order_id: 1 },
-        'usd',
+        'vnd',
       );
       const r2 = await controller.createPaymentIntent(
         TEST_USER,
         { order_id: 1 },
-        'usd',
+        'vnd',
       );
 
       expect(r1.client_secret).toBe(r2.client_secret);
@@ -291,7 +291,7 @@ describe('OrdersController', () => {
         new NotFoundException('Order 999 not found'),
       );
       await expect(
-        controller.createPaymentIntent(TEST_USER, { order_id: 999 }, 'usd'),
+        controller.createPaymentIntent(TEST_USER, { order_id: 999 }, 'vnd'),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -300,7 +300,7 @@ describe('OrdersController', () => {
         new BadRequestException('Order is already paid'),
       );
       await expect(
-        controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'usd'),
+        controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'vnd'),
       ).rejects.toThrow('Order is already paid');
     });
 
@@ -309,7 +309,7 @@ describe('OrdersController', () => {
         new BadRequestException('Cannot pay for a cancelled order'),
       );
       await expect(
-        controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'usd'),
+        controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'vnd'),
       ).rejects.toThrow('Cannot pay for a cancelled order');
     });
 
@@ -318,7 +318,7 @@ describe('OrdersController', () => {
         new ForbiddenException('You do not have permission'),
       );
       await expect(
-        controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'usd'),
+        controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'vnd'),
       ).rejects.toThrow(ForbiddenException);
     });
   });

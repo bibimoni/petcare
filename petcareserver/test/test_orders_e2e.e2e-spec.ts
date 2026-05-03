@@ -201,7 +201,7 @@ describe('Orders E2E — Webhook Flow', () => {
       client_secret: `cs_${orderId}`,
       payment_intent_id: `pi_${orderId}`,
       amount: 100,
-      currency: 'usd',
+      currency: 'vnd',
     });
     const res = await request(app.getHttpServer())
       .post('/v1/orders/payment/intent')
