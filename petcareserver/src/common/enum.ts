@@ -58,3 +58,23 @@ export enum InStoreFilter {
   IN_STORE = 'IN_STORE',
   NOT_IN_STORE = 'NOT_IN_STORE',
 }
+
+export enum ActivityType {
+  ORDER_CREATED = 'ORDER_CREATED',
+  ORDER_CANCELLED = 'ORDER_CANCELLED',
+  ORDER_PAID = 'ORDER_PAID',
+  PET_ADDED = 'PET_ADDED',
+  CUSTOMER_ADDED = 'CUSTOMER_ADDED',
+  LOW_STOCK = 'LOW_STOCK',
+  OUT_OF_STOCK = 'OUT_OF_STOCK',
+  PRODUCT_EXPIRED = 'PRODUCT_EXPIRED',
+  STORE_INVITATION = 'STORE_INVITATION',
+}
+
+export enum ActivityReferenceType {
+  ORDER = 'order',
+  PET = 'pet',
+  CUSTOMER = 'customer',
+  PRODUCT = 'product',
+  NOTIFICATION = 'notification',
+}

@@ -6,8 +6,13 @@ import { Order } from '../orders/entities/order.entity';
 import { OrderDetail } from '../orders/entities/order-detail.entity';
 import { Product } from '../categories/entities/product.entity';
 import { Customer } from '../customers/entities/customer.entity';
-import { Notification } from '../notifications/entities/notification.entity';
-import { CategoryType, OrderStatus } from '../common/enum';
+import { Notification, NotificationType } from '../notifications/entities/notification.entity';
+import {
+  ActivityReferenceType,
+  ActivityType,
+  CategoryType,
+  OrderStatus,
+} from '../common/enum';
 import {
   appNow,
   appDateFromParts,
@@ -55,18 +60,11 @@ export interface DashboardResponse {
 }
 
 export interface ActivityItem {
-  type:
-    | 'ORDER_CREATED'
-    | 'ORDER_CANCELLED'
-    | 'ORDER_PAID'
-    | 'PET_ADDED'
-    | 'CUSTOMER_ADDED'
-    | 'LOW_STOCK'
-    | 'PRODUCT_EXPIRED';
+  type: ActivityType;
   title: string;
   description: string;
   reference_id: number;
-  reference_type: 'order' | 'pet' | 'customer' | 'product';
+  reference_type: ActivityReferenceType;
   created_at: Date;
 }
 
@@ -300,13 +298,13 @@ export class AnalyticsService {
       let type: ActivityItem['type'];
       let title: string;
       if (order.status === OrderStatus.CANCELLED) {
-        type = 'ORDER_CANCELLED';
+        type = ActivityType.ORDER_CANCELLED;
         title = `Order #${order.order_id} cancelled`;
       } else if (order.status === OrderStatus.PAID) {
-        type = 'ORDER_PAID';
+        type = ActivityType.ORDER_PAID;
         title = `Order #${order.order_id} paid`;
       } else {
-        type = 'ORDER_CREATED';
+        type = ActivityType.ORDER_CREATED;
         title = `Order #${order.order_id} created`;
       }
       activities.push({
@@ -314,7 +312,7 @@ export class AnalyticsService {
         title,
         description: `Amount: ${Number(order.total_amount).toLocaleString()}`,
         reference_id: order.order_id,
-        reference_type: 'order',
+        reference_type: ActivityReferenceType.ORDER,
         created_at: order.created_at,
       });
     }
@@ -331,11 +329,11 @@ export class AnalyticsService {
     const recentPets = await petQuery.getMany();
     for (const pet of recentPets) {
       activities.push({
-        type: 'PET_ADDED',
+        type: ActivityType.PET_ADDED,
         title: `Pet "${pet.name}" added`,
         description: `Breed: ${pet.breed || 'Unknown'}`,
         reference_id: pet.pet_id,
-        reference_type: 'pet',
+        reference_type: ActivityReferenceType.PET,
         created_at: pet.created_at,
       });
     }
@@ -352,11 +350,11 @@ export class AnalyticsService {
     const recentCustomers = await customerQuery.getMany();
     for (const customer of recentCustomers) {
       activities.push({
-        type: 'CUSTOMER_ADDED',
+        type: ActivityType.CUSTOMER_ADDED,
         title: `Customer "${customer.full_name}" added`,
         description: `Phone: ${customer.phone}`,
         reference_id: customer.customer_id,
-        reference_type: 'customer',
+        reference_type: ActivityReferenceType.CUSTOMER,
         created_at: customer.created_at,
       });
     }
@@ -372,19 +370,35 @@ export class AnalyticsService {
 
     const recentNotifications = await notifQuery.getMany();
     for (const notif of recentNotifications) {
-      let type: ActivityItem['type'] = 'LOW_STOCK';
-      if (
-        String(notif.type) === 'EXPIRED' ||
-        String(notif.type) === 'EXPIRY_WARNING'
-      ) {
-        type = 'PRODUCT_EXPIRED';
+      let type: ActivityItem['type'];
+      let referenceType: ActivityItem['reference_type'] =
+        ActivityReferenceType.PRODUCT;
+
+      switch (notif.type) {
+        case NotificationType.LOW_STOCK:
+          type = ActivityType.LOW_STOCK;
+          break;
+        case NotificationType.OUT_OF_STOCK:
+          type = ActivityType.OUT_OF_STOCK;
+          break;
+        case NotificationType.EXPIRED:
+        case NotificationType.EXPIRY_WARNING:
+          type = ActivityType.PRODUCT_EXPIRED;
+          break;
+        case NotificationType.STORE_INVITATION:
+          type = ActivityType.STORE_INVITATION;
+          referenceType = ActivityReferenceType.NOTIFICATION;
+          break;
+        default:
+          continue;
       }
+
       activities.push({
         type,
         title: notif.title,
         description: notif.message,
-        reference_id: notif.product_id || notif.notification_id,
-        reference_type: 'product',
+        reference_id: notif.product_id ?? notif.notification_id,
+        reference_type: referenceType,
         created_at: notif.created_at,
       });
     }
