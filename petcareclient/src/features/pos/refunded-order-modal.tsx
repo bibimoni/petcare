@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 
 import type { Order } from "./type";
 
-import { getOrderDetail } from "./api";
+import { getOrderDetail, getOrderPayment, type OrderPaymentDto } from "./api";
 
 interface RefundedOrderModalProps {
   isOpen: boolean;
@@ -24,6 +24,9 @@ export const RefundedOrderModal = ({
   onClose,
 }: RefundedOrderModalProps) => {
   const [order, setOrder] = useState<Order | null>(null);
+
+  const [payment, setPayment] = useState<OrderPaymentDto | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -42,6 +45,19 @@ export const RefundedOrderModal = ({
     };
 
     fetchOrder();
+  }, [orderId, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !orderId) return;
+    const fetchPayment = async () => {
+      try {
+        const result = await getOrderPayment(Number(orderId));
+        setPayment(result ?? null);
+      } catch {
+        setPayment(null);
+      }
+    };
+    fetchPayment();
   }, [orderId, isOpen]);
 
   if (!isOpen || !order) return null;
@@ -275,13 +291,28 @@ export const RefundedOrderModal = ({
           </div>
           {/* Footer Actions */}
           {!isLoading && (
-            <div className="px-6 py-4 border-t border-[#f3ebe7] bg-gray-50 flex items-center justify-between shrink-0 rounded-b-3xl">
-              <div className="gap-3">
+            <div className="p-6 border-t border-[#f3ebe7] bg-white shrink-0 z-10 flex flex-row items-center justify-between gap-4">
+              {/* Left: Xem hoá đơn */}
+              {payment?.stripe_receipt_url ? (
+                <a
+                  href={payment.stripe_receipt_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="min-w-[140px] px-6 py-3.5 cursor-pointer bg-[#f27a4d] text-white font-semibold rounded-xl hover:bg-[#e86c42] transition-all shadow-lg shadow-gray-200 text-sm flex items-center justify-center"
+                >
+                  Xem hoá đơn
+                </a>
+              ) : (
+                <div />
+              )}
+              {/* Right: Close */}
+              <div className="flex flex-row gap-4 ml-auto">
                 <button
                   onClick={onClose}
-                  className="px-6 py-2 cursor-pointer bg-[#1b110d] text-white font-medium rounded-lg hover:bg-black transition-all shadow-lg shadow-gray-200 text-sm"
+                  className="min-w-[140px] bg-[#A8E6CF] cursor-pointer hover:bg-[#8addb6] text-emerald-900 font-bold py-3.5 px-6 rounded-xl shadow-[0_0_20px_-5px_rgba(168,230,207,0.5)] hover:shadow-lg hover:shadow-[#A8E6CF]/30 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
                 >
-                  Đóng
+                  <Close className="w-[22px] h-[22px] group-hover:scale-110 transition-transform" />
+                  <span className="text-base">Đóng</span>
                 </button>
               </div>
             </div>

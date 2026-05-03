@@ -84,7 +84,10 @@ export const PendingOrderModal = ({
       toast.success("Đã hủy đơn hàng!");
       onStatusChange();
       onClose();
-      queryClient.invalidateQueries({ queryKey: ["pos-orders-all"] });
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0].toString().startsWith("pos-orders"),
+      });
     } catch (_error) {
       toast.error("Hủy đơn hàng thất bại");
     } finally {
@@ -312,35 +315,37 @@ export const PendingOrderModal = ({
 
           {/* Footer Actions */}
           {!isLoading && (
-            <div className="p-6 border-t border-[#f3ebe7] bg-white shrink-0 z-10 flex flex-col md:flex-row gap-4 items-center">
-              <button
-                type="button"
-                onClick={() => setShowCancelConfirm(true)}
-                disabled={isProcessing}
-                className="w-full md:w-1/3 bg-white cursor-pointer  hover:bg-red-50 text-[#9a624c] hover:text-red-600 font-semibold py-3.5 px-6 rounded-xl border border-gray-200 hover:border-red-200 transition-all flex items-center justify-center gap-2 order-2 md:order-1 disabled:opacity-50"
-              >
-                <Ban className="w-5 h-5" />
-                Hủy giao dịch
-              </button>
-              <button
-                type="button"
-                onClick={handleCompletePayment}
-                disabled={isProcessing}
-                className="w-full md:w-2/3 bg-[#A8E6CF] cursor-pointer hover:bg-[#8addb6] text-emerald-900 font-bold py-3.5 px-6 rounded-xl shadow-[0_0_20px_-5px_rgba(168,230,207,0.5)] hover:shadow-lg hover:shadow-[#A8E6CF]/30 transition-all flex items-center justify-center gap-2 group order-1 md:order-2 disabled:opacity-50"
-              >
-                {isProcessing ? (
-                  <div className="w-[22px] h-[22px] border-2 border-emerald-900 border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <CheckCircle2 className="w-[22px] h-[22px] group-hover:scale-110 transition-transform" />
-                )}
-                <span className="text-base">
-                  {isProcessing
-                    ? "Đang xử lý..."
-                    : payment?.status === "PENDING"
-                      ? `Tiếp tục thanh toán (${Number(order.total_amount).toLocaleString("vi-VN")}đ)`
-                      : `Hoàn tất thanh toán (${Number(order.total_amount).toLocaleString("vi-VN")}đ)`}
-                </span>
-              </button>
+            <div className="p-6 border-t border-[#f3ebe7] bg-white shrink-0 z-10 flex flex-row items-center justify-between gap-4">
+              <div className="flex flex-row gap-4 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => setShowCancelConfirm(true)}
+                  disabled={isProcessing}
+                  className="min-w-[140px] bg-white cursor-pointer hover:bg-red-50 text-[#9a624c] hover:text-red-600 font-semibold py-3.5 px-6 rounded-xl border border-gray-200 hover:border-red-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <Ban className="w-5 h-5" />
+                  Hủy giao dịch
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCompletePayment}
+                  disabled={isProcessing}
+                  className="min-w-[140px] bg-[#A8E6CF] cursor-pointer hover:bg-[#8addb6] text-emerald-900 font-bold py-3.5 px-6 rounded-xl shadow-[0_0_20px_-5px_rgba(168,230,207,0.5)] hover:shadow-lg hover:shadow-[#A8E6CF]/30 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+                >
+                  {isProcessing ? (
+                    <div className="w-[22px] h-[22px] border-2 border-emerald-900 border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <CheckCircle2 className="w-[22px] h-[22px] group-hover:scale-110 transition-transform" />
+                  )}
+                  <span className="text-base">
+                    {isProcessing
+                      ? "Đang xử lý..."
+                      : payment?.status === "PENDING"
+                        ? `Tiếp tục thanh toán (${Number(order.total_amount).toLocaleString("vi-VN")}đ)`
+                        : `Hoàn tất thanh toán (${Number(order.total_amount).toLocaleString("vi-VN")}đ)`}
+                  </span>
+                </button>
+              </div>
             </div>
           )}
         </div>

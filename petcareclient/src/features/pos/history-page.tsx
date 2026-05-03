@@ -114,6 +114,7 @@ const PosHistoryPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [jumpPage, setJumpPage] = useState("");
   const [currentTime, setCurrentTime] = useState(() => new Date());
   const [selectedTx, setSelectedTx] = useState<HistoryTransaction | null>(null);
   const pageSize = 10;
@@ -252,10 +253,34 @@ const PosHistoryPage = () => {
   const totalOrders = ordersResponse?.total ?? 0;
   const startItem = totalOrders === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endItem = startItem + transactions.length - 1;
-  const paginationPages = useMemo(
-    () => Array.from({ length: totalPages }, (_, index) => index + 1),
-    [totalPages],
-  );
+  const paginationItems = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, "...", totalPages];
+    }
+    if (currentPage >= totalPages - 3) {
+      return [
+        1,
+        "...",
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
+    }
+    return [
+      1,
+      "...",
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      "...",
+      totalPages,
+    ];
+  }, [currentPage, totalPages]);
 
   const handleExportExcel = () => {
     const headers = [
@@ -602,12 +627,13 @@ const PosHistoryPage = () => {
               </table>
             </div>
 
-            <div className="flex items-center justify-between border-t border-[#f0e6df] p-4">
-              <p className="text-xs text-[#a07f6b]">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#f0e6df] p-4">
+              <p className="shrink-0 text-xs text-[#a07f6b]">
                 Hiển thị {totalOrders === 0 ? 0 : startItem} -{" "}
                 {totalOrders === 0 ? 0 : endItem} của {totalOrders} hóa đơn
               </p>
-              <div className="flex items-center gap-1 text-sm font-bold">
+
+              <div className="flex flex-wrap items-center justify-end gap-1 text-sm font-bold">
                 <button
                   type="button"
                   onClick={() =>
@@ -621,16 +647,28 @@ const PosHistoryPage = () => {
                   </span>
                 </button>
 
-                {paginationPages.map((page) => (
-                  <button
-                    key={page}
-                    type="button"
-                    onClick={() => setCurrentPage(page)}
-                    className={`flex h-8 w-8 items-center justify-center rounded-full ${page === currentPage ? "bg-[#f5a882] text-white" : "text-[#523c30] hover:bg-[#f5ebe5]"}`}
-                  >
-                    {page}
-                  </button>
-                ))}
+                {paginationItems.map((item, index) => {
+                  if (item === "...") {
+                    return (
+                      <span
+                        key={`ellipsis-${index}`}
+                        className="flex h-8 w-8 items-center justify-center text-[#a07f6b]"
+                      >
+                        ...
+                      </span>
+                    );
+                  }
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setCurrentPage(item as number)}
+                      className={`flex h-8 w-8 items-center justify-center rounded-full ${item === currentPage ? "bg-[#f5a882] text-white" : "text-[#523c30] hover:bg-[#f5ebe5]"}`}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
 
                 <button
                   type="button"
@@ -644,6 +682,33 @@ const PosHistoryPage = () => {
                     chevron_right
                   </span>
                 </button>
+
+                {/* Ô nhập số trang để nhảy nhanh (Chỉ hiện khi có quá nhiều trang) */}
+                {totalPages > 7 && (
+                  <div className="ml-2 flex items-center gap-2 border-l border-[#f0e6df] pl-4">
+                    <span className="text-xs font-normal text-[#a07f6b]">
+                      Đến trang:
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={totalPages}
+                      value={jumpPage}
+                      onChange={(e) => setJumpPage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const page = parseInt(jumpPage, 10);
+                          if (!isNaN(page) && page >= 1 && page <= totalPages) {
+                            setCurrentPage(page);
+                            setJumpPage("");
+                          }
+                        }
+                      }}
+                      className="h-8 w-14 rounded-md border border-[#ecdcd1] bg-white px-1 text-center text-sm font-normal text-[#523c30] outline-none transition focus:border-[#f5a882] focus:ring-1 focus:ring-[#f5a882]"
+                      placeholder="..."
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
