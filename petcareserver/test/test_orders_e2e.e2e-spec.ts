@@ -52,6 +52,7 @@ const mockStripeService = {
   refundCharge: jest.fn(),
   getChargeDetails: jest.fn(),
   constructWebhookEvent: jest.fn(),
+  fromStripeAmount: jest.fn(),
 };
 
 describe('Orders E2E — Webhook Flow', () => {
@@ -112,6 +113,11 @@ describe('Orders E2E — Webhook Flow', () => {
     jest.clearAllMocks();
     orderCounter = 0;
     await ds.synchronize(true);
+
+    mockStripeService.fromStripeAmount.mockImplementation(
+      (amount: number, currency: string) =>
+        currency.toLowerCase() === 'vnd' ? amount : amount / 100,
+    );
 
     const store = await ds.getRepository(Store).save({ name: 'E2E Store' });
     storeId = store.id;
@@ -198,11 +204,14 @@ describe('Orders E2E — Webhook Flow', () => {
     const res = await request(app.getHttpServer())
       .post('/v1/orders')
       .set('Authorization', `Bearer ${token}`)
-      .send({ items })
+      .send({ items, currency: 'vnd' })
       .expect(201);
     const body = res.body; // { order, checkout_url, session_id }
-    // Flatten: return order object with checkout_url attached
-    return { ...body.order, checkout_url: body.checkout_url, session_id: body.session_id };
+    return {
+      ...body.order,
+      checkout_url: body.checkout_url,
+      session_id: body.session_id,
+    };
   }
 
   // ── Helper: gửi webhook event giả ──
@@ -227,11 +236,16 @@ describe('Orders E2E — Webhook Flow', () => {
       payment_intent: `pi_test_${order.order_id}`,
     }).expect(200);
 
-    mockStripeService.getChargeDetails.mockResolvedValue({ receipt_url: null });
+    mockStripeService.getChargeDetails.mockResolvedValue({
+      receipt_url: null,
+      currency: 'vnd',
+    });
+
     await sendWebhook('payment_intent.succeeded', {
       id: `pi_test_${order.order_id}`,
       latest_charge: `ch_${order.order_id}`,
-      amount: Number(order.total_amount) * 100,
+      amount: Number(order.total_amount),
+      currency: 'vnd',
     }).expect(200);
   }
 
@@ -251,6 +265,7 @@ describe('Orders E2E — Webhook Flow', () => {
       // Simulate Stripe payment
       mockStripeService.getChargeDetails.mockResolvedValue({
         receipt_url: 'https://stripe.com/receipt/test',
+        currency: 'vnd',
       });
 
       await sendWebhook('checkout.session.completed', {
@@ -262,7 +277,8 @@ describe('Orders E2E — Webhook Flow', () => {
       await sendWebhook('payment_intent.succeeded', {
         id: `pi_test_${order.order_id}`,
         latest_charge: 'ch_test_123',
-        amount: 11000,
+        amount: 110,
+        currency: 'vnd',
       }).expect(200);
 
       // FE calls POST /orders/confirm
@@ -303,7 +319,7 @@ describe('Orders E2E — Webhook Flow', () => {
         { item_id: productId, item_type: 'PRODUCT', quantity: 1 },
       ]);
 
-      // WE NO LONGER SIMULATE checkout.session.completed here 
+      // WE NO LONGER SIMULATE checkout.session.completed here
       // because a failed payment wouldn't have it.
       // The DB already has pi_test_${order.order_id} saved.
 
@@ -365,8 +381,17 @@ describe('Orders E2E — Webhook Flow', () => {
         payment_intent: `pi_test_${order.order_id}`,
       }).expect(200);
 
-      mockStripeService.getChargeDetails.mockResolvedValue({ receipt_url: null });
-      const payload = { id: `pi_test_${order.order_id}`, latest_charge: 'ch_dup', amount: 6000 };
+      mockStripeService.getChargeDetails.mockResolvedValue({
+        receipt_url: null,
+        currency: 'vnd',
+      });
+
+      const payload = {
+        id: `pi_test_${order.order_id}`,
+        latest_charge: 'ch_dup',
+        amount: 60,
+        currency: 'vnd',
+      };
 
       await sendWebhook('payment_intent.succeeded', payload).expect(200);
       await sendWebhook('payment_intent.succeeded', payload).expect(200);
@@ -410,6 +435,7 @@ describe('Orders E2E — Webhook Flow', () => {
         id: 'pi_nonexistent',
         latest_charge: 'ch_nope',
         amount: 1000,
+        currency: 'vnd',
       }).expect(200);
     });
   });
@@ -437,7 +463,10 @@ describe('Orders E2E — Webhook Flow', () => {
     it('should return 401 without JWT', async () => {
       await request(app.getHttpServer())
         .post('/v1/orders')
-        .send({ items: [{ item_id: productId, item_type: 'PRODUCT', quantity: 1 }] })
+        .send({
+          items: [{ item_id: productId, item_type: 'PRODUCT', quantity: 1 }],
+          currency: 'vnd',
+        })
         .expect(401);
     });
 
@@ -445,7 +474,10 @@ describe('Orders E2E — Webhook Flow', () => {
       await request(app.getHttpServer())
         .post('/v1/orders')
         .set('Authorization', `Bearer ${token}`)
-        .send({ items: [{ item_id: 9999, item_type: 'PRODUCT', quantity: 1 }] })
+        .send({
+          items: [{ item_id: 9999, item_type: 'PRODUCT', quantity: 1 }],
+          currency: 'vnd',
+        })
         .expect(404);
     });
 
@@ -453,7 +485,10 @@ describe('Orders E2E — Webhook Flow', () => {
       await request(app.getHttpServer())
         .post('/v1/orders')
         .set('Authorization', `Bearer ${token}`)
-        .send({ items: [{ item_id: productId, item_type: 'PRODUCT', quantity: 9999 }] })
+        .send({
+          items: [{ item_id: productId, item_type: 'PRODUCT', quantity: 9999 }],
+          currency: 'vnd',
+        })
         .expect(400);
     });
   });
@@ -505,7 +540,9 @@ describe('Orders E2E — Webhook Flow', () => {
   describe('GET /v1/orders', () => {
     it('should return paginated orders', async () => {
       for (let i = 0; i < 3; i++) {
-        await createOrder([{ item_id: serviceId, item_type: 'SERVICE', quantity: 1 }]);
+        await createOrder([
+          { item_id: serviceId, item_type: 'SERVICE', quantity: 1 },
+        ]);
       }
       const res = await request(app.getHttpServer())
         .get('/v1/orders?page=1&limit=2')
@@ -564,13 +601,25 @@ describe('Orders E2E — Webhook Flow', () => {
       ]);
       await simulatePayment(order);
 
+      // FIX: getChargeDetails được gọi trong refundOrder để lấy currency
+      mockStripeService.getChargeDetails.mockResolvedValue({
+        receipt_url: null,
+        currency: 'vnd',
+      });
       mockStripeService.refundCharge.mockResolvedValue({ id: 're_test' });
+
       const res = await request(app.getHttpServer())
         .post(`/v1/orders/${order.order_id}/refund`)
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
       expect(res.body.success).toBe(true);
       expect(res.body.status).toBe('REFUNDED');
+
+      // Verify refundCharge được gọi đúng với currency
+      expect(mockStripeService.refundCharge).toHaveBeenCalledWith(
+        expect.any(String),
+        'vnd',
+      );
     });
 
     it('should return 400 for non-paid order', async () => {
@@ -584,4 +633,3 @@ describe('Orders E2E — Webhook Flow', () => {
     });
   });
 });
-
