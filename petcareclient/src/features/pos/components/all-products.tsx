@@ -51,6 +51,7 @@ const AllProductsPage = () => {
     useState<string>("all");
   const [productPage, setProductPage] = useState(1);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  console.log("🚀 ~ AllProductsPage ~ orderItems:", orderItems);
   const location = useLocation();
 
   const { data: profile } = useQuery({
@@ -184,8 +185,8 @@ const AllProductsPage = () => {
     type: "service" | "product",
   ) => {
     setOrderItems((prev) => {
-      const cartItemId = `${type}-${item.id}`;
-      const existing = prev.find((i) => i.id === cartItemId);
+      const cartItemId = `${item.id}`;
+      const existing = prev.find((i) => i.id === cartItemId && i.type !== type);
       if (existing) {
         return prev.map((i) =>
           i.id === cartItemId ? { ...i, quantity: i.quantity + 1 } : i,
@@ -210,11 +211,15 @@ const AllProductsPage = () => {
     setIsCreateOrderOpen(true);
   };
 
-  const handleUpdateQuantity = (id: string, delta: number) => {
+  const handleUpdateQuantity = (
+    id: string,
+    delta: number,
+    type: "service" | "product",
+  ) => {
     setOrderItems((prev) =>
       prev
         .map((item) => {
-          if (item.id === id) {
+          if (item.id === id && item.type === type) {
             const newQuantity = Math.max(0, item.quantity + delta);
             return { ...item, quantity: newQuantity };
           }

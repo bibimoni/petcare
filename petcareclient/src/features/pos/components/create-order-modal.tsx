@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { X, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { CustomerApi } from "@/features/customer/api/customer-api";
+import axiosClient from "@/lib/api";
 import { PetService } from "@/lib/pets";
 
 import type { OrderItem } from "../pos-page";
@@ -13,7 +15,11 @@ interface CreateOrderModalProps {
   items: OrderItem[];
   onClose: () => void;
   onRemoveItem: (id: string) => void;
-  onUpdateQuantity: (id: string, delta: number) => void;
+  onUpdateQuantity: (
+    id: string,
+    delta: number,
+    type: "service" | "product",
+  ) => void;
 }
 
 export const CreateOrderModal = ({
@@ -64,6 +70,56 @@ export const CreateOrderModal = ({
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN").format(price) + "đ";
+  };
+
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+
+  const handleCheckout = async () => {
+    if (!selectedCustomerId) {
+      toast.error("Vui lòng chọn khách hàng");
+      return;
+    }
+
+    if (!selectedPetId) {
+      toast.error("Vui lòng chọn thú cưng");
+      return;
+    }
+
+    if (items.length === 0) {
+      toast.error("Giỏ hàng trống");
+      return;
+    }
+
+    const payload = {
+      customer_id: Number(selectedCustomerId),
+      items: items.map((it) => ({
+        item_id: Number(it.id),
+        item_type: it.type === "product" ? "PRODUCT" : "SERVICE",
+        quantity: it.quantity,
+        pet_id: Number(selectedPetId),
+      })),
+      currency: "vnd",
+    };
+
+    try {
+      setIsCreatingOrder(true);
+      const res = await axiosClient.post("/orders", payload);
+      const checkoutUrl =
+        res?.data?.checkout_url ?? res?.data?.data?.checkout_url;
+
+      if (!checkoutUrl) {
+        toast.error("Không nhận được đường dẫn thanh toán");
+        return;
+      }
+
+      // redirect user to checkout
+      window.location.href = checkoutUrl;
+    } catch (err) {
+      console.error("Create order failed:", err);
+      toast.error("Tạo đơn hàng thất bại, vui lòng thử lại");
+    } finally {
+      setIsCreatingOrder(false);
+    }
   };
 
   return (
@@ -230,7 +286,9 @@ export const CreateOrderModal = ({
                       <div className="flex items-center rounded-full border border-[#ecdcd1] bg-[#fdfaf8]">
                         <button
                           className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-[#8d6955] hover:bg-[#efe5df] transition"
-                          onClick={() => onUpdateQuantity(item.id, -1)}
+                          onClick={() =>
+                            onUpdateQuantity(item.id, -1, item.type)
+                          }
                         >
                           -
                         </button>
@@ -239,7 +297,9 @@ export const CreateOrderModal = ({
                         </span>
                         <button
                           className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-[#8d6955] hover:bg-[#efe5df] transition"
-                          onClick={() => onUpdateQuantity(item.id, 1)}
+                          onClick={() =>
+                            onUpdateQuantity(item.id, 1, item.type)
+                          }
                         >
                           +
                         </button>
@@ -283,8 +343,13 @@ export const CreateOrderModal = ({
             <button className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-2 border-[#ecdcd1] bg-white text-[#8d6955] hover:bg-[#fdfaf8] transition">
               <span className="material-symbols-outlined">save</span>
             </button>
-            <button className="flex-1 flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#a9e4d1] text-lg font-bold text-[#1f5a4b] hover:bg-[#97dcc6] transition">
-              Thanh toán
+            <button
+              type="button"
+              onClick={handleCheckout}
+              disabled={isCreatingOrder}
+              className="flex-1 flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#a9e4d1] text-lg font-bold text-[#1f5a4b] hover:bg-[#97dcc6] transition disabled:opacity-60"
+            >
+              {isCreatingOrder ? "Đang tạo đơn..." : "Thanh toán"}
               <span className="material-symbols-outlined">arrow_forward</span>
             </button>
           </div>

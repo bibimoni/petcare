@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
-import { sidebarUser } from "@/lib/user";
+import axiosClient from "@/lib/api";
 
 const REDIRECT_SECONDS = 100;
 
@@ -10,6 +10,19 @@ const PaymentSuccessPage = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
   const [secondsLeft, setSecondsLeft] = useState(REDIRECT_SECONDS);
+
+  const [result, setResult] = useState<any>(null);
+
+  const formatVND = (value: unknown) => {
+    if (value === null || value === undefined) return "—";
+    const n = Number(value as any);
+    if (Number.isNaN(n)) return String(value);
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0,
+    }).format(n);
+  };
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -29,13 +42,31 @@ const PaymentSuccessPage = () => {
     };
   }, [navigate]);
 
+  useEffect(() => {
+    if (!orderId) return;
+
+    const confirmOrder = async () => {
+      try {
+        const res = await axiosClient.post("/orders/confirm", {
+          order_id: Number(orderId),
+        });
+
+        setResult(res.data ?? res.data?.data ?? null);
+      } catch (_error) {
+        // global error
+      }
+    };
+
+    void confirmOrder();
+  }, [orderId]);
+
   const handleGoBackNow = () => {
     navigate("/pos", { replace: true });
   };
 
   return (
     <div className="flex h-screen w-full overflow-hidden transition-all duration-300">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-6 backdrop-blur-sm">
@@ -50,7 +81,7 @@ const PaymentSuccessPage = () => {
         </header>
 
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
             <section className="overflow-hidden rounded-[2rem] border border-[#f0e3dc] bg-white shadow-[0_20px_60px_rgba(130,92,67,0.12)]">
               <div className="bg-gradient-to-br from-[#1f8c6e] via-[#3ab089] to-[#7ed8b8] px-8 py-10 text-white">
                 <div className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
@@ -60,14 +91,14 @@ const PaymentSuccessPage = () => {
                 </div>
 
                 <h2 className="text-3xl font-black">Thanh toán thành công</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-white/90">
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-white/90">
                   Hóa đơn đã được ghi nhận và đơn hàng sẵn sàng tiếp tục quy
                   trình xử lý. Màn hình sẽ tự động quay về POS sau {secondsLeft}{" "}
                   giây.
                 </p>
               </div>
 
-              <div className="grid gap-6 px-8 py-8 md:grid-cols-[1.3fr_0.7fr]">
+              <div className="grid gap-6 px-8 py-8 md:grid-cols-2">
                 <div className="space-y-5">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#a07f6b]">
@@ -88,6 +119,19 @@ const PaymentSuccessPage = () => {
                       </p>
                     </div>
                   </div>
+
+                  {result?.receipt_url && (
+                    <div>
+                      <a
+                        className="text-orange-600 underline"
+                        href={result.receipt_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Xem hóa đơn
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 <aside className="rounded-2xl bg-[#faf7f5] p-5">
@@ -97,8 +141,16 @@ const PaymentSuccessPage = () => {
 
                   <div className="mt-4 space-y-3">
                     <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm">
-                      <span className="text-sm text-[#7a5f50]">Thanh toán</span>
-                      <span className="font-bold text-[#1f8c6e]">Hoàn tất</span>
+                      <span className="text-sm text-[#7a5f50]">Mã đơn</span>
+                      <span className="font-bold text-[#1f8c6e]">
+                        {result?.order_id ?? orderId}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm">
+                      <span className="text-sm text-[#7a5f50]">Số tiền</span>
+                      <span className="font-bold text-[#1f8c6e]">
+                        {formatVND(result?.amount)}
+                      </span>
                     </div>
                   </div>
 
