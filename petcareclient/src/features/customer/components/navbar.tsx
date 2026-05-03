@@ -1,5 +1,3 @@
-import { Bell } from "lucide-react";
-
 import { Logo } from "@/components/Logo";
 import { Input } from "@/components/ui/input";
 

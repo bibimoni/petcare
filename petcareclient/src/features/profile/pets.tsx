@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Bell, Pencil, PawPrint, ChevronLeft } from "lucide-react";
+import { Pencil, PawPrint, ChevronLeft } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -170,13 +170,6 @@ export default function PetProfile({ petId }: { petId: number }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="rounded-full border border-[#ead8cf] bg-white p-2.5 text-[#9d6f5b] transition hover:bg-[#f8eeea]"
-            >
-              <Bell className="h-4 w-4" />
-            </button>
-
             <button
               type="button"
               className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-orange-600/80 px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#e29573]"
