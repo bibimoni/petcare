@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Ban,
   Clock,
@@ -5,39 +6,22 @@ import {
   MapPin,
   Package,
   X as Close,
-  Dog as Pets,
   ShoppingBag,
   CheckCircle2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
-// --- ĐỊNH NGHĨA KIỂU DỮ LIỆU ---
-interface OrderDetail {
-  id: number;
-  code?: string;
-  price: number;
-  quantity: number;
-  product_name?: string;
-}
+import { AlertDialog } from "@/components/ui/alert-dialog";
 
-interface Order {
-  id: number;
-  code: string;
-  pet_age?: string;
-  pet_name?: string;
-  pet_type?: string;
-  pet_breed?: string;
-  pet_weight?: string;
-  pet_gender?: string;
-  total_amount: number;
-  customer_name: string;
-  customer_type: string;
-  details: OrderDetail[];
-  customer_phone?: string;
-  customer_address?: string;
-  status: "PENDING" | "COMPLETED" | "CANCELLED";
-}
+import type { Order } from "./type";
+
+import {
+  cancelOrder,
+  getOrderDetail,
+  getOrderPayment,
+  type OrderPaymentDto,
+} from "./api";
 
 interface PendingOrderModalProps {
   isOpen: boolean;
@@ -46,33 +30,6 @@ interface PendingOrderModalProps {
   onStatusChange: () => void;
 }
 
-// --- DỮ LIỆU MẪU (MOCK DATA) ---
-const MOCK_PENDING_ORDER: Order = {
-  id: 920,
-  code: "POS-0920",
-  status: "PENDING",
-  customer_name: "Khách lẻ",
-  customer_type: "Vãng lai",
-  customer_phone: "",
-  customer_address: "",
-  pet_name: "Mimi",
-  pet_type: "Thú cưng",
-  pet_breed: "Mèo Anh",
-  pet_weight: "3.5",
-  pet_gender: "Cái",
-  pet_age: "1.5 Tuổi",
-  total_amount: 350000,
-  details: [
-    {
-      id: 1,
-      product_name: "Thức ăn hạt Royal Canin",
-      code: "RC-KD-500",
-      quantity: 1,
-      price: 350000,
-    },
-  ],
-};
-
 export const PendingOrderModal = ({
   orderId,
   isOpen,
@@ -80,48 +37,59 @@ export const PendingOrderModal = ({
   onStatusChange,
 }: PendingOrderModalProps) => {
   const [order, setOrder] = useState<Order | null>(null);
+  const [payment, setPayment] = useState<OrderPaymentDto | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false); // Dùng chung cho cả nút Thanh toán và Hủy
+  const queryClient = useQueryClient();
 
-  // Tải chi tiết đơn hàng (Giả lập API)
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !orderId) return;
 
     const fetchOrder = async () => {
       setIsLoading(true);
-      // Giả lập thời gian chờ tải data từ Server
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setOrder({ ...MOCK_PENDING_ORDER });
-      setIsLoading(false);
+      try {
+        const [detail, paymentResponse] = await Promise.all([
+          getOrderDetail(orderId),
+          getOrderPayment(orderId),
+        ]);
+
+        if (detail) {
+          setOrder(detail);
+        }
+        setPayment(paymentResponse ?? null);
+      } catch (_error) {
+        toast.error("Không tải được chi tiết đơn hàng");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchOrder();
   }, [orderId, isOpen]);
 
-  // Xử lý Hoàn tất thanh toán
-  const handleCompletePayment = async () => {
-    setIsProcessing(true);
-    // TODO: Thay bằng API thật (VD: api.patch(`/orders/${order?.id}/complete`))
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+  const handleCompletePayment = () => {
+    if (payment?.status !== "PENDING" || !payment.stripe_checkout_url) {
+      toast.error("Không có đường dẫn thanh toán");
+      return;
+    }
 
-    toast.success("Thanh toán thành công!");
-    setIsProcessing(false);
-    onStatusChange(); // Tải lại danh sách bên ngoài
-    onClose(); // Đóng modal
+    window.location.href = payment.stripe_checkout_url;
   };
 
-  // Xử lý Hủy giao dịch nhanh
   const handleCancelOrder = async () => {
-    if (!confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) return;
-
     setIsProcessing(true);
-    // TODO: Thay bằng API thật (VD: api.patch(`/orders/${order?.id}/cancel`))
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    toast.success("Đã hủy đơn hàng!");
-    setIsProcessing(false);
-    onStatusChange(); // Tải lại danh sách bên ngoài
-    onClose(); // Đóng modal
+    try {
+      await cancelOrder(orderId ?? order?.order_id ?? 0);
+      toast.success("Đã hủy đơn hàng!");
+      onStatusChange();
+      onClose();
+      queryClient.invalidateQueries({ queryKey: ["pos-orders-all"] });
+    } catch (_error) {
+      toast.error("Hủy đơn hàng thất bại");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (!isOpen || !order) return null;
@@ -146,7 +114,7 @@ export const PendingOrderModal = ({
               </div>
               <div>
                 <h2 className="text-lg font-bold text-[#1b110d] font-['Plus_Jakarta_Sans']">
-                  Chi tiết đơn hàng #{order.code}
+                  Chi tiết đơn hàng #{order.order_id}
                 </h2>
                 <span className="text-xs text-yellow-600 font-semibold bg-yellow-50 px-2 py-0.5 rounded-md border border-yellow-100 uppercase inline-block mt-0.5">
                   Chờ thanh toán
@@ -154,9 +122,10 @@ export const PendingOrderModal = ({
               </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
               disabled={isProcessing}
-              className="size-8 rounded-lg hover:bg-[#fcf9f8] flex items-center justify-center text-[#9a624c] transition-colors disabled:opacity-50"
+              className="size-8 rounded-lg hover:bg-[#fcf9f8] cursor-pointer flex items-center justify-center text-[#9a624c] transition-colors disabled:opacity-50"
             >
               <Close className="w-5 h-5" />
             </button>
@@ -181,79 +150,68 @@ export const PendingOrderModal = ({
                     <div className="flex items-start justify-between relative z-10 mb-3">
                       <div className="flex items-center gap-3">
                         <div className="size-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold border border-orange-200 shrink-0">
-                          {order.customer_name.charAt(0).toUpperCase()}
+                          {order.customer.full_name.charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <div className="font-bold text-[#1b110d]">
-                            {order.customer_name}
+                            {order.customer.full_name}
                           </div>
                           <div className="text-[10px] text-[#9a624c] uppercase tracking-wider font-semibold">
                             Khách hàng
                           </div>
                         </div>
                       </div>
-                      <span className="bg-gray-100 text-[#9a624c] text-xs px-2 py-1 rounded-md font-medium">
-                        {order.customer_type}
-                      </span>
                     </div>
                     <div className="space-y-2 relative z-10 pl-13">
                       <div className="flex items-center gap-2 text-sm text-[#9a624c]">
                         <Phone className="w-4 h-4" />
-                        <span>{order.customer_phone || "--"}</span>
+                        <span>{order.customer.phone || "--"}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-[#9a624c]">
                         <MapPin className="w-4 h-4" />
                         <span
                           className={
-                            !order.customer_address
+                            !order.customer.address
                               ? "italic text-gray-400"
                               : ""
                           }
                         >
-                          {order.customer_address || "Chưa cập nhật địa chỉ"}
+                          {order.customer.address || "Chưa cập nhật địa chỉ"}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Thú cưng */}
-                  {order.pet_name && (
-                    <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-blue-50/50 rounded-bl-full -mr-4 -mt-4 group-hover:bg-blue-100/50 transition-colors"></div>
-                      <div className="flex items-start justify-between relative z-10 mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="size-10 rounded-full bg-[#fcf9f8] border border-[#f3ebe7] flex items-center justify-center text-[#9a624c] shrink-0">
-                            <Pets className="w-5 h-5" />
+                  <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-[#f7b297]/5 rounded-bl-full -mr-4 -mt-4 group-hover:bg-[#f7b297]/10 transition-colors"></div>
+                    <div className="flex items-start justify-between relative z-10 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold border border-orange-200 shrink-0">
+                          {order.order_details[0].pet.name
+                            .charAt(0)
+                            .toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-bold text-[#1b110d]">
+                            {order.order_details[0].pet.name}
                           </div>
-                          <div>
-                            <div className="font-bold text-[#1b110d]">
-                              {order.pet_name}
-                            </div>
-                            <div className="text-[10px] text-[#9a624c] uppercase tracking-wider font-semibold">
-                              {order.pet_type}
-                            </div>
+                          <div className="text-[10px] text-[#9a624c] uppercase tracking-wider font-semibold">
+                            Thú cưng
                           </div>
                         </div>
-                        <div className="flex gap-1">
-                          {order.pet_gender && (
-                            <span className="bg-blue-50 text-blue-700 border border-blue-100 text-[10px] px-2 py-1 rounded-md font-bold uppercase">
-                              {order.pet_gender}
-                            </span>
-                          )}
-                          {order.pet_age && (
-                            <span className="bg-pink-50 text-pink-700 border border-pink-100 text-[10px] px-2 py-1 rounded-md font-bold uppercase">
-                              {order.pet_age}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-[#1b110d] font-medium pl-1">
-                        <span className="size-1.5 rounded-full bg-green-500"></span>
-                        {order.pet_breed}{" "}
-                        {order.pet_weight ? `- ${order.pet_weight}kg` : ""}
                       </div>
                     </div>
-                  )}
+                    <div className="space-y-2 relative z-10 pl-13">
+                      <div className="flex items-center gap-2 text-sm text-[#9a624c]">
+                        <span>
+                          Giống: {order.order_details[0].pet.breed || "--"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-[#9a624c]">
+                        <span>{order.order_details[0].pet.notes}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Cột phải (Danh sách sản phẩm) */}
@@ -265,7 +223,7 @@ export const PendingOrderModal = ({
                         Danh sách sản phẩm
                       </h3>
                       <span className="text-xs font-medium bg-white border border-[#f3ebe7] text-[#9a624c] px-2 py-1 rounded-md shadow-sm">
-                        {order.details.length} sản phẩm
+                        {order.order_details.length} sản phẩm
                       </span>
                     </div>
 
@@ -286,7 +244,7 @@ export const PendingOrderModal = ({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#f3ebe7]">
-                          {order.details.map((detail) => (
+                          {order.order_details.map((detail) => (
                             <tr
                               key={detail.id}
                               className="hover:bg-[#fcf9f8]/30 transition-colors group"
@@ -298,10 +256,9 @@ export const PendingOrderModal = ({
                                   </div>
                                   <div>
                                     <div className="font-semibold text-[#1b110d] text-sm">
-                                      {detail.product_name}
-                                    </div>
-                                    <div className="text-[11px] text-[#9a624c]">
-                                      {detail.code}
+                                      {detail.item_type === "PRODUCT"
+                                        ? detail.product?.name
+                                        : detail.service?.combo_name}
                                     </div>
                                   </div>
                                 </div>
@@ -310,11 +267,14 @@ export const PendingOrderModal = ({
                                 {detail.quantity}
                               </td>
                               <td className="px-5 py-3 text-right text-[#9a624c]">
-                                {Number(detail.price).toLocaleString("vi-VN")}đ
+                                {Number(detail.unit_price).toLocaleString(
+                                  "vi-VN",
+                                )}
+                                đ
                               </td>
                               <td className="px-5 py-3 text-right font-bold text-[#1b110d]">
                                 {(
-                                  Number(detail.price) * detail.quantity
+                                  Number(detail.unit_price) * detail.quantity
                                 ).toLocaleString("vi-VN")}
                                 đ
                               </td>
@@ -339,7 +299,7 @@ export const PendingOrderModal = ({
                         <span className="font-bold text-[#1b110d]">
                           Tổng thanh toán
                         </span>
-                        <span className="font-bold text-[#f7b297] text-xl">
+                        <span className="font-bold text-[#9a624c] text-xl">
                           {Number(order.total_amount).toLocaleString("vi-VN")}đ
                         </span>
                       </div>
@@ -354,17 +314,19 @@ export const PendingOrderModal = ({
           {!isLoading && (
             <div className="p-6 border-t border-[#f3ebe7] bg-white shrink-0 z-10 flex flex-col md:flex-row gap-4 items-center">
               <button
-                onClick={handleCancelOrder}
+                type="button"
+                onClick={() => setShowCancelConfirm(true)}
                 disabled={isProcessing}
-                className="w-full md:w-1/3 bg-white hover:bg-red-50 text-[#9a624c] hover:text-red-600 font-semibold py-3.5 px-6 rounded-xl border border-gray-200 hover:border-red-200 transition-all flex items-center justify-center gap-2 order-2 md:order-1 disabled:opacity-50"
+                className="w-full md:w-1/3 bg-white cursor-pointer  hover:bg-red-50 text-[#9a624c] hover:text-red-600 font-semibold py-3.5 px-6 rounded-xl border border-gray-200 hover:border-red-200 transition-all flex items-center justify-center gap-2 order-2 md:order-1 disabled:opacity-50"
               >
                 <Ban className="w-5 h-5" />
                 Hủy giao dịch
               </button>
               <button
+                type="button"
                 onClick={handleCompletePayment}
                 disabled={isProcessing}
-                className="w-full md:w-2/3 bg-[#A8E6CF] hover:bg-[#8addb6] text-emerald-900 font-bold py-3.5 px-6 rounded-xl shadow-[0_0_20px_-5px_rgba(168,230,207,0.5)] hover:shadow-lg hover:shadow-[#A8E6CF]/30 transition-all flex items-center justify-center gap-2 group order-1 md:order-2 disabled:opacity-50"
+                className="w-full md:w-2/3 bg-[#A8E6CF] cursor-pointer hover:bg-[#8addb6] text-emerald-900 font-bold py-3.5 px-6 rounded-xl shadow-[0_0_20px_-5px_rgba(168,230,207,0.5)] hover:shadow-lg hover:shadow-[#A8E6CF]/30 transition-all flex items-center justify-center gap-2 group order-1 md:order-2 disabled:opacity-50"
               >
                 {isProcessing ? (
                   <div className="w-[22px] h-[22px] border-2 border-emerald-900 border-t-transparent rounded-full animate-spin"></div>
@@ -374,13 +336,30 @@ export const PendingOrderModal = ({
                 <span className="text-base">
                   {isProcessing
                     ? "Đang xử lý..."
-                    : `Hoàn tất thanh toán (${Number(order.total_amount).toLocaleString("vi-VN")}đ)`}
+                    : payment?.status === "PENDING"
+                      ? `Tiếp tục thanh toán (${Number(order.total_amount).toLocaleString("vi-VN")}đ)`
+                      : `Hoàn tất thanh toán (${Number(order.total_amount).toLocaleString("vi-VN")}đ)`}
                 </span>
               </button>
             </div>
           )}
         </div>
       </div>
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        open={showCancelConfirm}
+        onOpenChange={setShowCancelConfirm}
+        title="Huỷ đơn"
+        description="Bạn có chắc chắn muốn huỷ đơn hàng? Hành động này không thể hoàn tác."
+        actionLabel="Huỷ"
+        cancelLabel="Đóng"
+        onConfirm={() => {
+          setShowCancelConfirm(false);
+          handleCancelOrder();
+        }}
+        variant="destructive"
+      />
     </>
   );
 };

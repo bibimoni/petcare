@@ -205,10 +205,10 @@ export default function AddPetModal({ open, onClose, onCreated }: Props) {
       {/* overlay */}
       <div
         className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-      // onClick={() =>{
-      //   resetForm();
-      //   onClose();
-      // }}
+        // onClick={() =>{
+        //   resetForm();
+        //   onClose();
+        // }}
       />
 
       {/* modal */}

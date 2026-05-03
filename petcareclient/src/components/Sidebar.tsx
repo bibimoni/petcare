@@ -115,8 +115,6 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
   const isLoadingUserInfo = userQuery.isPending;
 
   const roleName = resolvedUserInfo.role?.name?.toUpperCase();
-  console.log("🚀 ~ Sidebar ~ resolvedUserInfo:", resolvedUserInfo);
-  console.log("🚀 ~ Sidebar ~ roleName:", roleName);
   const isAdmin = roleName === "ADMIN";
   const isStaff = roleName === "STAFF";
   const isLimited = !isAdmin && !isStaff;
