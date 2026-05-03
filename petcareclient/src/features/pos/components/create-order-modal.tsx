@@ -14,7 +14,7 @@ interface CreateOrderModalProps {
   userName: string;
   items: OrderItem[];
   onClose: () => void;
-  onRemoveItem: (id: string) => void;
+  onRemoveItem: (cartKey: string) => void;
   onUpdateQuantity: (
     id: string,
     delta: number,
