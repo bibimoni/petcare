@@ -101,6 +101,12 @@ const mapOrderToHistoryTransaction = (
   };
 };
 
+const sumOrderRevenue = (orders: OrderListItemDto[] | undefined) =>
+  (orders ?? []).reduce(
+    (sum, order) => sum + Number(order.total_amount ?? 0),
+    0,
+  );
+
 const PosHistoryPage = () => {
   const navigate = useNavigate();
   const [fromDate, setFromDate] = useState<string | null>(null);
@@ -145,6 +151,25 @@ const PosHistoryPage = () => {
         date_from: formattedFrom,
         date_to: formattedTo,
       }),
+  });
+
+  const totalMatchingOrders = ordersResponse?.total ?? 0;
+
+  const { data: allOrdersResponse } = useQuery({
+    queryKey: [
+      "pos-orders-all",
+      formattedFrom,
+      formattedTo,
+      statusFilter,
+      totalMatchingOrders,
+    ],
+    queryFn: () =>
+      getOrders(1, totalMatchingOrders, {
+        status: statusFilter,
+        date_from: formattedFrom,
+        date_to: formattedTo,
+      }),
+    enabled: totalMatchingOrders > 0,
   });
 
   useEffect(() => {
@@ -221,6 +246,7 @@ const PosHistoryPage = () => {
 
   const uniqueCustomers = getUniqueCustomersCount(ordersResponse?.data);
   const uniquePets = getUniquePetsCount(ordersResponse?.data);
+  const totalRevenue = sumOrderRevenue(allOrdersResponse?.data);
 
   const totalPages = ordersResponse?.pages ?? 1;
   const totalOrders = ordersResponse?.total ?? 0;
@@ -312,7 +338,7 @@ const PosHistoryPage = () => {
         </header>
 
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+          <div className="mx-auto flex w-full p-4 flex-col gap-6">
             <button
               type="button"
               onClick={() => navigate("/pos")}
@@ -371,14 +397,16 @@ const PosHistoryPage = () => {
                 <div className="flex items-center gap-3">
                   <select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="h-10 rounded-md border border-[#ecdcd1] bg-white px-3 text-sm text-[#523c30] outline-none"
                   >
                     <option value="">Tất cả</option>
                     <option value="PAID">Đã thanh toán</option>
                     <option value="PENDING">Chờ thanh toán</option>
-                    <option value="CANCELLED">Đã hủy</option>
-                    <option value="REFUNDED">Đã hoàn tiền</option>
+                    <option value="CANCELLED">Đã hủy và hoàn tiền</option>
                   </select>
 
                   <button
@@ -399,16 +427,16 @@ const PosHistoryPage = () => {
           <div className="mb-8 grid grid-cols-4 gap-4">
             <div className="rounded-2xl bg-white p-5 shadow-sm relative overflow-hidden">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
-                TỔNG DOANH THU
+                TỔNG GIÁ TRỊ HOÁ ĐƠN
               </p>
               <p className="mt-2 text-2xl font-black text-[#2f231d]">
-                128.450.000đ
+                {formatVND(totalRevenue)}
               </p>
             </div>
 
             <div className="rounded-2xl bg-white p-5 shadow-sm relative overflow-hidden">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
-                TỔNG SỐ HÓA ĐƠN ĐÃ THANH TOÁN
+                TỔNG SỐ HÓA ĐƠN
               </p>
               <p className="mt-2 text-2xl font-black text-[#2f231d]">
                 {totalOrders}

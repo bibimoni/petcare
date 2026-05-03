@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Ban,
   Phone,
@@ -9,6 +10,8 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+
+import { AlertDialog } from "@/components/ui/alert-dialog";
 
 import type { Order } from "./type";
 
@@ -29,7 +32,9 @@ export const OrderDetailModal = ({
 }: OrderDetailModalProps) => {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showRefundConfirm, setShowRefundConfirm] = useState(false);
   const [isRefunding, setIsRefunding] = useState(false);
+  const queryClient = useQueryClient();
 
   // Tải chi tiết đơn hàng
   useEffect(() => {
@@ -61,6 +66,8 @@ export const OrderDetailModal = ({
         "Hoàn tiền thành công, vui lòng kiểm tra tài khoản ngân hàng của bạn",
       );
       onStatusChange();
+      onClose();
+      queryClient.invalidateQueries({ queryKey: ["pos-orders-all"] });
     } catch (_error) {
       // global error
     } finally {
@@ -305,7 +312,7 @@ export const OrderDetailModal = ({
             <div className="p-6 border-t border-[#f3ebe7] bg-white shrink-0 z-10 flex flex-col md:flex-row gap-4 items-center">
               <button
                 type="button"
-                onClick={handleRefund}
+                onClick={() => setShowRefundConfirm(true)}
                 disabled={isRefunding}
                 className="w-full md:w-1/3 bg-white cursor-pointer hover:bg-red-50 text-[#9a624c] hover:text-red-600 font-semibold py-3.5 px-6 rounded-xl border border-gray-200 hover:border-red-200 transition-all flex items-center justify-center gap-2 order-2 md:order-1 disabled:opacity-50"
               >
@@ -324,6 +331,20 @@ export const OrderDetailModal = ({
           )}
         </div>
       </div>
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        open={showRefundConfirm}
+        onOpenChange={setShowRefundConfirm}
+        title="Hoàn đơn"
+        description="Bạn có chắc chắn muốn hoàn tiền? Hành động này không thể hoàn tác."
+        actionLabel="Hoàn tiền"
+        cancelLabel="Đóng"
+        onConfirm={() => {
+          setShowRefundConfirm(false);
+          handleRefund();
+        }}
+      />
     </>
   );
 };

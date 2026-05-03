@@ -1,15 +1,20 @@
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
-import { getOrderPayment, type OrderPaymentDto } from "@/features/pos/api";
+import {
+  confirmOrder,
+  getOrderPayment,
+  type OrderPaymentDto,
+} from "@/features/pos/api";
 
-const REDIRECT_SECONDS = 100;
+const REDIRECT_SECONDS = 30;
 
 const PaymentSuccessPage = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
   const [secondsLeft, setSecondsLeft] = useState(REDIRECT_SECONDS);
+  const hasConfirmedRef = useRef(false);
 
   const [result, setResult] = useState<OrderPaymentDto | null>(null);
 
@@ -55,6 +60,22 @@ const PaymentSuccessPage = () => {
     };
 
     void fetchPayment();
+  }, [orderId]);
+
+  useEffect(() => {
+    if (!orderId || hasConfirmedRef.current) return;
+
+    hasConfirmedRef.current = true;
+
+    const confirm = async () => {
+      try {
+        await confirmOrder(Number(orderId));
+      } catch (_error) {
+        // global error
+      }
+    };
+
+    void confirm();
   }, [orderId]);
 
   const handleGoBackNow = () => {
@@ -147,12 +168,6 @@ const PaymentSuccessPage = () => {
                       <span className="text-sm text-[#7a5f50]">Số tiền</span>
                       <span className="font-bold text-[#1f8c6e]">
                         {formatVND(result?.amount)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm">
-                      <span className="text-sm text-[#7a5f50]">Trạng thái</span>
-                      <span className="font-bold text-[#1f8c6e]">
-                        {result?.status ?? "PENDING"}
                       </span>
                     </div>
                   </div>

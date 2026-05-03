@@ -128,6 +128,51 @@ export type OrderDetailDto = {
   }>;
 };
 
+export type OrderListItemDto = {
+  user_id: number;
+  order_id: number;
+  store_id: number;
+  created_at: string;
+  updated_at: string;
+  customer_id: number;
+  note?: string | null;
+  total_amount: string;
+  cancel_reason?: string | null;
+  cancelled_by_user_id?: number | null;
+  status: "PENDING" | "COMPLETED" | "CANCELLED" | string;
+  customer: {
+    full_name: string;
+    customer_id: number;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+  } | null;
+  order_details: Array<{
+    id: number;
+    quantity: number;
+    subtotal: string;
+    unit_price: string;
+    product_id?: number | null;
+    service_id?: number | null;
+    item_type: "PRODUCT" | "SERVICE";
+    service?: {
+      id: number;
+      combo_name?: string | null;
+    } | null;
+    product?: {
+      product_id: number;
+      name?: string | null;
+    } | null;
+  }>;
+};
+
+export type OrdersListResponseDto = {
+  page: number;
+  total: number;
+  limit: number;
+  pages: number;
+  data: OrderListItemDto[];
+};
 const mapServiceDto = (service: ServiceDto, index: number): PosService => {
   const serviceName = String(service.combo_name ?? "Dịch vụ");
   const iconMeta = getServiceIconMeta(serviceName);
@@ -223,12 +268,39 @@ export const getOrderPayment = async (
   return response.data;
 };
 
-export const getOrderDetail = async (
-  orderId: number | string,
-): Promise<OrderDetailDto> => {
-  const response = (await axiosClient.get(`/orders/${Number(orderId)}`)) as {
-    data: OrderDetailDto;
-  };
+export const getOrderDetail = async (orderId: number | string) => {
+  const response = await axiosClient.get(`/orders/${Number(orderId)}`);
+
+  return response.data;
+};
+
+export const confirmOrder = async (orderId: number | string) =>
+  axiosClient.post("/orders/confirm", {
+    order_id: Number(orderId),
+  });
+
+export const getOrders = async (
+  page = 1,
+  limit = 10,
+  filters?: { status?: string; date_to?: string; date_from?: string },
+): Promise<OrdersListResponseDto> => {
+  const params: Record<string, any> = { page, limit };
+
+  if (filters) {
+    if (typeof filters.status === "string" && filters.status !== "") {
+      params.status = filters.status;
+    }
+    if (typeof filters.date_from === "string" && filters.date_from.trim()) {
+      params.date_from = filters.date_from;
+    }
+    if (typeof filters.date_to === "string" && filters.date_to.trim()) {
+      params.date_to = filters.date_to;
+    }
+  }
+
+  const response = (await axiosClient.get("/orders", {
+    params,
+  })) as { data: OrdersListResponseDto };
 
   return response.data;
 };
@@ -237,7 +309,7 @@ export const cancelOrder = async (orderId: number | string) =>
   axiosClient.patch(`/orders/${Number(orderId)}/cancel`);
 
 export const refundOrder = async (orderId: number | string) =>
-  axiosClient.patch(`/orders/${Number(orderId)}/refund`);
+  axiosClient.post(`/orders/${Number(orderId)}/refund`);
 
 export const createOrder = async (payload: unknown) =>
   axiosClient.post("/orders", payload);

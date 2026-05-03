@@ -22,6 +22,7 @@ export type OrderItem = {
   id: string;
   name: string;
   price: string;
+  cartKey?: string;
   quantity: number;
   numericPrice: number;
   type: "service" | "product";

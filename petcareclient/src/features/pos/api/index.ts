@@ -1,1 +1,1 @@
-export * from "./pos-api";
+export * from "./pos.api";

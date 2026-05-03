@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Ban,
   Clock,
@@ -40,6 +41,7 @@ export const PendingOrderModal = ({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false); // Dùng chung cho cả nút Thanh toán và Hủy
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!isOpen || !orderId) return;
@@ -82,6 +84,7 @@ export const PendingOrderModal = ({
       toast.success("Đã hủy đơn hàng!");
       onStatusChange();
       onClose();
+      queryClient.invalidateQueries({ queryKey: ["pos-orders-all"] });
     } catch (_error) {
       toast.error("Hủy đơn hàng thất bại");
     } finally {

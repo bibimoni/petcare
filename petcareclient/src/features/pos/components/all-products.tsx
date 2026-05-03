@@ -32,6 +32,17 @@ const chunkItems = <T,>(items: T[], pageSize: number): T[][] => {
   return pages;
 };
 
+const getCartItemKey = (id: string | number, type: "service" | "product") =>
+  `${type}:${id}`;
+
+const getOrderItemPrice = (item: PosService | PosProduct) => {
+  if ("rawPrice" in item) {
+    return item.rawPrice;
+  }
+
+  return Number(item.price.replace(/\D/g, "")) || 0;
+};
+
 const AllProductsPage = () => {
   const navigate = useNavigate();
   const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false);
@@ -51,7 +62,6 @@ const AllProductsPage = () => {
     useState<string>("all");
   const [productPage, setProductPage] = useState(1);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-  console.log("🚀 ~ AllProductsPage ~ orderItems:", orderItems);
   const location = useLocation();
 
   const { data: profile } = useQuery({
@@ -185,24 +195,21 @@ const AllProductsPage = () => {
     type: "service" | "product",
   ) => {
     setOrderItems((prev) => {
-      const cartItemId = `${item.id}`;
-      const existing = prev.find((i) => i.id === cartItemId && i.type !== type);
+      const cartItemId = getCartItemKey(item.id, type);
+      const existing = prev.find((i) => i.cartKey === cartItemId);
       if (existing) {
         return prev.map((i) =>
-          i.id === cartItemId ? { ...i, quantity: i.quantity + 1 } : i,
+          i.cartKey === cartItemId ? { ...i, quantity: i.quantity + 1 } : i,
         );
       }
-      const numericPrice =
-        "rawPrice" in item
-          ? (item as any).rawPrice
-          : parseInt(item.price.replace(/\D/g, ""), 10) || 0;
       return [
         ...prev,
         {
-          id: cartItemId,
+          id: String(item.id),
+          cartKey: cartItemId,
           name: item.name,
           price: item.price,
-          numericPrice,
+          numericPrice: getOrderItemPrice(item),
           quantity: 1,
           type,
         },
@@ -219,7 +226,7 @@ const AllProductsPage = () => {
     setOrderItems((prev) =>
       prev
         .map((item) => {
-          if (item.id === id && item.type === type) {
+          if ((item.cartKey ?? item.id) === id && item.type === type) {
             const newQuantity = Math.max(0, item.quantity + delta);
             return { ...item, quantity: newQuantity };
           }
@@ -230,7 +237,9 @@ const AllProductsPage = () => {
   };
 
   const handleRemoveItem = (id: string) => {
-    setOrderItems((prev) => prev.filter((item) => item.id !== id));
+    setOrderItems((prev) =>
+      prev.filter((item) => (item.cartKey ?? item.id) !== id),
+    );
   };
 
   useEffect(() => {
