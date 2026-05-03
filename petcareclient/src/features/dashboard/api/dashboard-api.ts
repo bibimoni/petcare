@@ -148,8 +148,13 @@ export const getDashboardRevenue = async (
 
     const data = response.data || [];
 
+    // --- LOGIC MAP DỮ LIỆU VÀO KHUNG CHUẨN ---
+    let days: string[] = [];
+    let values: number[] = [];
+
+    // 1. Nếu chọn Năm (12 Tháng)
     if (granularity === "month") {
-      const monthLabels = [
+      days = [
         "T1",
         "T2",
         "T3",
@@ -163,33 +168,119 @@ export const getDashboardRevenue = async (
         "T11",
         "T12",
       ];
-      const monthValues = new Array(12).fill(0);
+      values = new Array(12).fill(0);
 
-      // Map dữ liệu thật từ BE vào đúng tháng
       data.forEach((item) => {
         const d = new Date(item.date);
-        monthValues[d.getMonth()] = item.profit; // getMonth() trả về từ 0-11
+        values[d.getMonth()] = item.profit;
       });
-
-      const total = monthValues.reduce((sum, val) => sum + val, 0);
-      return {
-        days: monthLabels,
-        values: monthValues,
-        totalWeekly: total.toLocaleString("vi-VN") + "đ",
+    }
+    // 2. Nếu chọn Tháng (Tuần 1, Tuần 2, Tuần 3, Tuần 4...)
+    else if (granularity === "week") {
+      // Hàm helper tính xem một ngày rơi vào tuần thứ mấy trong tháng (1, 2, 3...)
+      // Mở rộng nhận cả Date object và string
+      const getWeekOfMonth = (dateInput: Date | string) => {
+        const d = new Date(dateInput);
+        const firstDay = new Date(d.getFullYear(), d.getMonth(), 1).getDay();
+        return Math.ceil(
+          (d.getDate() + (firstDay === 0 ? 6 : firstDay - 1)) / 7,
+        );
       };
+
+      const targetYear = now.getFullYear();
+      const targetMonth = now.getMonth() - 1; // Tháng trước
+
+      // Đếm số tuần của tháng trước bằng cách lấy ngày cuối cùng
+      const lastDayOfLastMonth = new Date(targetYear, targetMonth + 1, 0);
+      const totalWeeks = getWeekOfMonth(lastDayOfLastMonth);
+
+      // Khởi tạo sườn lưu ngày bắt đầu và kết thúc của từng tuần
+      const weekRanges = Array.from({ length: totalWeeks }, () => ({
+        start: "",
+        end: "",
+      }));
+
+      // Duyệt qua tất cả các ngày trong tháng để tìm start/end của mỗi tuần
+      for (let day = 1; day <= lastDayOfLastMonth.getDate(); day++) {
+        const d = new Date(targetYear, targetMonth, day);
+        const weekIndex = getWeekOfMonth(d) - 1;
+        const dateString = `${d.getDate()}/${d.getMonth() + 1}`;
+
+        // Nếu tuần này chưa có ngày bắt đầu thì gán ngày hiện tại vào
+        if (!weekRanges[weekIndex].start) {
+          weekRanges[weekIndex].start = dateString;
+        }
+        // Liên tục đè ngày hiện tại vào làm ngày kết thúc (ngày cuối cùng lặp qua sẽ là end)
+        weekRanges[weekIndex].end = dateString;
+      }
+
+      // Map mảng weekRanges thành label hiển thị: "Tuần 1 (1/4 - 5/4)"
+      days = weekRanges.map((w, i) => `Tuần ${i + 1} (${w.start} - ${w.end})`);
+      values = new Array(totalWeeks).fill(0);
+
+      data.forEach((item) => {
+        const weekIndex = getWeekOfMonth(item.date) - 1;
+        // Kiểm tra an toàn để đảm bảo index không bị lọt ra ngoài mảng
+        if (weekIndex >= 0 && weekIndex < totalWeeks) {
+          values[weekIndex] = item.profit;
+        }
+      });
+    }
+    // 3. Nếu chọn Tuần này / Tuần trước (7 Ngày từ Thứ 2 -> CN)
+    else {
+      // Xác định ngày bắt đầu vòng lặp tuỳ theo period
+      let currentIterDate = new Date();
+      if (period === "this_week") {
+        currentIterDate = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() - distanceToMonday,
+        );
+      } else if (period === "last_week") {
+        currentIterDate = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() - distanceToMonday - 7,
+        );
+      }
+
+      // Tạo mảng 7 ngày (T2, T3, ... CN)
+      days = [];
+      values = new Array(7).fill(0);
+      const dayNames = [
+        "Thứ 2",
+        "Thứ 3",
+        "Thứ 4",
+        "Thứ 5",
+        "Thứ 6",
+        "Thứ 7",
+        "Chủ Nhật",
+      ];
+
+      // Map nhanh data từ BE (key là YYYY-MM-DD, value là profit) để tìm cho lẹ
+      const dataMap = new Map(
+        data.map((item) => [item.date.split("T")[0], item.profit]),
+      );
+
+      for (let i = 0; i < 7; i++) {
+        const dateStr = formatDate(currentIterDate);
+
+        // Thêm nhãn (VD: "T2 (15/4)")
+        days.push(
+          `${dayNames[i]} (${currentIterDate.getDate()}/${currentIterDate.getMonth() + 1})`,
+        );
+
+        // Đắp data nếu có, không có thì giữ nguyên số 0
+        if (dataMap.has(dateStr)) {
+          values[i] = dataMap.get(dateStr) as number;
+        }
+
+        // Tăng thêm 1 ngày
+        currentIterDate.setDate(currentIterDate.getDate() + 1);
+      }
     }
 
-    // NẾU LÀ VIEW THEO NGÀY/TUẦN (Xử lý như cũ)
-    if (data.length === 0) {
-      return { days: ["Không có dữ liệu"], values: [0], totalWeekly: "0đ" };
-    }
-
-    const days = data.map((item) => {
-      const d = new Date(item.date);
-      return `${d.getDate()}/${d.getMonth() + 1}`;
-    });
-
-    const values = data.map((item) => item.profit);
+    // Tính tổng doanh thu tuần/tháng/năm
     const total = values.reduce((sum, val) => sum + val, 0);
     const totalWeekly = total.toLocaleString("vi-VN") + "đ";
 
