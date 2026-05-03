@@ -16,6 +16,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { CountryDropdown } from "@/components/ui/country-dropdown";
 import api from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
+import { setStoredUser } from "@/lib/user";
 
 export default function CreateStorePage() {
   const navigate = useNavigate();
@@ -107,16 +108,21 @@ export default function CreateStorePage() {
       const data = response.data || response;
 
       // 2. Cập nhật localStorage để App (đặc biệt là Sidebar) biết user đã có cửa hàng
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const currentUser = JSON.parse(userStr);
-        // Gán store_id và role_id từ BE trả về vào local storage
-        currentUser.store_id = data.store.id;
-        if (data.admin_role) {
-          currentUser.role_id = data.admin_role.id;
-        }
-        localStorage.setItem("user", JSON.stringify(currentUser));
-      }
+      setStoredUser({
+        store_id: data.store.id,
+        role_id: data.admin_role?.id ?? null,
+        ...(data.admin_role
+          ? {
+              role: {
+                description: String(data.admin_role.description ?? ""),
+                id: String(data.admin_role.id ?? ""),
+                name: String(data.admin_role.name ?? "ADMIN"),
+                role_permissions: data.admin_role.role_permissions ?? null,
+                store_id: Number(data.store.id ?? 0),
+              },
+            }
+          : {}),
+      });
 
       queryClient.invalidateQueries({ queryKey: ["sidebar-user"] });
 

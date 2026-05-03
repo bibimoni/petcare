@@ -10,6 +10,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import axiosClient from "@/lib/api";
+import { queryClient } from "@/lib/query-client";
+import { getStoredUser, setStoredUser, buildSidebarUser } from "@/lib/user";
 
 type AcceptInvitationResponse = {
   note: string;
@@ -64,6 +66,29 @@ export default function AcceptInvitationPage() {
         });
 
         setResult(response.data ?? null);
+
+        const acceptedRole = response.data?.role
+          ? {
+              description: String(response.data.role.description ?? ""),
+              id: String(response.data.role.id ?? ""),
+              name: String(response.data.role.name ?? ""),
+              role_permissions: response.data.role.role_permissions ?? null,
+              store_id: Number(response.data.store?.id ?? 0),
+            }
+          : null;
+
+        const mergedStoredUser = setStoredUser({
+          ...getStoredUser(),
+          store_id: response.data?.store?.id ?? null,
+          role_id: response.data?.role?.id ?? null,
+          ...(acceptedRole ? { role: acceptedRole } : {}),
+        });
+
+        const sidebarUser = buildSidebarUser(
+          mergedStoredUser,
+          mergedStoredUser,
+        );
+        queryClient.setQueryData(["sidebar-user"], sidebarUser);
 
         if (notificationId) {
           try {

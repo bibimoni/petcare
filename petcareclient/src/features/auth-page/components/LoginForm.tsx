@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { login } from "@/lib/auth";
+import { setStoredUser } from "@/lib/user";
 
 type Errors = { email?: string; password?: string };
 
@@ -46,7 +47,7 @@ export default function LoginForm() {
 
       if (token) {
         localStorage.setItem("accessToken", token);
-        localStorage.setItem("user", JSON.stringify(user));
+        setStoredUser(user);
         toast.success("Đăng nhập thành công");
         if (user.role == null) {
           navigate("/create-store");

@@ -14,6 +14,18 @@ export type SidebarUser = {
   } | null;
 };
 
+type StoredUser = Record<string, unknown> & {
+  email?: string;
+  phone?: string;
+  role?: unknown;
+  fullName?: string;
+  full_name?: string;
+  role_id?: number | null;
+  store_id?: number | null;
+};
+
+const USER_STORAGE_KEY = "user";
+
 const emptySidebarUser: SidebarUser = {
   role: null,
   email: "",
@@ -22,34 +34,99 @@ const emptySidebarUser: SidebarUser = {
   full_name: "",
 };
 
+export const getStoredUser = (): StoredUser | null => {
+  try {
+    const rawUser = localStorage.getItem(USER_STORAGE_KEY);
+    return rawUser ? (JSON.parse(rawUser) as StoredUser) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const setStoredUser = (patch: StoredUser): StoredUser => {
+  const currentUser = getStoredUser() ?? {};
+  const nextUser = { ...currentUser, ...patch };
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
+  return nextUser;
+};
+
+const normalizeRole = (
+  role: unknown,
+  storeIdFallback: number,
+): SidebarUser["role"] => {
+  if (!role) {
+    return null;
+  }
+
+  if (typeof role === "string") {
+    const roleName = role.trim();
+
+    if (!roleName) {
+      return null;
+    }
+
+    return {
+      description: "",
+      id: "",
+      name: roleName,
+      role_permissions: null,
+      store_id: storeIdFallback,
+    };
+  }
+
+  if (typeof role === "object") {
+    const roleData = role as Record<string, unknown>;
+    const roleName = String(roleData.name ?? "").trim();
+
+    if (!roleName) {
+      return null;
+    }
+
+    return {
+      description: String(roleData.description ?? ""),
+      id: String(roleData.id ?? ""),
+      name: roleName,
+      role_permissions: roleData.role_permissions ?? null,
+      store_id: Number(roleData.store_id ?? storeIdFallback),
+    };
+  }
+
+  return null;
+};
+
+export const buildSidebarUser = (
+  profile: StoredUser | null,
+  fallback: StoredUser | null = null,
+): SidebarUser => {
+  const storeId = Number(profile?.store_id ?? fallback?.store_id ?? 0);
+  const role =
+    normalizeRole(profile?.role, storeId) ??
+    normalizeRole(fallback?.role, storeId);
+
+  return {
+    role,
+    email: String(profile?.email ?? fallback?.email ?? ""),
+    phone: String(profile?.phone ?? fallback?.phone ?? ""),
+    store_id: storeId,
+    full_name: String(
+      profile?.full_name ??
+        profile?.fullName ??
+        fallback?.full_name ??
+        fallback?.fullName ??
+        "",
+    ),
+  };
+};
+
 export async function getSidebarUser(): Promise<SidebarUser> {
   try {
     const response = await api.get("/users/profile");
     const profile = response.data?.data ?? response.data ?? response;
 
-    const normalizedRole = (() => {
-      if (profile?.role) {
-        const role = profile.role as Record<string, unknown>;
-        return {
-          description: String(role.description ?? ""),
-          id: String(role.id ?? ""),
-          name: String(role.name ?? ""),
-          role_permissions: role.role_permissions ?? null,
-          store_id: Number(role.store_id ?? 0),
-        };
-      }
-
-      return null;
-    })();
-
-    return {
-      role: normalizedRole,
-      email: String(profile?.email ?? ""),
-      phone: String(profile?.phone ?? ""),
-      store_id: Number(profile?.store_id ?? 0),
-      full_name: String(profile?.full_name ?? profile?.fullName ?? ""),
-    };
+    return buildSidebarUser(profile, getStoredUser());
   } catch {
-    return emptySidebarUser;
+    return (
+      buildSidebarUser(getStoredUser(), getStoredUser()) ?? emptySidebarUser
+    );
   }
 }
