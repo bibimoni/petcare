@@ -16,7 +16,6 @@ import { Sidebar } from "@/components/Sidebar";
 import { CountryDropdown } from "@/components/ui/country-dropdown";
 import api from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
-import { sidebarUser } from "@/lib/user";
 
 export default function CreateStorePage() {
   const navigate = useNavigate();
@@ -156,7 +155,7 @@ export default function CreateStorePage() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="min-h-0 flex-1 bg-surface-light dark:bg-surface-dark px-4 py-5 md:px-6 md:py-6">

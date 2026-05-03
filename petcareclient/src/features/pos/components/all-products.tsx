@@ -11,7 +11,7 @@ import {
   getPosProductCategories,
   getPosServiceCategories,
 } from "@/features/pos/api/pos.api";
-import { sidebarUser, getSidebarUser } from "@/lib/user";
+import { getSidebarUser } from "@/lib/user";
 
 import type { OrderItem } from "../pos-page";
 
@@ -249,7 +249,7 @@ const AllProductsPage = () => {
     <div
       className={`flex h-screen w-full overflow-hidden transition-all duration-300 ${isCreateOrderOpen ? "pr-[400px]" : ""}`}
     >
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
         <header className="sticky top-0 z-10 flex h-20 items-center justify-between gap-4 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-8 backdrop-blur-sm">

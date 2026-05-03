@@ -10,7 +10,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import axiosClient from "@/lib/api";
-import { sidebarUser } from "@/lib/user";
 
 type AcceptInvitationResponse = {
   note: string;
@@ -67,7 +66,16 @@ export default function AcceptInvitationPage() {
         setResult(response.data ?? null);
 
         if (notificationId) {
-          await axiosClient.patch(`/notifications/${notificationId}/mark-read`);
+          try {
+            await axiosClient.patch(
+              `/notifications/${notificationId}/mark-read`,
+            );
+          } catch (markReadError) {
+            console.error(
+              "Failed to mark notification as read:",
+              markReadError,
+            );
+          }
         }
       } catch {
         setErrorMessage("Không thể chấp nhận lời mời. Vui lòng thử lại.");
@@ -103,7 +111,7 @@ export default function AcceptInvitationPage() {
 
   return (
     <div className="flex min-h-screen bg-[#fdf9f6]">
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
       <main className="flex-1">
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-lg rounded-2xl border-none bg-white p-0 shadow-2xl">
@@ -137,7 +145,7 @@ export default function AcceptInvitationPage() {
                   </div>
                   <div className="text-[#7a5a43]">
                     {result?.note ||
-                      "Bạn đã được thêm vào cửa hàng thành công. Vui lòng đăng nhập để tiếp tục"}
+                      "Bạn đã được thêm vào cửa hàng thành công!"}
                   </div>
 
                   <div className="rounded-xl border border-orange-100 bg-[#fdf9f6] p-4 space-y-2 text-[#7a5a43]">

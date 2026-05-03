@@ -3,6 +3,7 @@ import api from "@/lib/api";
 export type SidebarUser = {
   email: string;
   phone: string;
+  store_id: number;
   full_name: string;
   role: {
     id: string;
@@ -17,6 +18,7 @@ const emptySidebarUser: SidebarUser = {
   role: null,
   email: "",
   phone: "",
+  store_id: 0,
   full_name: "",
 };
 
@@ -44,11 +46,10 @@ export async function getSidebarUser(): Promise<SidebarUser> {
       role: normalizedRole,
       email: String(profile?.email ?? ""),
       phone: String(profile?.phone ?? ""),
+      store_id: Number(profile?.store_id ?? 0),
       full_name: String(profile?.full_name ?? profile?.fullName ?? ""),
     };
   } catch {
     return emptySidebarUser;
   }
 }
-
-export const sidebarUser = getSidebarUser();

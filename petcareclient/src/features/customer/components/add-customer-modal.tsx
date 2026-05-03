@@ -12,7 +12,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { CustomerApi } from "@/features/customer/api/customer-api";
-import { handleApiError } from "@/lib/api";
 
 type AddCustomerModalProps = {
   open: boolean;
@@ -97,8 +96,8 @@ export default function AddCustomerModal({
       toast.success("Thêm khách hàng mới thành công");
       resetForm();
       onOpenChange(false);
-    } catch (error) {
-      handleApiError(error);
+    } catch (_error) {
+      // API error is handled globally
     } finally {
       setIsSubmitting(false);
     }

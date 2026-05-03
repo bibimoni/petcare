@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 
 import { Footer } from "@/components/Footer";
 import { Sidebar } from "@/components/Sidebar";
-import { sidebarUser } from "@/lib/user";
 
 import {
   type StatsData,
@@ -62,7 +61,7 @@ export const DashboardPage = () => {
   return (
     <div className="flex h-screen w-full overflow-hidden">
       {/* Sidebar */}
-      <Sidebar userInfo={sidebarUser} />
+      <Sidebar />
 
       {/* Main Content */}
       <main className="flex flex-1 flex-col overflow-hidden relative">
