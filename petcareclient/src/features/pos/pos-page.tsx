@@ -7,7 +7,7 @@ import {
   type PosProduct,
   type PosService,
   getPosCatalogOverview,
-} from "@/features/pos/api/pos.api";
+} from "@/features/pos/api";
 import { getSidebarUser } from "@/lib/user";
 
 import { CancelledOrderModal } from "./cancelled-order-modal";

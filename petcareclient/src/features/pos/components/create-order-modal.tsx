@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { CustomerApi } from "@/features/customer/api/customer-api";
-import { createOrder } from "@/features/pos/api/pos.api";
+import { createOrder } from "@/features/pos/api";
 import { PetService } from "@/lib/pets";
 
 import type { OrderItem } from "../pos-page";

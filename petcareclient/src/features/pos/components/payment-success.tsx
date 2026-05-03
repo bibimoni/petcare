@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
-import axiosClient from "@/lib/api";
+import { getOrderPayment, type OrderPaymentDto } from "@/features/pos/api";
 
 const REDIRECT_SECONDS = 100;
 
@@ -11,11 +11,11 @@ const PaymentSuccessPage = () => {
   const { orderId } = useParams();
   const [secondsLeft, setSecondsLeft] = useState(REDIRECT_SECONDS);
 
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<OrderPaymentDto | null>(null);
 
   const formatVND = (value: unknown) => {
     if (value === null || value === undefined) return "—";
-    const n = Number(value as any);
+    const n = Number(value);
     if (Number.isNaN(n)) return String(value);
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -45,19 +45,16 @@ const PaymentSuccessPage = () => {
   useEffect(() => {
     if (!orderId) return;
 
-    const confirmOrder = async () => {
+    const fetchPayment = async () => {
       try {
-        const res = await axiosClient.post("/orders/confirm", {
-          order_id: Number(orderId),
-        });
-
-        setResult(res.data ?? res.data?.data ?? null);
+        const payment = await getOrderPayment(Number(orderId));
+        setResult(payment ?? null);
       } catch (_error) {
         // global error
       }
     };
 
-    void confirmOrder();
+    void fetchPayment();
   }, [orderId]);
 
   const handleGoBackNow = () => {
@@ -120,11 +117,11 @@ const PaymentSuccessPage = () => {
                     </div>
                   </div>
 
-                  {result?.receipt_url && (
+                  {result?.stripe_receipt_url && (
                     <div>
                       <a
                         className="text-orange-600 underline"
-                        href={result.receipt_url}
+                        href={result.stripe_receipt_url}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -150,6 +147,12 @@ const PaymentSuccessPage = () => {
                       <span className="text-sm text-[#7a5f50]">Số tiền</span>
                       <span className="font-bold text-[#1f8c6e]">
                         {formatVND(result?.amount)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm">
+                      <span className="text-sm text-[#7a5f50]">Trạng thái</span>
+                      <span className="font-bold text-[#1f8c6e]">
+                        {result?.status ?? "PENDING"}
                       </span>
                     </div>
                   </div>

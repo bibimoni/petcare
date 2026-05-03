@@ -10,7 +10,7 @@ import {
   type PosProduct,
   getPosProductCategories,
   getPosServiceCategories,
-} from "@/features/pos/api/pos.api";
+} from "@/features/pos/api";
 import { getSidebarUser } from "@/lib/user";
 
 import type { OrderItem } from "../pos-page";

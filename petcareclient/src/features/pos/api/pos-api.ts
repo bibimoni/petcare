@@ -14,7 +14,9 @@ import {
 } from "@/features/service/api/service.api";
 import axiosClient from "@/lib/api";
 
-import { formatPrice, toNumber } from "../utils";
+import { toNumber, formatPrice } from "../utils";
+
+/* eslint-disable sort-keys */
 
 const productFallbackImages = [
   "/images/hero-page/pet-food.jpg",
@@ -89,19 +91,19 @@ export type OrderPaymentDto = {
   order_id: number;
   payment_id: number;
   payment_method: string;
-  status: "PENDING" | "COMPLETED" | "CANCELLED" | "REFUNDED";
   stripe_charge_id: string | null;
+  stripe_client_secret: string | null;
   stripe_checkout_session_id: string | null;
   stripe_checkout_url: string | null;
-  stripe_client_secret: string | null;
   stripe_payment_intent_id: string | null;
   stripe_receipt_url: string | null;
   updated_at: string;
+  status: "PENDING" | "COMPLETED" | "CANCELLED" | "REFUNDED";
 };
 
 export type OrderDetailDto = {
-  cancel_reason?: string | null;
   cashier_name?: string;
+  cancel_reason?: string | null;
   code: string;
   created_at?: string;
   customer_address?: string;
@@ -128,6 +130,51 @@ export type OrderDetailDto = {
   total_amount: number;
 };
 
+export type OrderListItemDto = {
+  cancel_reason?: string | null;
+  cancelled_by_user_id?: number | null;
+  created_at: string;
+  customer: {
+    address?: string | null;
+    customer_id: number;
+    email?: string | null;
+    full_name: string;
+    phone?: string | null;
+  } | null;
+  customer_id: number;
+  note?: string | null;
+  order_details: Array<{
+    id: number;
+    item_type: "PRODUCT" | "SERVICE";
+    product?: {
+      name?: string | null;
+      product_id: number;
+    } | null;
+    product_id?: number | null;
+    quantity: number;
+    service?: {
+      combo_name?: string | null;
+      id: number;
+    } | null;
+    service_id?: number | null;
+    subtotal: string;
+    unit_price: string;
+  }>;
+  order_id: number;
+  status: "PENDING" | "COMPLETED" | "CANCELLED" | string;
+  store_id: number;
+  total_amount: string;
+  updated_at: string;
+  user_id: number;
+};
+
+export type OrdersListResponseDto = {
+  data: OrderListItemDto[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+};
 const mapServiceDto = (service: ServiceDto, index: number): PosService => {
   const serviceName = String(service.combo_name ?? "Dịch vụ");
   const iconMeta = getServiceIconMeta(serviceName);
@@ -223,12 +270,19 @@ export const getOrderPayment = async (
   return response.data;
 };
 
-export const getOrderDetail = async (
-  orderId: number | string,
-): Promise<OrderDetailDto> => {
-  const response = (await axiosClient.get(`/orders/${Number(orderId)}`)) as {
-    data: OrderDetailDto;
-  };
+export const getOrderDetail = async (orderId: number | string) => {
+  const response = await axiosClient.get(`/orders/${Number(orderId)}`);
+
+  return response.data;
+};
+
+export const getOrders = async (
+  page = 1,
+  limit = 10,
+): Promise<OrdersListResponseDto> => {
+  const response = (await axiosClient.get("/orders", {
+    params: { page, limit },
+  })) as { data: OrdersListResponseDto };
 
   return response.data;
 };
@@ -241,3 +295,5 @@ export const refundOrder = async (orderId: number | string) =>
 
 export const createOrder = async (payload: unknown) =>
   axiosClient.post("/orders", payload);
+
+/* eslint-enable sort-keys */

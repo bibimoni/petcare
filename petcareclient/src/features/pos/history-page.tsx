@@ -1,22 +1,121 @@
+/* eslint-disable */
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
+import { getOrders, type OrderListItemDto } from "@/features/pos/api";
 
 import { CancelledOrderModal } from "./cancelled-order-modal";
 import { OrderDetailModal } from "./completed-order-modal";
-import { historyTransactions, type HistoryTransaction } from "./mock-data";
 import { PendingOrderModal } from "./pending-order-modal";
+import { RefundedOrderModal } from "./refunded-order-modal";
+
+type HistoryTransaction = {
+  cancel_reason?: string;
+  customerInitials: string;
+  customerName: string;
+  customerPhone: string;
+  date: string;
+  id: string;
+  numericId: number;
+  pet: string;
+  status: "PAID" | "CANCELLED" | "PENDING" | "REFUNDED";
+  time: string;
+  total: string;
+};
+
+const formatVND = (value: string | number) =>
+  `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(Number(value))}đ`;
+
+const toDateParts = (dateString: string) => {
+  const date = new Date(dateString);
+
+  return {
+    date: date.toLocaleDateString("vi-VN"),
+    time: date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }),
+  };
+};
+
+const getCustomerInitials = (fullName: string) => {
+  const trimmed = fullName.trim();
+  if (!trimmed) return "KL";
+
+  return trimmed
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+};
+
+const summarizeOrderItems = (
+  orderDetails: OrderListItemDto["order_details"],
+) => {
+  if (orderDetails.length === 0) return "Không có mặt hàng";
+
+  const firstItem = orderDetails[0];
+  const firstName =
+    firstItem.item_type === "SERVICE"
+      ? (firstItem.service?.combo_name ?? "Dịch vụ")
+      : (firstItem.product?.name ?? "Sản phẩm");
+
+  if (orderDetails.length === 1) {
+    return `${firstName} x${firstItem.quantity}`;
+  }
+
+  return `${firstName} x${firstItem.quantity} +${orderDetails.length - 1} mục khác`;
+};
+
+const getOrderStatus = (status: string, cancel_reason?: string | null) => {
+  if (status === "CANCELLED") {
+    if (cancel_reason === "Refunded") {
+      return "REFUNDED";
+    }
+  }
+
+  return status as "PAID" | "CANCELLED" | "PENDING";
+};
+
+const mapOrderToHistoryTransaction = (
+  order: OrderListItemDto,
+): HistoryTransaction => {
+  const customerName = order.customer?.full_name ?? "Khách lẻ";
+  const phone = order.customer?.phone ?? "--";
+  const { date, time } = toDateParts(order.created_at);
+  return {
+    customerInitials: getCustomerInitials(customerName),
+    customerName,
+    customerPhone: phone,
+    date,
+    id: `POS-${String(order.order_id).padStart(4, "0")}`,
+    numericId: order.order_id,
+    pet: summarizeOrderItems(order.order_details),
+    status: getOrderStatus(order?.status, order?.cancel_reason),
+    time,
+    total: formatVND(order.total_amount),
+  };
+};
 
 const PosHistoryPage = () => {
   const navigate = useNavigate();
   const [fromDate, setFromDate] = useState("10/01/2023");
   const [toDate, setToDate] = useState("10/31/2023");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [currentTime, setCurrentTime] = useState(() => new Date());
-
-  // State quản lý việc mở modal giao dịch
   const [selectedTx, setSelectedTx] = useState<HistoryTransaction | null>(null);
+  console.log("🚀 ~ PosHistoryPage ~ selectedTx:", selectedTx);
+  const pageSize = 10;
+
+  const { data: ordersResponse, isLoading } = useQuery({
+    queryKey: ["pos-orders", currentPage, pageSize],
+    queryFn: () => getOrders(currentPage, pageSize),
+  });
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -51,16 +150,35 @@ const PosHistoryPage = () => {
     };
   }, [currentTime]);
 
-  const handleExportExcel = () => {
-    const dataToExport = searchTerm.trim()
-      ? historyTransactions.filter(
-          (tx) =>
-            tx.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            tx.customerPhone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            tx.customerName.toLowerCase().includes(searchTerm.toLowerCase()),
-        )
-      : historyTransactions;
+  const transactions = useMemo(() => {
+    const orders = ordersResponse?.data ?? [];
+    const mapped = orders.map(mapOrderToHistoryTransaction);
 
+    if (!searchTerm.trim()) {
+      return mapped;
+    }
+
+    const keyword = searchTerm.toLowerCase();
+
+    return mapped.filter(
+      (tx) =>
+        tx.id.toLowerCase().includes(keyword) ||
+        tx.customerPhone.toLowerCase().includes(keyword) ||
+        tx.customerName.toLowerCase().includes(keyword) ||
+        tx.pet.toLowerCase().includes(keyword),
+    );
+  }, [ordersResponse?.data, searchTerm]);
+
+  const totalPages = ordersResponse?.pages ?? 1;
+  const totalOrders = ordersResponse?.total ?? 0;
+  const startItem = totalOrders === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = startItem + transactions.length - 1;
+  const paginationPages = useMemo(
+    () => Array.from({ length: totalPages }, (_, index) => index + 1),
+    [totalPages],
+  );
+
+  const handleExportExcel = () => {
     const headers = [
       "Mã Hóa Đơn",
       "Khách Hàng",
@@ -72,7 +190,7 @@ const PosHistoryPage = () => {
       "Trạng Thái",
     ];
 
-    const rows = dataToExport.map((tx) => [
+    const rows = transactions.map((tx) => [
       tx.id,
       tx.customerName,
       tx.customerPhone,
@@ -112,7 +230,6 @@ const PosHistoryPage = () => {
       <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
-        {/* Top Header */}
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-6 backdrop-blur-sm">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#cb8f6a]">
@@ -152,11 +269,10 @@ const PosHistoryPage = () => {
           </div>
         </header>
 
-        {/* Main Content */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-            {/* Back button */}
             <button
+              type="button"
               onClick={() => navigate("/pos")}
               className="flex w-fit cursor-pointer items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#a07f6b] transition hover:text-[#7f5d47]"
             >
@@ -166,7 +282,6 @@ const PosHistoryPage = () => {
               QUAY LẠI
             </button>
 
-            {/* Page Header */}
             <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-black text-[#2f231d]">
@@ -214,7 +329,10 @@ const PosHistoryPage = () => {
                     </div>
                   </div>
                 </div>
-                <button className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-orange-600/80 px-6 text-sm font-bold text-white transition hover:bg-orange-600/60 shadow-[0_4px_12px_rgba(245,168,130,0.3)]">
+                <button
+                  type="button"
+                  className="flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-orange-600/80 px-6 text-sm font-bold text-white transition hover:bg-orange-600/60 shadow-[0_4px_12px_rgba(245,168,130,0.3)]"
+                >
                   <span className="material-symbols-outlined text-[18px]">
                     filter_alt
                   </span>
@@ -224,7 +342,6 @@ const PosHistoryPage = () => {
             </div>
           </div>
 
-          {/* Stats Cards */}
           <div className="mb-8 grid grid-cols-4 gap-4">
             <div className="rounded-2xl bg-white p-5 shadow-sm relative overflow-hidden">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
@@ -248,7 +365,9 @@ const PosHistoryPage = () => {
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
                 TỔNG SỐ HÓA ĐƠN
               </p>
-              <p className="mt-2 text-2xl font-black text-[#2f231d]">432</p>
+              <p className="mt-2 text-2xl font-black text-[#2f231d]">
+                {totalOrders}
+              </p>
               <p className="mt-3 text-xs text-[#9f7d67]">
                 Trung bình 14 đơn/ngày
               </p>
@@ -284,7 +403,6 @@ const PosHistoryPage = () => {
             </div>
           </div>
 
-          {/* Data Table Area */}
           <div className="rounded-2xl bg-white p-2 shadow-sm">
             <div className="flex items-center justify-between p-4">
               <div className="relative w-[400px]">
@@ -294,7 +412,10 @@ const PosHistoryPage = () => {
                 <input
                   type="text"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   placeholder="Tìm theo mã hóa đơn hoặc SĐT khách hàng..."
                   className="h-10 w-full rounded-full bg-[#fdfaf8] pl-11 pr-4 text-sm text-[#523c30] outline-none transition focus:ring-1 focus:ring-[#f3d8c4]"
                 />
@@ -302,6 +423,7 @@ const PosHistoryPage = () => {
 
               <div className="flex gap-3">
                 <button
+                  type="button"
                   onClick={handleExportExcel}
                   className="flex h-10 cursor-pointer items-center gap-2 rounded-full bg-[#fdfaf8] px-5 text-sm font-bold text-[#2f231d] transition hover:bg-[#f5ebe5]"
                 >
@@ -319,7 +441,7 @@ const PosHistoryPage = () => {
                   <tr className="border-b border-[#f0e6df] text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
                     <th className="py-4 pr-4">MÃ HÓA ĐƠN</th>
                     <th className="p-4">KHÁCH HÀNG</th>
-                    <th className="p-4">THÚ CƯNG</th>
+                    <th className="p-4">MẶT HÀNG / DỊCH VỤ</th>
                     <th className="p-4">TỔNG TIỀN</th>
                     <th className="p-4">THỜI GIAN</th>
                     <th className="p-4">TRẠNG THÁI</th>
@@ -327,20 +449,26 @@ const PosHistoryPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {historyTransactions
-                    .filter(
-                      (tx) =>
-                        tx.id
-                          .toLowerCase()
-                          .includes(searchTerm.toLowerCase()) ||
-                        tx.customerPhone
-                          .toLowerCase()
-                          .includes(searchTerm.toLowerCase()) ||
-                        tx.customerName
-                          .toLowerCase()
-                          .includes(searchTerm.toLowerCase()),
-                    )
-                    .map((tx) => (
+                  {isLoading ? (
+                    <tr>
+                      <td
+                        className="py-10 text-center text-sm text-[#9f7d67]"
+                        colSpan={7}
+                      >
+                        Đang tải dữ liệu...
+                      </td>
+                    </tr>
+                  ) : transactions.length === 0 ? (
+                    <tr>
+                      <td
+                        className="py-10 text-center text-sm text-[#9f7d67]"
+                        colSpan={7}
+                      >
+                        Không có dữ liệu phù hợp
+                      </td>
+                    </tr>
+                  ) : (
+                    transactions.map((tx) => (
                       <tr
                         key={tx.id}
                         onClick={() => setSelectedTx(tx)}
@@ -380,72 +508,76 @@ const PosHistoryPage = () => {
                           <p className="text-xs text-[#a07f6b]">{tx.time}</p>
                         </td>
                         <td className="p-4">
-                          {/* Map status qua Badge */}
-                          {tx.status === "COMPLETED" && (
+                          {tx.status === "PAID" && (
                             <div className="inline-flex items-center gap-1.5 rounded-full bg-[#e6f7f1] px-2.5 py-1 text-[10px] font-bold text-[#1f8c6e]">
-                              <span className="h-1.5 w-1.5 rounded-full bg-[#1f8c6e]"></span>
+                              <span className="h-1.5 w-1.5 rounded-full bg-[#1f8c6e]" />
                               Đã thanh toán
                             </div>
                           )}
                           {tx.status === "PENDING" && (
-                            <div className="inline-flex items-center gap-1.5 rounded-full bg-yellow-50 border border-yellow-100 px-2.5 py-1 text-[10px] font-bold text-yellow-600">
-                              <span className="h-1.5 w-1.5 rounded-full bg-yellow-500"></span>
+                            <div className="inline-flex items-center gap-1.5 rounded-full border border-yellow-100 bg-yellow-50 px-2.5 py-1 text-[10px] font-bold text-yellow-600">
+                              <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
                               Chờ thanh toán
                             </div>
                           )}
+                          {tx.status === "REFUNDED" && (
+                            <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-600">
+                              <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                              Đã hoàn tiền
+                            </div>
+                          )}
                           {tx.status === "CANCELLED" && (
-                            <div className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-100 px-2.5 py-1 text-[10px] font-bold text-red-600">
-                              <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                            <div className="inline-flex items-center gap-1.5 rounded-full border border-red-100 bg-red-50 px-2.5 py-1 text-[10px] font-bold text-red-600">
+                              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                               Đã hủy
                             </div>
                           )}
                         </td>
                       </tr>
-                    ))}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
-            {/* Pagination */}
             <div className="flex items-center justify-between border-t border-[#f0e6df] p-4">
               <p className="text-xs text-[#a07f6b]">
-                Hiển thị 1 -{" "}
-                {
-                  historyTransactions.filter(
-                    (tx) =>
-                      tx.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      tx.customerPhone
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                      tx.customerName
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase()),
-                  ).length
-                }{" "}
-                của {historyTransactions.length} hóa đơn
+                Hiển thị {totalOrders === 0 ? 0 : startItem} -{" "}
+                {totalOrders === 0 ? 0 : endItem} của {totalOrders} hóa đơn
               </p>
               <div className="flex items-center gap-1 text-sm font-bold">
-                <button className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5]">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage((page) => Math.max(1, page - 1))
+                  }
+                  disabled={currentPage === 1}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5] disabled:cursor-not-allowed disabled:opacity-40"
+                >
                   <span className="material-symbols-outlined text-[16px]">
                     chevron_left
                   </span>
                 </button>
-                <button className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f5a882] text-white">
-                  1
-                </button>
-                <button className="flex h-8 w-8 items-center justify-center rounded-full text-[#523c30] hover:bg-[#f5ebe5]">
-                  2
-                </button>
-                <button className="flex h-8 w-8 items-center justify-center rounded-full text-[#523c30] hover:bg-[#f5ebe5]">
-                  3
-                </button>
-                <span className="flex h-8 w-8 items-center justify-center text-[#a07f6b]">
-                  ...
-                </span>
-                <button className="flex h-8 w-8 items-center justify-center rounded-full text-[#523c30] hover:bg-[#f5ebe5]">
-                  44
-                </button>
-                <button className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5]">
+
+                {paginationPages.map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setCurrentPage(page)}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full ${page === currentPage ? "bg-[#f5a882] text-white" : "text-[#523c30] hover:bg-[#f5ebe5]"}`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage((page) => Math.min(totalPages, page + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5] disabled:cursor-not-allowed disabled:opacity-40"
+                >
                   <span className="material-symbols-outlined text-[16px]">
                     chevron_right
                   </span>
@@ -455,23 +587,28 @@ const PosHistoryPage = () => {
           </div>
         </div>
 
-        {/* --- KHU VỰC CHỨA CÁC MODALS TRẠNG THÁI --- */}
         <OrderDetailModal
-          isOpen={selectedTx?.status === "COMPLETED"}
+          isOpen={selectedTx?.status === "PAID"}
           orderId={selectedTx?.numericId || null}
           onClose={() => setSelectedTx(null)}
-          onStatusChange={() => {}}
+          onStatusChange={() => setCurrentPage(1)}
         />
 
         <PendingOrderModal
           isOpen={selectedTx?.status === "PENDING"}
           orderId={selectedTx?.numericId || null}
           onClose={() => setSelectedTx(null)}
-          onStatusChange={() => {}}
+          onStatusChange={() => setCurrentPage(1)}
         />
 
         <CancelledOrderModal
           isOpen={selectedTx?.status === "CANCELLED"}
+          orderId={selectedTx?.numericId || null}
+          onClose={() => setSelectedTx(null)}
+        />
+
+        <RefundedOrderModal
+          isOpen={selectedTx?.status === "REFUNDED"}
           orderId={selectedTx?.numericId || null}
           onClose={() => setSelectedTx(null)}
         />
