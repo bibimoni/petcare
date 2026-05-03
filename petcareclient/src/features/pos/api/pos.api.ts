@@ -14,6 +14,7 @@ import {
 } from "@/features/service/api/service.api";
 
 import { toNumber, formatPrice } from "../utils";
+import axiosClient from "@/lib/api";
 
 const productFallbackImages = [
   "/images/hero-page/pet-food.jpg",
@@ -183,4 +184,12 @@ export const getPosCatalogOverview = async (): Promise<{
     services,
     products,
   };
+};
+
+export const createOrder = async (payload: unknown) => {
+  return axiosClient.post("/orders", payload);
+};
+
+export const confirmOrder = async (orderId: number | string) => {
+  return axiosClient.post("/orders/confirm", { order_id: Number(orderId) });
 };

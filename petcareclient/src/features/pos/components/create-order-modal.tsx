@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { CustomerApi } from "@/features/customer/api/customer-api";
-import axiosClient from "@/lib/api";
+import { createOrder } from "@/features/pos/api/pos.api";
 import { PetService } from "@/lib/pets";
 
 import type { OrderItem } from "../pos-page";
@@ -65,14 +65,15 @@ export const CreateOrderModal = ({
     (sum, item) => sum + item.numericPrice * item.quantity,
     0,
   );
-  const vat = subTotal * 0.08;
-  const total = subTotal + vat;
+
+  const total = subTotal;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN").format(price) + "đ";
   };
 
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
 
   const handleCheckout = async () => {
     if (!selectedCustomerId) {
@@ -103,7 +104,7 @@ export const CreateOrderModal = ({
 
     try {
       setIsCreatingOrder(true);
-      const res = await axiosClient.post("/orders", payload);
+      const res = await createOrder(payload);
       const checkoutUrl =
         res?.data?.checkout_url ?? res?.data?.data?.checkout_url;
 
@@ -119,6 +120,45 @@ export const CreateOrderModal = ({
       toast.error("Tạo đơn hàng thất bại, vui lòng thử lại");
     } finally {
       setIsCreatingOrder(false);
+    }
+  };
+
+  const handleSaveOrder = async () => {
+    if (!selectedCustomerId) {
+      toast.error("Vui lòng chọn khách hàng");
+      return;
+    }
+
+    if (!selectedPetId) {
+      toast.error("Vui lòng chọn thú cưng");
+      return;
+    }
+
+    if (items.length === 0) {
+      toast.error("Giỏ hàng trống");
+      return;
+    }
+
+    const payload = {
+      customer_id: Number(selectedCustomerId),
+      items: items.map((it) => ({
+        item_id: Number(it.id),
+        item_type: it.type === "product" ? "PRODUCT" : "SERVICE",
+        quantity: it.quantity,
+        pet_id: Number(selectedPetId),
+      })),
+      currency: "vnd",
+    };
+
+    try {
+      setIsSavingOrder(true);
+      await createOrder(payload);
+      toast.success("Đã lưu đơn hàng ở trạng thái tạm");
+      onClose();
+    } catch (_err) {
+      // global error
+    } finally {
+      setIsSavingOrder(false);
     }
   };
 
@@ -324,10 +364,6 @@ export const CreateOrderModal = ({
               </span>
               <span className="font-medium">{formatPrice(subTotal)}</span>
             </div>
-            <div className="flex justify-between text-[#523c30]">
-              <span>Thuế VAT (8%)</span>
-              <span className="font-medium">{formatPrice(vat)}</span>
-            </div>
           </div>
 
           <div className="flex justify-between items-end pt-2 border-t border-[#eaded6]">
@@ -340,7 +376,12 @@ export const CreateOrderModal = ({
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-2 border-[#ecdcd1] bg-white text-[#8d6955] hover:bg-[#fdfaf8] transition">
+            <button
+              type="button"
+              onClick={handleSaveOrder}
+              disabled={isSavingOrder}
+              className="flex h-14 w-14 cursor-pointer shrink-0 items-center justify-center rounded-xl border-2 border-[#ecdcd1] bg-white text-[#8d6955] hover:bg-[#fdfaf8] transition disabled:opacity-60"
+            >
               <span className="material-symbols-outlined">save</span>
             </button>
             <button
