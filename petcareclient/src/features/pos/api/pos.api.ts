@@ -14,7 +14,7 @@ import {
 } from "@/features/service/api/service.api";
 import axiosClient from "@/lib/api";
 
-import { formatPrice, toNumber } from "../utils";
+import { toNumber, formatPrice } from "../utils";
 
 const productFallbackImages = [
   "/images/hero-page/pet-food.jpg",
@@ -84,48 +84,48 @@ export type PosProduct = {
 
 export type OrderPaymentDto = {
   amount: number;
-  created_at: string;
-  error_message: string | null;
   order_id: number;
+  created_at: string;
   payment_id: number;
+  updated_at: string;
   payment_method: string;
-  status: "PENDING" | "COMPLETED" | "CANCELLED" | "REFUNDED";
+  error_message: string | null;
   stripe_charge_id: string | null;
-  stripe_checkout_session_id: string | null;
+  stripe_receipt_url: string | null;
   stripe_checkout_url: string | null;
   stripe_client_secret: string | null;
   stripe_payment_intent_id: string | null;
-  stripe_receipt_url: string | null;
-  updated_at: string;
+  stripe_checkout_session_id: string | null;
+  status: "PENDING" | "COMPLETED" | "CANCELLED" | "REFUNDED";
 };
 
 export type OrderDetailDto = {
-  cancel_reason?: string | null;
-  cashier_name?: string;
-  code: string;
-  created_at?: string;
-  customer_address?: string;
-  customer_name: string;
-  customer_phone?: string;
-  customer_type?: string;
-  details: Array<{
-    category_name?: string;
-    code?: string;
-    id: number;
-    price: number;
-    product_name?: string;
-    quantity: number;
-    service_name?: string;
-  }>;
   id: number;
+  code: string;
   pet_age?: string;
-  pet_breed?: string;
-  pet_gender?: string;
   pet_name?: string;
   pet_type?: string;
+  pet_breed?: string;
+  created_at?: string;
+  pet_gender?: string;
   pet_weight?: string;
-  status: "PENDING" | "COMPLETED" | "CANCELLED" | string;
   total_amount: number;
+  cashier_name?: string;
+  customer_name: string;
+  customer_type?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  cancel_reason?: string | null;
+  status: "PENDING" | "COMPLETED" | "CANCELLED" | string;
+  details: Array<{
+    id: number;
+    code?: string;
+    price: number;
+    quantity: number;
+    product_name?: string;
+    service_name?: string;
+    category_name?: string;
+  }>;
 };
 
 const mapServiceDto = (service: ServiceDto, index: number): PosService => {

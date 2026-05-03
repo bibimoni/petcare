@@ -1,18 +1,18 @@
 import {
+  Ban,
+  Phone,
+  MapPin,
+  Package,
   X as Close,
   CheckCircle,
   ShoppingBag,
-  Package,
-  Phone,
-  MapPin,
-  Ban,
-  XCircle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
-import { getOrderDetail, refundOrder } from "./api";
 import type { Order } from "./type";
+
+import { refundOrder, getOrderDetail } from "./api";
 
 interface OrderDetailModalProps {
   isOpen: boolean;

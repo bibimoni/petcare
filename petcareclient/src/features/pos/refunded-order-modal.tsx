@@ -1,16 +1,16 @@
 import {
-  Clock,
-  Receipt,
-  X as Close,
-  ShoppingBag,
   Phone,
   MapPin,
   Package,
+  X as Close,
+  ShoppingBag,
+  ReceiptIcon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
-import { getOrderDetail } from "./api";
 import type { Order } from "./type";
+
+import { getOrderDetail } from "./api";
 
 interface RefundedOrderModalProps {
   isOpen: boolean;
@@ -44,60 +44,69 @@ export const RefundedOrderModal = ({
     fetchOrder();
   }, [orderId, isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !order) return null;
 
   return (
     <>
-      {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 p-4 backdrop-blur-[2px] transition-opacity"
+        className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm z-30 transition-opacity"
         onClick={onClose}
-      >
-        {/* Modal Container */}
-        <div
-          className="bg-white rounded-3xl shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04),0_0_0_1px_rgba(243,235,231,1)] w-full max-w-4xl max-h-[90vh] flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-200 border border-[#f3ebe7]"
-          onClick={(e) => e.stopPropagation()} // Chặn sự kiện click ra ngoài
-        >
-          {isLoading ? (
-            <div className="flex flex-col gap-4 justify-center items-center h-[50vh] text-[#9a624c]">
-              <div className="w-8 h-8 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-              <p className="font-medium text-sm">
-                Đang tải thông tin đơn hoàn...
-              </p>
-            </div>
-          ) : order ? (
-            <div className="flex-1 overflow-y-auto p-6 bg-[#fcf9f8]/50 custom-scrollbar">
-              {/* Header */}
-              <div className="px-6 py-4 border-b border-[#f3ebe7] flex items-center justify-between shrink-0 bg-white z-10">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                    <Receipt className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-['Plus_Jakarta_Sans'] font-bold text-[#1b110d] flex items-center gap-2">
-                      Chi tiết đơn hàng #{order.order_id}
-                      <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold border border-blue-200 uppercase tracking-wide">
-                        Đã hoàn tiền
-                      </span>
-                    </h2>
-                    <div className="flex items-center gap-3 text-xs text-[#9a624c] mt-0.5">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" /> {order.created_at}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="size-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 transition-colors"
-                  title="Đóng"
-                >
-                  <Close className="w-5 h-5" />
-                </button>
+      ></div>
+      {/* Modal Content */}
+      <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-[0_10px_40px_-5px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(0,0,0,0.05)] w-full max-w-5xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+          {/* Header */}
+          <div className="px-8 py-5 border-b border-[#f3ebe7] flex items-center justify-between bg-white shrink-0 h-20">
+            <div className="flex items-center gap-4">
+              {/* Icon Trạng thái */}
+              <div
+                className={`size-11 rounded-full flex items-center justify-center border shadow-sm ${"bg-blue-50 text-blue-600 border-blue-100"}`}
+              >
+                <ReceiptIcon className="w-6 h-6" />
               </div>
+              <div>
+                <h2 className="text-xl font-bold font-['Plus_Jakarta_Sans'] text-[#1b110d] leading-tight">
+                  Chi tiết đơn hàng
+                </h2>
+                <div className="flex items-center gap-3 text-sm mt-1">
+                  <span className="text-[#9a624c] font-medium">
+                    Mã đơn:{" "}
+                    <span className="text-[#1b110d] font-bold">
+                      #{order.order_id}
+                    </span>
+                  </span>
+                  <span className="text-gray-300">|</span>
+                  {/* Badge Trạng thái */}
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold border ${"bg-blue-50 text-blue-700 border-blue-100"}`}
+                  >
+                    <span
+                      className={`size-1.5 rounded-full ${"bg-blue-500"}`}
+                    ></span>
+                    Đã hoàn
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-[#9a624c] hover:text-[#1b110d] cursor-pointer hover:bg-[#fcf9f8] p-2 rounded-lg transition-colors"
+            >
+              <Close className="w-6 h-6" />
+            </button>
+          </div>
 
-              {/* Nội dung chính */}
-              <div className="flex flex-col py-5 md:flex-row gap-6 animate-in fade-in duration-300">
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-6 bg-[#FAFAFA] custom-scrollbar">
+            {isLoading ? (
+              <div className="flex flex-col gap-4 justify-center items-center h-full text-[#9a624c]">
+                <div className="w-8 h-8 border-4 border-[#f7b297] border-t-transparent rounded-full animate-spin"></div>
+                <p className="font-medium text-sm">
+                  Đang tải chi tiết đơn hàng...
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col md:flex-row gap-6 animate-in fade-in duration-300">
                 <div className="flex flex-col gap-4 w-full md:w-1/3">
                   {/* Khách hàng */}
                   <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
@@ -239,44 +248,44 @@ export const RefundedOrderModal = ({
                       </table>
                     </div>
 
-                    <div className="mt-auto bg-gray-50 border-t border-[#f3ebe7] p-4">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-[#9a624c]">Tạm tính:</span>
-                          <span className="font-medium text-[#1b110d]">
-                            {Number(order.total_amount).toLocaleString("vi-VN")}
-                            đ
-                          </span>
-                        </div>
-                        <div className="h-px bg-[#f3ebe7] my-1"></div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-[#1b110d] font-bold">
-                            Tổng tiền hoàn:
-                          </span>
-                          <span className="text-xl font-['Plus_Jakarta_Sans'] font-bold text-[#9a624c] decoration-blue-500/50 decoration-2">
-                            {Number(order.total_amount).toLocaleString("vi-VN")}
-                            đ
-                          </span>
-                        </div>
+                    {/* Tổng kết tiền */}
+                    <div className="px-5 py-4 bg-gray-50/50 border-t border-[#f3ebe7] flex flex-col gap-2 shrink-0 mt-auto">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-[#9a624c]">
+                          Tổng đã thanh toán
+                        </span>
+                        <span className="text-sm font-medium text-[#1b110d]">
+                          {Number(order.total_amount).toLocaleString("vi-VN")}đ
+                        </span>
+                      </div>
+                      <div className="border-t border-dashed border-[#f3ebe7] my-1"></div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-[#1b110d]">
+                          Tổng tiền hoàn
+                        </span>
+                        <span className="font-bold text-[#9a624c] text-xl">
+                          {Number(order.total_amount).toLocaleString("vi-VN")}đ
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Footer */}
-              <div className="px-6 py-4 border-t border-[#f3ebe7] bg-gray-50 flex items-center justify-between shrink-0 rounded-b-3xl">
-                <div className="gap-3">
-                  <button
-                    onClick={onClose}
-                    className="px-6 py-2 cursor-pointer bg-[#1b110d] text-white font-medium rounded-lg hover:bg-black transition-all shadow-lg shadow-gray-200 text-sm"
-                  >
-                    Đóng
-                  </button>
-                </div>
+            )}
+          </div>
+          {/* Footer Actions */}
+          {!isLoading && (
+            <div className="px-6 py-4 border-t border-[#f3ebe7] bg-gray-50 flex items-center justify-between shrink-0 rounded-b-3xl">
+              <div className="gap-3">
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2 cursor-pointer bg-[#1b110d] text-white font-medium rounded-lg hover:bg-black transition-all shadow-lg shadow-gray-200 text-sm"
+                >
+                  Đóng
+                </button>
               </div>
             </div>
-          ) : null}
+          )}
         </div>
       </div>
     </>

@@ -1,71 +1,71 @@
 export interface OrderDetail {
+  pet: Pet;
   id: number;
   order_id: number;
-  item_type: string;
-  original_cost: string;
   quantity: number;
   subtotal: string;
-  unit_price: string;
+  item_type: string;
   service?: Service;
   product?: Product;
-  pet: Pet;
+  unit_price: string;
+  original_cost: string;
 }
 
 export interface Service {
   id: number;
-  category_id: number;
-  combo_name: string;
-  description: string;
-  min_weight: number;
-  max_weight: number;
   price: string;
   status: string;
   store_id: number;
+  combo_name: string;
+  min_weight: number;
+  max_weight: number;
+  category_id: number;
+  description: string;
 }
 
 export interface Product {
+  name: string;
+  store_id: number;
   product_id: number;
-  category_id: number;
   cost_price: string;
+  sell_price: string;
+  category_id: number;
   description: string;
   expiry_date: string;
-  min_stock_level: number;
-  name: string;
-  sell_price: string;
   stock_quantity: number;
-  store_id: number;
+  min_stock_level: number;
 }
 
 export interface Pet {
-  pet_id: number;
-  breed: string;
   dob: string;
-  gender: string;
   name: string;
+  breed: string;
   notes: string;
-  pet_code: string;
+  pet_id: number;
+  gender: string;
   status: string;
+  pet_code: string;
   store_id: number;
 }
 
 export interface CustomerDetail {
-  address: string;
-  customer_id: number;
   email: string;
-  full_name: string;
   notes: string;
   phone: string;
+  address: string;
   store_id: number;
+  full_name: string;
+  customer_id: number;
   total_spend: number;
 }
 
 export interface Order {
-  created_at: string;
   order_id: number;
+  created_at: string;
   total_amount: number;
-  customer: CustomerDetail;
   cancel_reason?: string;
-  cancelled_by_user_id?: number;
+  customer: CustomerDetail;
   order_details: OrderDetail[];
+  cancelled_by_user_id?: number;
   status: "PENDING" | "COMPLETED" | "CANCELLED" | "REFUNDED";
 }

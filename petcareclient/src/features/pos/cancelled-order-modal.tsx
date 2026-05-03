@@ -1,20 +1,16 @@
 import {
-  Clock,
-  Receipt,
-  X as Close,
-  AlertCircle,
-  Dog as Pets,
-  ShoppingBag,
-  User as Person,
   Phone,
   MapPin,
   Package,
-  CheckCircle,
+  X as Close,
+  ShoppingBag,
+  XCircleIcon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
-import { getOrderDetail } from "./api";
 import type { Order } from "./type";
+
+import { getOrderDetail } from "./api";
 
 interface CancelledOrderModalProps {
   isOpen: boolean;
@@ -66,7 +62,7 @@ export const CancelledOrderModal = ({
               <div
                 className={`size-11 rounded-full flex items-center justify-center border shadow-sm ${"bg-red-50 text-red-600 border-red-100"}`}
               >
-                <CheckCircle className="w-6 h-6" />
+                <XCircleIcon className="w-6 h-6" />
               </div>
               <div>
                 <h2 className="text-xl font-bold font-['Plus_Jakarta_Sans'] text-[#1b110d] leading-tight">

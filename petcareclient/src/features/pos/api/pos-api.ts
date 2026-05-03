@@ -16,8 +16,6 @@ import axiosClient from "@/lib/api";
 
 import { toNumber, formatPrice } from "../utils";
 
-/* eslint-disable sort-keys */
-
 const productFallbackImages = [
   "/images/hero-page/pet-food.jpg",
   "/images/hero-page/pet-accessories.jpg",
@@ -86,94 +84,94 @@ export type PosProduct = {
 
 export type OrderPaymentDto = {
   amount: number;
-  created_at: string;
-  error_message: string | null;
   order_id: number;
+  created_at: string;
   payment_id: number;
-  payment_method: string;
-  stripe_charge_id: string | null;
-  stripe_client_secret: string | null;
-  stripe_checkout_session_id: string | null;
-  stripe_checkout_url: string | null;
-  stripe_payment_intent_id: string | null;
-  stripe_receipt_url: string | null;
   updated_at: string;
+  payment_method: string;
+  error_message: string | null;
+  stripe_charge_id: string | null;
+  stripe_receipt_url: string | null;
+  stripe_checkout_url: string | null;
+  stripe_client_secret: string | null;
+  stripe_payment_intent_id: string | null;
+  stripe_checkout_session_id: string | null;
   status: "PENDING" | "COMPLETED" | "CANCELLED" | "REFUNDED";
 };
 
 export type OrderDetailDto = {
-  cashier_name?: string;
-  cancel_reason?: string | null;
-  code: string;
-  created_at?: string;
-  customer_address?: string;
-  customer_name: string;
-  customer_phone?: string;
-  customer_type?: string;
-  details: Array<{
-    category_name?: string;
-    code?: string;
-    id: number;
-    price: number;
-    product_name?: string;
-    quantity: number;
-    service_name?: string;
-  }>;
   id: number;
+  code: string;
   pet_age?: string;
-  pet_breed?: string;
-  pet_gender?: string;
   pet_name?: string;
   pet_type?: string;
+  pet_breed?: string;
+  created_at?: string;
+  pet_gender?: string;
   pet_weight?: string;
-  status: "PENDING" | "COMPLETED" | "CANCELLED" | string;
   total_amount: number;
+  cashier_name?: string;
+  customer_name: string;
+  customer_type?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  cancel_reason?: string | null;
+  status: "PENDING" | "COMPLETED" | "CANCELLED" | string;
+  details: Array<{
+    id: number;
+    code?: string;
+    price: number;
+    quantity: number;
+    product_name?: string;
+    service_name?: string;
+    category_name?: string;
+  }>;
 };
 
 export type OrderListItemDto = {
-  cancel_reason?: string | null;
-  cancelled_by_user_id?: number | null;
+  user_id: number;
+  order_id: number;
+  store_id: number;
   created_at: string;
-  customer: {
-    address?: string | null;
-    customer_id: number;
-    email?: string | null;
-    full_name: string;
-    phone?: string | null;
-  } | null;
+  updated_at: string;
   customer_id: number;
   note?: string | null;
+  total_amount: string;
+  cancel_reason?: string | null;
+  cancelled_by_user_id?: number | null;
+  status: "PENDING" | "COMPLETED" | "CANCELLED" | string;
+  customer: {
+    full_name: string;
+    customer_id: number;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+  } | null;
   order_details: Array<{
     id: number;
-    item_type: "PRODUCT" | "SERVICE";
-    product?: {
-      name?: string | null;
-      product_id: number;
-    } | null;
-    product_id?: number | null;
     quantity: number;
-    service?: {
-      combo_name?: string | null;
-      id: number;
-    } | null;
-    service_id?: number | null;
     subtotal: string;
     unit_price: string;
+    product_id?: number | null;
+    service_id?: number | null;
+    item_type: "PRODUCT" | "SERVICE";
+    service?: {
+      id: number;
+      combo_name?: string | null;
+    } | null;
+    product?: {
+      product_id: number;
+      name?: string | null;
+    } | null;
   }>;
-  order_id: number;
-  status: "PENDING" | "COMPLETED" | "CANCELLED" | string;
-  store_id: number;
-  total_amount: string;
-  updated_at: string;
-  user_id: number;
 };
 
 export type OrdersListResponseDto = {
-  data: OrderListItemDto[];
-  total: number;
   page: number;
+  total: number;
   limit: number;
   pages: number;
+  data: OrderListItemDto[];
 };
 const mapServiceDto = (service: ServiceDto, index: number): PosService => {
   const serviceName = String(service.combo_name ?? "Dịch vụ");
@@ -295,5 +293,3 @@ export const refundOrder = async (orderId: number | string) =>
 
 export const createOrder = async (payload: unknown) =>
   axiosClient.post("/orders", payload);
-
-/* eslint-enable sort-keys */

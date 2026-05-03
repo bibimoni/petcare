@@ -11,14 +11,16 @@ import {
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
+import { AlertDialog } from "@/components/ui/alert-dialog";
+
+import type { Order } from "./type";
+
 import {
   cancelOrder,
   getOrderDetail,
   getOrderPayment,
   type OrderPaymentDto,
 } from "./api";
-import type { Order } from "./type";
-import { AlertDialog } from "@/components/ui/alert-dialog";
 
 interface PendingOrderModalProps {
   isOpen: boolean;
