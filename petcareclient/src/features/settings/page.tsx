@@ -5,7 +5,8 @@ import { toast } from "sonner";
 
 import { Sidebar } from "@/components/Sidebar";
 import { AlertDialog } from "@/components/ui/alert-dialog";
-import { getSidebarUser } from "@/lib/user";
+import { queryClient } from "@/lib/query-client";
+import { setStoredUser, getSidebarUser } from "@/lib/user";
 
 import {
   leaveStore,
@@ -59,7 +60,14 @@ const SettingsPage = () => {
   const { mutate: handleUpdateProfile, isPending: isUpdatingProfile } =
     useMutation({
       mutationFn: (data: UpdateProfilePayload) => updateUserProfile(data),
-      onSuccess: () => {
+      onSuccess: (response) => {
+        setStoredUser({
+          full_name: response.data.full_name,
+          email: response.data.email,
+          phone: response.data.phone,
+          address: response.data.address,
+        });
+        queryClient.invalidateQueries({ queryKey: ["sidebar-user"] });
         toast.success("Cập nhật thông tin thành công");
       },
       onError: () => {
@@ -71,6 +79,12 @@ const SettingsPage = () => {
   const { mutate: handleLeaveStore, isPending: isLeavingStore } = useMutation({
     mutationFn: () => leaveStore(storeId),
     onSuccess: () => {
+      setStoredUser({
+        store_id: null,
+        role_id: null,
+        role: null,
+      });
+      queryClient.invalidateQueries({ queryKey: ["sidebar-user"] });
       toast.success("Bạn đã rời cửa hàng thành công");
       navigate("/create-store");
     },
@@ -84,6 +98,12 @@ const SettingsPage = () => {
     {
       mutationFn: () => deleteStore(storeId),
       onSuccess: () => {
+        setStoredUser({
+          store_id: null,
+          role_id: null,
+          role: null,
+        });
+        queryClient.invalidateQueries({ queryKey: ["sidebar-user"] });
         toast.success("Xoá cửa hàng thành công");
         navigate("/create-store");
       },
