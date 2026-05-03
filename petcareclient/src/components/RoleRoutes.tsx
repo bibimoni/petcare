@@ -36,6 +36,14 @@ export default function RoleRoute({ children, allowedRoles }: Props) {
   const roleName = userInfo?.role?.name?.toUpperCase() || "NULL";
 
   if (!allowedRoles.includes(roleName)) {
+    if (roleName === "NULL") {
+      return <Navigate to="/create-store" replace />;
+    }
+
+    if (roleName === "ADMIN" || roleName === "STAFF") {
+      return <Navigate to="/dashboard" replace />;
+    }
+
     return <Navigate to="/not-authenticated" replace />;
   }
 

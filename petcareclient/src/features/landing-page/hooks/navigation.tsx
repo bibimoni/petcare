@@ -11,7 +11,7 @@ export function useNavigation() {
       return;
     }
 
-    navigate("/dashboard");
+    navigate(`/${action || "dashboard"}`);
   };
 
   return handleNavigation;

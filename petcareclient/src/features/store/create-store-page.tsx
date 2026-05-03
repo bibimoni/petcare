@@ -16,7 +16,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { CountryDropdown } from "@/components/ui/country-dropdown";
 import api from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
-import { setStoredUser } from "@/lib/user";
+import { setStoredUser, buildSidebarUser } from "@/lib/user";
 
 export default function CreateStorePage() {
   const navigate = useNavigate();
@@ -107,8 +107,8 @@ export default function CreateStorePage() {
       const response = await api.post("/stores", payload);
       const data = response.data || response;
 
-      // 2. Cập nhật localStorage để App (đặc biệt là Sidebar) biết user đã có cửa hàng
-      setStoredUser({
+      // 2. Cập nhật localStorage và cache để App biết user đã có cửa hàng
+      const storedUser = setStoredUser({
         store_id: data.store.id,
         role_id: data.admin_role?.id ?? null,
         ...(data.admin_role
@@ -123,16 +123,14 @@ export default function CreateStorePage() {
             }
           : {}),
       });
-
-      queryClient.invalidateQueries({ queryKey: ["sidebar-user"] });
+      const sidebarUser = buildSidebarUser(storedUser, storedUser);
+      queryClient.setQueryData(["sidebar-user"], sidebarUser);
 
       toast.success("Khởi tạo cửa hàng thành công!");
       clearLogoImage();
-
-      // 3. Chuyển hướng sang trang Dashboard quản lý
       setTimeout(() => {
         navigate("/dashboard");
-      }, 1000);
+      }, 100);
     } catch (error: unknown) {
       console.error("Lỗi tạo cửa hàng:", error);
 

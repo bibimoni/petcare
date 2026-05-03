@@ -8,13 +8,10 @@ export interface UpdateProfilePayload {
 }
 
 export interface UpdateProfileResponse {
-  message: string;
-  data: {
-    email: string;
-    phone: string;
-    address: string;
-    full_name: string;
-  };
+  email: string;
+  phone: string;
+  address: string;
+  full_name: string;
 }
 
 /**

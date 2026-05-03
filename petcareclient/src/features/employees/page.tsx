@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Sidebar } from "@/components/Sidebar";
+import { AlertDialog } from "@/components/ui/alert-dialog";
 import { getSidebarUser } from "@/lib/user";
 
 import { deleteStaff, getStaffList } from "./api/store.api";
@@ -22,6 +23,11 @@ const EmployeesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [selectedStaffToDelete, setSelectedStaffToDelete] = useState<{
+    user_id: number;
+    full_name: string;
+  } | null>(null);
   const ITEMS_PER_PAGE = 4;
 
   const { data, isLoading } = useQuery({
@@ -225,15 +231,11 @@ const EmployeesPage = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                const confirmed = window.confirm(
-                                  `Xóa nhân viên ${member.full_name}?`,
-                                );
-
-                                if (!confirmed) {
-                                  return;
-                                }
-
-                                handleDeleteStaff(member.user_id);
+                                setSelectedStaffToDelete({
+                                  user_id: member.user_id,
+                                  full_name: member.full_name,
+                                });
+                                setDeleteConfirmOpen(true);
                               }}
                               disabled={isDeleting}
                               className="cursor-pointer text-[#c65a4b] transition hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
@@ -302,6 +304,25 @@ const EmployeesPage = () => {
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
         storeId={storeId}
+      />
+
+      <AlertDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Xóa nhân viên"
+        description={`Bạn có chắc chắn muốn xóa nhân viên ${selectedStaffToDelete?.full_name}? Hành động này không thể hoàn tác.`}
+        actionLabel="Xóa"
+        cancelLabel="Hủy"
+        variant="destructive"
+        onConfirm={() => {
+          if (selectedStaffToDelete) {
+            handleDeleteStaff(selectedStaffToDelete.user_id);
+            setSelectedStaffToDelete(null);
+          }
+        }}
+        onCancel={() => {
+          setSelectedStaffToDelete(null);
+        }}
       />
     </div>
   );

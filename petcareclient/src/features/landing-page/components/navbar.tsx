@@ -9,10 +9,23 @@ import { useNavigation } from "@/features/landing-page/hooks/navigation";
 const Navbar = () => {
   const handleNavigation = useNavigation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     setIsAuthenticated(!!token);
+
+    if (token) {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr) as { role?: string | null };
+          setUserRole(user.role ?? null);
+        } catch (e) {
+          console.error("Failed to parse user from localStorage", e);
+        }
+      }
+    }
   }, []);
 
   return (
@@ -27,7 +40,13 @@ const Navbar = () => {
           {isAuthenticated ? (
             <Button
               className="cursor-pointer rounded-full font-bold"
-              onClick={() => handleNavigation("dashboard")}
+              onClick={() => {
+                if (userRole === null) {
+                  handleNavigation("create-store");
+                } else {
+                  handleNavigation("dashboard");
+                }
+              }}
             >
               Dashboard
             </Button>

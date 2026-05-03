@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Sidebar } from "@/components/Sidebar";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { queryClient } from "@/lib/query-client";
-import { setStoredUser, getSidebarUser } from "@/lib/user";
+import { setStoredUser, getSidebarUser, buildSidebarUser } from "@/lib/user";
 
 import {
   leaveStore,
@@ -46,13 +46,13 @@ const SettingsPage = () => {
 
   // Update form when profile loads
   useEffect(() => {
-    if (profile) {
-      setFormData({
-        full_name: profile.full_name || "",
-        email: profile.email || "",
-        phone: profile.phone || "",
-        address: "",
-      });
+    if (profile?.full_name || profile?.email || profile?.phone) {
+      setFormData((prevData) => ({
+        full_name: profile.full_name || prevData.full_name || "",
+        email: profile.email || prevData.email || "",
+        phone: profile.phone || prevData.phone || "",
+        address: prevData.address || "",
+      }));
     }
   }, [profile]);
 
@@ -61,13 +61,14 @@ const SettingsPage = () => {
     useMutation({
       mutationFn: (data: UpdateProfilePayload) => updateUserProfile(data),
       onSuccess: (response) => {
-        setStoredUser({
-          full_name: response.data.full_name,
-          email: response.data.email,
-          phone: response.data.phone,
-          address: response.data.address,
+        const storedUser = setStoredUser({
+          full_name: response.full_name,
+          email: response.email,
+          phone: response.phone,
+          address: response.address,
         });
-        queryClient.invalidateQueries({ queryKey: ["sidebar-user"] });
+        const sidebarUser = buildSidebarUser(storedUser, storedUser);
+        queryClient.setQueryData(["sidebar-user"], sidebarUser);
         toast.success("Cập nhật thông tin thành công");
       },
       onError: () => {
@@ -79,12 +80,14 @@ const SettingsPage = () => {
   const { mutate: handleLeaveStore, isPending: isLeavingStore } = useMutation({
     mutationFn: () => leaveStore(storeId),
     onSuccess: () => {
-      setStoredUser({
+      const updatedUser = setStoredUser({
         store_id: null,
         role_id: null,
         role: null,
       });
-      queryClient.invalidateQueries({ queryKey: ["sidebar-user"] });
+
+      const sidebarUser = buildSidebarUser(updatedUser, updatedUser);
+      queryClient.setQueryData(["sidebar-user"], sidebarUser);
       toast.success("Bạn đã rời cửa hàng thành công");
       navigate("/create-store");
     },
@@ -98,12 +101,14 @@ const SettingsPage = () => {
     {
       mutationFn: () => deleteStore(storeId),
       onSuccess: () => {
-        setStoredUser({
+        const updatedUser = setStoredUser({
           store_id: null,
           role_id: null,
           role: null,
         });
-        queryClient.invalidateQueries({ queryKey: ["sidebar-user"] });
+
+        const sidebarUser = buildSidebarUser(updatedUser, updatedUser);
+        queryClient.setQueryData(["sidebar-user"], sidebarUser);
         toast.success("Xoá cửa hàng thành công");
         navigate("/create-store");
       },
