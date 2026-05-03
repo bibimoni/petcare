@@ -9,8 +9,9 @@ import {
   IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { CategoryType } from 'src/common';
+import { Currency } from '../../common/enum';
 
 export class CreateOrderItemDto {
   @ApiProperty({ description: 'ID of the item being ordered' })
@@ -74,4 +75,32 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   note?: string;
+
+  @ApiProperty({
+    enum: Currency,
+    required: false,
+    example: Currency.USD,
+    description: 'Currency for payment (default: USD)',
+  })
+  @IsEnum(Currency)
+  @IsOptional()
+  currency?: Currency;
+
+  // @ApiProperty({
+  //   description: 'URL to redirect after successful payment',
+  //   required: false,
+  // })
+  @ApiHideProperty()
+  @IsString()
+  @IsOptional()
+  success_url?: string;
+
+  // @ApiProperty({
+  //   description: 'URL to redirect if payment is cancelled',
+  //   required: false,
+  // })
+  @ApiHideProperty()
+  @IsString()
+  @IsOptional()
+  cancel_url?: string;
 }
