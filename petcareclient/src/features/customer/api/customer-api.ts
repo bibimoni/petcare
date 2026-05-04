@@ -8,6 +8,7 @@ export type CustomerListItem = {
   address?: string;
   fullName?: string;
   full_name?: string;
+  avatar_url?: string;
   id?: number | string;
   [key: string]: unknown;
   created_at: Date | string;

@@ -3,21 +3,12 @@ import { Edit, Trash2, PawPrint } from "lucide-react";
 import type { CustomerListItem } from "../api/customer-api";
 
 type CustomerRowProps = {
+  c: CustomerListItem;
   onEditCustomer: (customer: CustomerListItem) => void;
-  c: {
-    name?: string;
-    phone?: string;
-    avatar?: string;
-    full_name?: string;
-    id?: number | string;
-    pets?: unknown[] | number;
-    last_visit?: string | null;
-    customer_id?: number | string;
-  };
 };
 
 export default function CustomerRow({ c, onEditCustomer }: CustomerRowProps) {
-  const displayName = c.full_name || c.name || "Khách hàng";
+  const displayName = c.full_name || c.fullName || "Khách hàng";
   const displayId = c.customer_id || c.id || "-";
   const petCount = Array.isArray(c.pets) ? c.pets.length : Number(c.pets || 0);
   const lastVisit = c.last_visit
@@ -30,7 +21,7 @@ export default function CustomerRow({ c, onEditCustomer }: CustomerRowProps) {
         <div className="flex items-center gap-3">
           {c.avatar ? (
             <img
-              src={c.avatar}
+              src={c.avatar_url}
               className="w-10 h-10 rounded-full object-cover"
             />
           ) : (
