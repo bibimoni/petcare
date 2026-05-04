@@ -122,7 +122,6 @@ export class CustomersController {
     summary: 'Get customer history',
     description:
       'Retrieves the change history for a specific customer (create, update, delete events)',
-    deprecated: true,
   })
   @ApiParam({ name: 'customerId', type: Number })
   @ApiResponse({

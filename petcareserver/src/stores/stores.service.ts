@@ -20,6 +20,9 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { Invitation } from './entities/invitation.entity';
+import { CustomerHistory } from '../customers/entities/customer-history.entity';
+import { ProductHistory } from '../categories/entities/product-history.entity';
+import { ServiceHistory } from '../categories/entities/service-history.entity';
 import {
   UserStatus,
   StoreStatus,
@@ -51,6 +54,12 @@ export class StoresService {
     private permissionRepository: Repository<Permission>,
     @InjectRepository(Invitation)
     private invitationRepository: Repository<Invitation>,
+    @InjectRepository(CustomerHistory)
+    private customerHistoryRepository: Repository<CustomerHistory>,
+    @InjectRepository(ProductHistory)
+    private productHistoryRepository: Repository<ProductHistory>,
+    @InjectRepository(ServiceHistory)
+    private serviceHistoryRepository: Repository<ServiceHistory>,
     private readonly mailService: MailService,
     @Inject(forwardRef(() => NotificationScheduler))
     private readonly notificationScheduler: NotificationScheduler,
@@ -685,5 +694,97 @@ export class StoresService {
     };
 
     return response;
+  }
+
+  async getActivity(
+    storeId: number,
+    filters?: {
+      entity_type?: 'CUSTOMER' | 'PRODUCT' | 'SERVICE';
+      performed_by?: number;
+    },
+  ) {
+    type ActivityEntry = {
+      id: number;
+      entity_type: 'CUSTOMER' | 'PRODUCT' | 'SERVICE';
+      entity_id: number;
+      action: string;
+      performed_by: number | null;
+      performed_by_name: string | null;
+      old_values: Record<string, any> | null;
+      new_values: Record<string, any> | null;
+      created_at: Date;
+    };
+
+    const entries: ActivityEntry[] = [];
+
+    if (!filters?.entity_type || filters.entity_type === 'CUSTOMER') {
+      const customerWhere: any = { store_id: storeId };
+      if (filters?.performed_by) customerWhere.performed_by = filters.performed_by;
+      const rows = await this.customerHistoryRepository.find({
+        where: customerWhere,
+        order: { created_at: 'DESC' },
+      });
+      for (const r of rows) {
+        entries.push({
+          id: r.id,
+          entity_type: 'CUSTOMER',
+          entity_id: r.customer_id,
+          action: r.action,
+          performed_by: r.performed_by,
+          performed_by_name: r.performed_by_name,
+          old_values: r.old_values,
+          new_values: r.new_values,
+          created_at: r.created_at,
+        });
+      }
+    }
+
+    if (!filters?.entity_type || filters.entity_type === 'PRODUCT') {
+      const productWhere: any = { store_id: storeId };
+      if (filters?.performed_by) productWhere.performed_by = filters.performed_by;
+      const rows = await this.productHistoryRepository.find({
+        where: productWhere,
+        order: { created_at: 'DESC' },
+      });
+      for (const r of rows) {
+        entries.push({
+          id: r.id,
+          entity_type: 'PRODUCT',
+          entity_id: r.product_id,
+          action: r.action,
+          performed_by: r.performed_by,
+          performed_by_name: r.performed_by_name,
+          old_values: r.old_values,
+          new_values: r.new_values,
+          created_at: r.created_at,
+        });
+      }
+    }
+
+    if (!filters?.entity_type || filters.entity_type === 'SERVICE') {
+      const serviceWhere: any = { store_id: storeId };
+      if (filters?.performed_by) serviceWhere.performed_by = filters.performed_by;
+      const rows = await this.serviceHistoryRepository.find({
+        where: serviceWhere,
+        order: { created_at: 'DESC' },
+      });
+      for (const r of rows) {
+        entries.push({
+          id: r.id,
+          entity_type: 'SERVICE',
+          entity_id: r.service_id,
+          action: r.action,
+          performed_by: r.performed_by,
+          performed_by_name: r.performed_by_name,
+          old_values: r.old_values,
+          new_values: r.new_values,
+          created_at: r.created_at,
+        });
+      }
+    }
+
+    entries.sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
+
+    return entries;
   }
 }
