@@ -83,6 +83,8 @@ export const CreateOrderModal = ({
     return new Intl.NumberFormat("vi-VN").format(price) + "đ";
   };
 
+  const hasServices = items.some((item) => item.type === "service");
+
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
 
@@ -92,13 +94,13 @@ export const CreateOrderModal = ({
       return;
     }
 
-    if (!selectedPetId) {
-      toast.error("Vui lòng chọn thú cưng");
+    if (items.length === 0) {
+      toast.error("Giỏ hàng trống");
       return;
     }
 
-    if (items.length === 0) {
-      toast.error("Giỏ hàng trống");
+    if (hasServices && !selectedPetId) {
+      toast.error("Vui lòng chọn thú cưng (có dịch vụ trong đơn hàng)");
       return;
     }
 
@@ -108,7 +110,7 @@ export const CreateOrderModal = ({
         item_id: Number(it.id),
         item_type: it.type === "product" ? "PRODUCT" : "SERVICE",
         quantity: it.quantity,
-        pet_id: Number(selectedPetId),
+        pet_id: selectedPetId ? Number(selectedPetId) : null,
       })),
       currency: "vnd",
     };
@@ -140,13 +142,14 @@ export const CreateOrderModal = ({
       return;
     }
 
-    if (!selectedPetId) {
-      toast.error("Vui lòng chọn thú cưng");
+    if (items.length === 0) {
+      toast.error("Giỏ hàng trống");
       return;
     }
 
-    if (items.length === 0) {
-      toast.error("Giỏ hàng trống");
+    // Only require pet selection if order contains services
+    if (hasServices && !selectedPetId) {
+      toast.error("Vui lòng chọn thú cưng (có dịch vụ trong đơn hàng)");
       return;
     }
 
@@ -156,7 +159,7 @@ export const CreateOrderModal = ({
         item_id: Number(it.id),
         item_type: it.type === "product" ? "PRODUCT" : "SERVICE",
         quantity: it.quantity,
-        pet_id: Number(selectedPetId),
+        pet_id: selectedPetId ? Number(selectedPetId) : null,
       })),
       currency: "vnd",
     };
@@ -268,7 +271,7 @@ export const CreateOrderModal = ({
           {/* Pet Selection */}
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-[#9f7d67]">
-              Chọn Pet
+              Chọn Pet {hasServices && <span className="text-red-500">*</span>}
             </label>
             <div className="relative">
               <div className="pointer-events-none absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#efe5df] text-[#8d6955]">
@@ -283,11 +286,13 @@ export const CreateOrderModal = ({
                 className="w-full cursor-pointer appearance-none rounded-xl border border-[#ecdcd1] bg-[#fdfaf8] py-2.5 pl-12 pr-10 text-sm font-medium text-[#523c30] outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="">
-                  {selectedCustomerId
-                    ? pets.length === 0
+                  {!selectedCustomerId
+                    ? "Vui lòng chọn khách hàng trước"
+                    : pets.length === 0
                       ? "Khách hàng này chưa có pet"
-                      : "Chọn thú cưng..."
-                    : "Vui lòng chọn khách hàng trước"}
+                      : hasServices
+                        ? "Chọn thú cưng (bắt buộc)"
+                        : "Chọn thú cưng (tùy chọn)"}
                 </option>
                 {pets.map((p) => (
                   <option key={p.pet_id || p.id} value={p.pet_id || p.id}>

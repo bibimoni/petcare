@@ -166,13 +166,13 @@ export const CancelledOrderModal = ({
                     <div className="flex items-start justify-between relative z-10 mb-3">
                       <div className="flex items-center gap-3">
                         <div className="size-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold border border-orange-200 shrink-0">
-                          {order.order_details[0].pet.name
+                          {order.order_details[0].pet?.name
                             .charAt(0)
                             .toUpperCase()}
                         </div>
                         <div>
                           <div className="font-bold text-[#1b110d]">
-                            {order.order_details[0].pet.name}
+                            {order.order_details[0].pet?.name}
                           </div>
                           <div className="text-[10px] text-[#9a624c] uppercase tracking-wider font-semibold">
                             Thú cưng
@@ -183,11 +183,11 @@ export const CancelledOrderModal = ({
                     <div className="space-y-2 relative z-10 pl-13">
                       <div className="flex items-center gap-2 text-sm text-[#9a624c]">
                         <span>
-                          Giống: {order.order_details[0].pet.breed || "--"}
+                          Giống: {order.order_details[0].pet?.breed || "--"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-[#9a624c]">
-                        <span>{order.order_details[0].pet.notes}</span>
+                        <span>{order.order_details[0].pet?.notes}</span>
                       </div>
                     </div>
                   </div>

@@ -51,9 +51,7 @@ class ProfileService {
 
   async getCustomerByPhone(phone: string): Promise<Customer> {
     try {
-      console.log(`Fetching customer info for phone ${phone}...`);
       const response = await axiosClient.get(`/customers/phone/${phone}`);
-      console.log("Customer data received:", response);
       return response as unknown as Customer;
     } catch (error) {
       console.error("Error fetching customer by phone:", error);
@@ -66,7 +64,6 @@ class ProfileService {
     data: Partial<Customer>,
   ): Promise<Customer> {
     try {
-      console.log(`Updating customer ${customerId}...`);
       const response = await axiosClient.patch(
         `/customers/${customerId}`,
         data,
@@ -80,9 +77,7 @@ class ProfileService {
 
   async getPetsByCustomer(customerId: number): Promise<Pet[]> {
     try {
-      console.log(`Fetching pets for customer ${customerId}...`);
       const response = await axiosClient.get(`/pets/customer/${customerId}`);
-      console.log("Pets response:", response);
 
       const convertToArray = (data: any): any[] => {
         if (!data) return [];
@@ -128,7 +123,6 @@ class ProfileService {
         avatar_url: item.avatar_url,
       }));
 
-      console.log(`Parsed ${pets.length} pets:`, pets);
       return pets;
     } catch (error) {
       console.error("Error fetching pets:", error);
@@ -138,9 +132,7 @@ class ProfileService {
 
   async getOrdersByCustomer(customerId: number): Promise<Order[]> {
     try {
-      console.log(` Fetching orders for customer ${customerId}...`);
       const response = await axiosClient.get(`/orders/customer/${customerId}`);
-      console.log(" Orders response:", response);
 
       const convertToArray = (data: any): any[] => {
         if (!data) return [];
@@ -191,7 +183,6 @@ class ProfileService {
         })),
       }));
 
-      console.log(`Parsed ${orders.length} orders:`, orders);
       return orders;
     } catch (error) {
       console.error("Error fetching orders:", error);
