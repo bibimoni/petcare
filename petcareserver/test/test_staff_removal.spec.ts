@@ -9,6 +9,9 @@ import { Role } from '../src/roles/entities/role.entity';
 import { Invitation } from '../src/stores/entities/invitation.entity';
 import { RolePermission } from '../src/roles/entities/role-permission.entity';
 import { Permission } from '../src/permissions/entities/permission.entity';
+import { CustomerHistory } from '../src/customers/entities/customer-history.entity';
+import { ProductHistory } from '../src/categories/entities/product-history.entity';
+import { ServiceHistory } from '../src/categories/entities/service-history.entity';
 import { MailService } from '../src/mail/mail.service';
 import { NotificationsService } from '../src/notifications/notifications.service';
 import { NotificationScheduler } from '../src/notifications/notification.scheduler';
@@ -182,6 +185,18 @@ describe('StoresService - Staff Removal', () => {
         },
         {
           provide: getRepositoryToken(Permission),
+          useValue: createMockRepository(),
+        },
+        {
+          provide: getRepositoryToken(CustomerHistory),
+          useValue: createMockRepository(),
+        },
+        {
+          provide: getRepositoryToken(ProductHistory),
+          useValue: createMockRepository(),
+        },
+        {
+          provide: getRepositoryToken(ServiceHistory),
           useValue: createMockRepository(),
         },
         {
