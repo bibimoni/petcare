@@ -118,9 +118,6 @@ const SettingsPage = () => {
         toast.success("Xoá cửa hàng thành công");
         navigate("/create-store");
       },
-      onError: () => {
-        toast.error("Xoá cửa hàng thất bại, vui lòng thử lại");
-      },
     },
   );
 
