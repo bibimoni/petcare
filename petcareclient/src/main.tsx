@@ -212,7 +212,7 @@ createRoot(document.getElementById("root")!).render(
           <Route
             path="/settings"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+              <RoleRoute allowedRoles={["ADMIN", "STAFF", "NULL"]}>
                 <SettingsPage />
               </RoleRoute>
             }
