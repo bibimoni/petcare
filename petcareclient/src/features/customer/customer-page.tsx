@@ -4,8 +4,8 @@ import { toast } from "sonner";
 
 import { Footer } from "@/components/Footer";
 import { Sidebar } from "@/components/Sidebar";
-import { queryClient } from "@/lib/query-client";
 import { AlertDialog } from "@/components/ui/alert-dialog";
+import { queryClient } from "@/lib/query-client";
 
 import { CustomerApi, type CustomerListItem } from "./api/customer-api";
 import AddCustomerModal from "./components/add-customer-modal";

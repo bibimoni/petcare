@@ -1,5 +1,5 @@
 import { Edit, Trash2, PawPrint } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 import type { CustomerListItem } from "../api/customer-api";
 
@@ -14,7 +14,7 @@ export default function CustomerRow({
   onEditCustomer,
   onDeleteCustomer,
 }: CustomerRowProps) {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const displayName = c.full_name || c.fullName || "Khách hàng";
   const displayId = c.customer_id || c.id || "-";
   const petCount = Array.isArray(c.pets) ? c.pets.length : Number(c.pets || 0);
@@ -24,9 +24,9 @@ export default function CustomerRow({
 
   return (
     <tr className="hover:bg-gray-50">
-      <td 
+      <td
         className="p-4 cursor-pointer"
-        onClick={() => navigate(`/customers/${displayId}`)}
+        // onClick={() => navigate(`/customers/${displayId}`)}
       >
         <div className="flex items-center gap-3">
           {c.avatar ? (
