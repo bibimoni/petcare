@@ -719,7 +719,7 @@ export class StoresService {
 
     if (!filters?.entity_type || filters.entity_type === 'CUSTOMER') {
       const customerWhere: any = { store_id: storeId };
-      if (filters?.performed_by) customerWhere.performed_by = filters.performed_by;
+      if (filters?.performed_by !== undefined) customerWhere.performed_by = filters.performed_by;
       const rows = await this.customerHistoryRepository.find({
         where: customerWhere,
         order: { created_at: 'DESC' },
@@ -741,7 +741,7 @@ export class StoresService {
 
     if (!filters?.entity_type || filters.entity_type === 'PRODUCT') {
       const productWhere: any = { store_id: storeId };
-      if (filters?.performed_by) productWhere.performed_by = filters.performed_by;
+      if (filters?.performed_by !== undefined) productWhere.performed_by = filters.performed_by;
       const rows = await this.productHistoryRepository.find({
         where: productWhere,
         order: { created_at: 'DESC' },
@@ -763,7 +763,7 @@ export class StoresService {
 
     if (!filters?.entity_type || filters.entity_type === 'SERVICE') {
       const serviceWhere: any = { store_id: storeId };
-      if (filters?.performed_by) serviceWhere.performed_by = filters.performed_by;
+      if (filters?.performed_by !== undefined) serviceWhere.performed_by = filters.performed_by;
       const rows = await this.serviceHistoryRepository.find({
         where: serviceWhere,
         order: { created_at: 'DESC' },

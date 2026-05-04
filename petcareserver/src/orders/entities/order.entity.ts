@@ -19,7 +19,7 @@ export class Order {
   @PrimaryGeneratedColumn()
   order_id: number;
 
-  @Column({ name: 'store_id' })
+  @Column({ name: 'store_id', nullable: true })
   store_id: number;
 
   @ManyToOne(() => Store, (store) => store.orders, { onDelete: 'SET NULL' })

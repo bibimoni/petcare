@@ -59,9 +59,10 @@ export class StoresController {
     @Query('entity_type') entity_type?: 'CUSTOMER' | 'PRODUCT' | 'SERVICE',
     @Query('performed_by') performed_by?: string,
   ) {
+    const performedByNum = performed_by ? parseInt(performed_by, 10) : undefined;
     return this.storesService.getActivity(user.store_id, {
       entity_type,
-      performed_by: performed_by ? parseInt(performed_by, 10) : undefined,
+      performed_by: performedByNum && !isNaN(performedByNum) ? performedByNum : undefined,
     });
   }
 

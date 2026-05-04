@@ -307,7 +307,7 @@ export class CustomersService {
     });
 
     const orders = await this.orderRepository.find({
-      where: { customer_id: customerId },
+      where: { customer_id: customerId, store_id: storeId },
       select: ['order_id'],
     });
 

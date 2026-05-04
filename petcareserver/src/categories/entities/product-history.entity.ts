@@ -19,7 +19,7 @@ export class ProductHistory {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'product_id' })
+  @Column({ name: 'product_id', nullable: true })
   product_id: number;
 
   @ManyToOne(() => Product, { onDelete: 'SET NULL' })

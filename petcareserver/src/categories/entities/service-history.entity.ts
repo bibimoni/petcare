@@ -19,7 +19,7 @@ export class ServiceHistory {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'service_id' })
+  @Column({ name: 'service_id', nullable: true })
   service_id: number;
 
   @ManyToOne(() => Service, { onDelete: 'SET NULL' })
