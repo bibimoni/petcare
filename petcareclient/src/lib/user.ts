@@ -18,12 +18,18 @@ export type SidebarUser = {
 type StoredUser = Record<string, unknown> & {
   email?: string;
   phone?: string;
-  role?: unknown;
   address?: string;
   fullName?: string;
   full_name?: string;
   role_id?: number | null;
   store_id?: number | null;
+  role?: {
+    id: string;
+    name: string;
+    store_id: number;
+    description: string;
+    role_permissions: unknown;
+  } | null;
 };
 
 const USER_STORAGE_KEY = "user";

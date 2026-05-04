@@ -52,7 +52,6 @@ export default function CustomerProfilePage() {
             customerResponse.customer_id,
           );
           setPets(petsResponse || []);
-          console.log("Pets loaded:", petsResponse?.length || 0, "pets");
         } catch (petError) {
           console.error("Error fetching pets:", petError);
           setPets([]);
@@ -64,7 +63,6 @@ export default function CustomerProfilePage() {
             customerResponse.customer_id,
           );
           setOrders(ordersResponse || []);
-          console.log("Orders loaded:", ordersResponse?.length || 0, "orders");
         } catch (orderError: any) {
           console.error("Error fetching orders:", orderError);
           setOrders([]);

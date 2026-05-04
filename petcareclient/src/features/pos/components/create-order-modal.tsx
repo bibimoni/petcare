@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { X, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { CustomerApi } from "@/features/customer/api/customer-api";
+import AddCustomerModal from "@/features/customer/components/add-customer-modal";
 import { createOrder } from "@/features/pos/api";
 import { PetService } from "@/lib/pets";
 
@@ -30,10 +31,12 @@ export const CreateOrderModal = ({
   onRemoveItem,
   userName,
 }: CreateOrderModalProps) => {
+  const queryClient = useQueryClient();
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [selectedPetId, setSelectedPetId] = useState<string>("");
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const [isAddCustomerModalOpen, setIsAddCustomerModalOpen] = useState(false);
 
   const { data: customers = [] } = useQuery({
     queryKey: ["customers"],
@@ -52,6 +55,14 @@ export const CreateOrderModal = ({
     },
     enabled: !!selectedCustomerId,
   });
+
+  const handleAddCustomerSuccess = async () => {
+    // Refetch customers list to include the newly created customer
+    await queryClient.refetchQueries({
+      queryKey: ["customers"],
+    });
+    setIsAddCustomerModalOpen(false);
+  };
 
   const filteredCustomers = customers.filter((c) => {
     const term = customerSearchTerm.toLowerCase();
@@ -72,6 +83,8 @@ export const CreateOrderModal = ({
     return new Intl.NumberFormat("vi-VN").format(price) + "đ";
   };
 
+  const hasServices = items.some((item) => item.type === "service");
+
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
 
@@ -81,13 +94,13 @@ export const CreateOrderModal = ({
       return;
     }
 
-    if (!selectedPetId) {
-      toast.error("Vui lòng chọn thú cưng");
+    if (items.length === 0) {
+      toast.error("Giỏ hàng trống");
       return;
     }
 
-    if (items.length === 0) {
-      toast.error("Giỏ hàng trống");
+    if (hasServices && !selectedPetId) {
+      toast.error("Vui lòng chọn thú cưng (có dịch vụ trong đơn hàng)");
       return;
     }
 
@@ -97,7 +110,7 @@ export const CreateOrderModal = ({
         item_id: Number(it.id),
         item_type: it.type === "product" ? "PRODUCT" : "SERVICE",
         quantity: it.quantity,
-        pet_id: Number(selectedPetId),
+        pet_id: selectedPetId ? Number(selectedPetId) : null,
       })),
       currency: "vnd",
     };
@@ -129,13 +142,14 @@ export const CreateOrderModal = ({
       return;
     }
 
-    if (!selectedPetId) {
-      toast.error("Vui lòng chọn thú cưng");
+    if (items.length === 0) {
+      toast.error("Giỏ hàng trống");
       return;
     }
 
-    if (items.length === 0) {
-      toast.error("Giỏ hàng trống");
+    // Only require pet selection if order contains services
+    if (hasServices && !selectedPetId) {
+      toast.error("Vui lòng chọn thú cưng (có dịch vụ trong đơn hàng)");
       return;
     }
 
@@ -145,7 +159,7 @@ export const CreateOrderModal = ({
         item_id: Number(it.id),
         item_type: it.type === "product" ? "PRODUCT" : "SERVICE",
         quantity: it.quantity,
-        pet_id: Number(selectedPetId),
+        pet_id: selectedPetId ? Number(selectedPetId) : null,
       })),
       currency: "vnd",
     };
@@ -213,7 +227,8 @@ export const CreateOrderModal = ({
               />
               <button
                 type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#be9477] hover:text-[#2f231d]"
+                onClick={() => setIsAddCustomerModalOpen(true)}
+                className="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-[#be9477] hover:text-[#2f231d]"
               >
                 <span className="material-symbols-outlined text-[20px]">
                   person_add
@@ -256,7 +271,7 @@ export const CreateOrderModal = ({
           {/* Pet Selection */}
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-[#9f7d67]">
-              Chọn Pet
+              Chọn Pet {hasServices && <span className="text-red-500">*</span>}
             </label>
             <div className="relative">
               <div className="pointer-events-none absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#efe5df] text-[#8d6955]">
@@ -271,11 +286,13 @@ export const CreateOrderModal = ({
                 className="w-full cursor-pointer appearance-none rounded-xl border border-[#ecdcd1] bg-[#fdfaf8] py-2.5 pl-12 pr-10 text-sm font-medium text-[#523c30] outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="">
-                  {selectedCustomerId
-                    ? pets.length === 0
+                  {!selectedCustomerId
+                    ? "Vui lòng chọn khách hàng trước"
+                    : pets.length === 0
                       ? "Khách hàng này chưa có pet"
-                      : "Chọn thú cưng..."
-                    : "Vui lòng chọn khách hàng trước"}
+                      : hasServices
+                        ? "Chọn thú cưng (bắt buộc)"
+                        : "Chọn thú cưng (tùy chọn)"}
                 </option>
                 {pets.map((p) => (
                   <option key={p.pet_id || p.id} value={p.pet_id || p.id}>
@@ -396,6 +413,12 @@ export const CreateOrderModal = ({
           </div>
         </div>
       </div>
+
+      <AddCustomerModal
+        open={isAddCustomerModalOpen}
+        onOpenChange={setIsAddCustomerModalOpen}
+        onCreated={handleAddCustomerSuccess}
+      />
     </>
   );
 };
