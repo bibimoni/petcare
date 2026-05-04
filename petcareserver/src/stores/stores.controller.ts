@@ -41,6 +41,31 @@ import { UpdateNotificationScheduleDto } from './dto/update-notification-schedul
 export class StoresController {
   constructor(private readonly storesService: StoresService) {}
 
+  @Get('activity')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions(STORE_PERMISSIONS.REPORTS_VIEW)
+  @ApiOperation({
+    summary: 'Get store activity log',
+    description:
+      'Retrieves a unified timeline of customer, product, and service audit events for the store, sorted by time. Optional filters: entity_type, performed_by.',
+  })
+  @ApiQuery({ name: 'entity_type', required: false, enum: ['CUSTOMER', 'PRODUCT', 'SERVICE'] })
+  @ApiQuery({ name: 'performed_by', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Activity log retrieved successfully' })
+  getActivity(
+    @CurrentUser() user: any,
+    @Query('entity_type') entity_type?: 'CUSTOMER' | 'PRODUCT' | 'SERVICE',
+    @Query('performed_by') performed_by?: string,
+  ) {
+    const performedByNum = performed_by ? parseInt(performed_by, 10) : undefined;
+    return this.storesService.getActivity(user.store_id, {
+      entity_type,
+      performed_by: performedByNum && !isNaN(performedByNum) ? performedByNum : undefined,
+    });
+  }
+
   @Get()
   @ApiOperation({
     summary: 'Get all stores',

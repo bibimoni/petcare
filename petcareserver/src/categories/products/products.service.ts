@@ -8,14 +8,33 @@ import { Repository, LessThan, Between } from 'typeorm';
 import { Product, ProductStatus } from '../entities/product.entity';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
+import {
+  ProductHistory,
+  ProductHistoryAction,
+} from '../entities/product-history.entity';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationType } from '../../notifications/entities/notification.entity';
+
+const PRODUCT_TRACKED_FIELDS = [
+  'name',
+  'cost_price',
+  'sell_price',
+  'stock_quantity',
+  'status',
+  'category_id',
+  'description',
+  'image_url',
+] as const;
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+
+    @InjectRepository(ProductHistory)
+    private readonly productHistoryRepository: Repository<ProductHistory>,
+
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -116,6 +135,8 @@ export class ProductsService {
     storeId: number,
     createProductDto: CreateProductDto,
     expiryWarningDays: number,
+    performedBy?: number,
+    performedByName?: string,
   ) {
     if (
       createProductDto.expiry_date &&
@@ -143,6 +164,16 @@ export class ProductsService {
       expiryWarningDays,
     );
 
+    await this.productHistoryRepository.save({
+      product_id: savedProduct.product_id,
+      store_id: storeId,
+      action: ProductHistoryAction.CREATED,
+      performed_by: performedBy ?? null,
+      performed_by_name: performedByName ?? null,
+      old_values: null,
+      new_values: this.extractTrackedFields(savedProduct),
+    });
+
     return savedProduct;
   }
 
@@ -151,6 +182,8 @@ export class ProductsService {
     productId: number,
     updateProductDto: UpdateProductDto,
     expiryWarningDays: number,
+    performedBy?: number,
+    performedByName?: string,
   ): Promise<Product> {
     const product = await this.findByProduct(storeId, productId);
 
@@ -172,6 +205,8 @@ export class ProductsService {
       );
     }
 
+    const oldValues = this.extractTrackedFields(product);
+
     Object.assign(product, updateProductDto);
     const updatedProduct = await this.productRepository.save(product);
 
@@ -181,15 +216,47 @@ export class ProductsService {
       expiryWarningDays,
     );
 
+    await this.productHistoryRepository.save({
+      product_id: updatedProduct.product_id,
+      store_id: storeId,
+      action: ProductHistoryAction.UPDATED,
+      performed_by: performedBy ?? null,
+      performed_by_name: performedByName ?? null,
+      old_values: oldValues,
+      new_values: this.extractTrackedFields(updatedProduct),
+    });
+
     return updatedProduct;
   }
 
-  async deleteProduct(storeId: number, productId: number): Promise<void> {
+  async deleteProduct(
+    storeId: number,
+    productId: number,
+    performedBy?: number,
+    performedByName?: string,
+  ): Promise<void> {
     const product = await this.findByProduct(storeId, productId);
+
+    await this.productHistoryRepository.save({
+      product_id: product.product_id,
+      store_id: storeId,
+      action: ProductHistoryAction.DELETED,
+      performed_by: performedBy ?? null,
+      performed_by_name: performedByName ?? null,
+      old_values: this.extractTrackedFields(product),
+      new_values: null,
+    });
 
     await this.productRepository.delete({
       product_id: product.product_id,
       store_id: product.store_id,
+    });
+  }
+
+  async getHistory(storeId: number, productId: number) {
+    return this.productHistoryRepository.find({
+      where: { product_id: productId, store_id: storeId },
+      order: { created_at: 'DESC' },
     });
   }
 
@@ -238,6 +305,14 @@ export class ProductsService {
     }));
   }
 
+  private extractTrackedFields(product: Product): Record<string, any> {
+    const result: Record<string, any> = {};
+    for (const key of PRODUCT_TRACKED_FIELDS) {
+      result[key] = (product as any)[key];
+    }
+    return result;
+  }
+
   private async checkAndCreateNotifications(
     storeId: number,
     product: Product,
@@ -282,7 +357,6 @@ export class ProductsService {
         );
 
         if (daysUntilExpiry < 0) {
-          // Sản phẩm đã hết hạn
           const alreadyNotified =
             await this.notificationsService.hasNotificationToday(
               storeId,
@@ -297,7 +371,6 @@ export class ProductsService {
             );
           }
         } else if (daysUntilExpiry <= expiryWarningDays) {
-          // Sản phẩm sắp hết hạn
           const alreadyNotified =
             await this.notificationsService.hasNotificationToday(
               storeId,

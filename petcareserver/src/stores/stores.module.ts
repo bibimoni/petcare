@@ -7,6 +7,9 @@ import { User } from '../users/entities/user.entity';
 import { Role } from '../roles/entities/role.entity';
 import { RolePermission } from '../roles/entities/role-permission.entity';
 import { Permission } from '../permissions/entities/permission.entity';
+import { CustomerHistory } from '../customers/entities/customer-history.entity';
+import { ProductHistory } from '../categories/entities/product-history.entity';
+import { ServiceHistory } from '../categories/entities/service-history.entity';
 import { StoresService } from './stores.service';
 import { StoresController } from './stores.controller';
 import { NotificationsModule } from 'src/notifications/notifications.module';
@@ -20,6 +23,9 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
       Role,
       RolePermission,
       Permission,
+      CustomerHistory,
+      ProductHistory,
+      ServiceHistory,
     ]),
     MailModule,
     forwardRef(() => NotificationsModule),
