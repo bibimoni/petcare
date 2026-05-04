@@ -1,14 +1,10 @@
+import type { CustomerListItem } from "../api/customer-api";
+
 import CustomerRow from "./customer-row";
 
 type CustomerTableProps = {
-  customers: {
-    id?: number | string;
-    customer_id?: number | string;
-  }[];
-  onEditCustomer: (customer: {
-    id?: number | string;
-    customer_id?: number | string;
-  }) => void;
+  customers: CustomerListItem[];
+  onEditCustomer: (customer: CustomerListItem) => void;
 };
 
 export default function CustomerTable({

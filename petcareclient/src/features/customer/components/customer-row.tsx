@@ -1,6 +1,9 @@
 import { Edit, Trash2, PawPrint } from "lucide-react";
 
+import type { CustomerListItem } from "../api/customer-api";
+
 type CustomerRowProps = {
+  onEditCustomer: (customer: CustomerListItem) => void;
   c: {
     name?: string;
     phone?: string;
@@ -11,16 +14,6 @@ type CustomerRowProps = {
     last_visit?: string | null;
     customer_id?: number | string;
   };
-  onEditCustomer: (customer: {
-    name?: string;
-    phone?: string;
-    avatar?: string;
-    full_name?: string;
-    id?: number | string;
-    pets?: unknown[] | number;
-    last_visit?: string | null;
-    customer_id?: number | string;
-  }) => void;
 };
 
 export default function CustomerRow({ c, onEditCustomer }: CustomerRowProps) {
