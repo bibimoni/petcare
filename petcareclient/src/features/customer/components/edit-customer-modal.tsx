@@ -81,19 +81,14 @@ export default function EditCustomerModal({
 
     const nextErrors = {
       fullName: fullName.trim() ? "" : "Vui lòng nhập tên khách hàng",
-      email: email.trim() ? "" : "Vui lòng nhập email khách hàng",
+      email: "",
       phone: phone.trim() ? "" : "Vui lòng nhập số điện thoại",
-      address: address.trim() ? "" : "Vui lòng nhập địa chỉ",
+      address: "",
     };
 
     setErrors(nextErrors);
 
-    if (
-      nextErrors.fullName ||
-      nextErrors.email ||
-      nextErrors.phone ||
-      nextErrors.address
-    ) {
+    if (nextErrors.fullName || nextErrors.phone) {
       return;
     }
 
@@ -107,14 +102,22 @@ export default function EditCustomerModal({
     try {
       setIsSubmitting(true);
 
-      await CustomerApi.editCustomer({
+      const payload: any = {
         id: customerId,
         fullName: fullName.trim(),
         phone: phone.trim(),
-        email: email.trim(),
-        address: address.trim(),
         notes: notes.trim(),
-      });
+      };
+
+      if (email.trim()) {
+        payload.email = email.trim();
+      }
+
+      if (address.trim()) {
+        payload.address = address.trim();
+      }
+
+      await CustomerApi.editCustomer(payload);
 
       await onUpdated();
       toast.success("Cập nhật khách hàng thành công");
@@ -179,7 +182,7 @@ export default function EditCustomerModal({
 
             <label className="block">
               <span className="mb-2 block text-md font-semibold text-[#2f2420]">
-                Email khách hàng <span className="text-[#dc6e5f]">*</span>
+                Email khách hàng
               </span>
               <div className="flex h-16 items-center gap-3 rounded-3xl bg-[#efeded] px-5">
                 <User className="h-6 w-6 text-[#a3745f]" />

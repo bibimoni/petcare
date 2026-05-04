@@ -1,13 +1,20 @@
 import { Edit, Trash2, PawPrint } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import type { CustomerListItem } from "../api/customer-api";
 
 type CustomerRowProps = {
   c: CustomerListItem;
   onEditCustomer: (customer: CustomerListItem) => void;
+  onDeleteCustomer: (customerId: string | number) => void;
 };
 
-export default function CustomerRow({ c, onEditCustomer }: CustomerRowProps) {
+export default function CustomerRow({
+  c,
+  onEditCustomer,
+  onDeleteCustomer,
+}: CustomerRowProps) {
+  const navigate = useNavigate();
   const displayName = c.full_name || c.fullName || "Khách hàng";
   const displayId = c.customer_id || c.id || "-";
   const petCount = Array.isArray(c.pets) ? c.pets.length : Number(c.pets || 0);
@@ -17,7 +24,10 @@ export default function CustomerRow({ c, onEditCustomer }: CustomerRowProps) {
 
   return (
     <tr className="hover:bg-gray-50">
-      <td className="p-4">
+      <td 
+        className="p-4 cursor-pointer"
+        onClick={() => navigate(`/customers/${displayId}`)}
+      >
         <div className="flex items-center gap-3">
           {c.avatar ? (
             <img
@@ -61,6 +71,7 @@ export default function CustomerRow({ c, onEditCustomer }: CustomerRowProps) {
           <button
             type="button"
             className="p-2 hover:bg-red-50 text-red-500 rounded"
+            onClick={() => onDeleteCustomer(c.customer_id || c.id || "")}
           >
             <Trash2 size={16} />
           </button>

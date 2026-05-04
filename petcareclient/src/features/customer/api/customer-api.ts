@@ -75,4 +75,8 @@ export const CustomerApi = {
     });
     return response.data;
   },
+  deleteCustomer: async (id: number) => {
+    const response = await axiosClient.delete(`/customers/${id}`);
+    return response.data;
+  },
 };

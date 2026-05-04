@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Footer } from "@/components/Footer";
 import { Sidebar } from "@/components/Sidebar";
 import { queryClient } from "@/lib/query-client";
+import { AlertDialog } from "@/components/ui/alert-dialog";
 
 import { CustomerApi, type CustomerListItem } from "./api/customer-api";
 import AddCustomerModal from "./components/add-customer-modal";
@@ -24,6 +26,9 @@ export default function CustomersPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] =
     useState<CustomerListItem | null>(null);
+  const [customerToDelete, setCustomerToDelete] = useState<
+    string | number | null
+  >(null);
   const customersQuery = useQuery({
     queryKey: ["customers-list"],
     queryFn: CustomerApi.getCustomers,
@@ -36,6 +41,24 @@ export default function CustomersPage() {
   const handleEditCustomer = (customer: CustomerListItem) => {
     setSelectedCustomer(customer);
     setIsEditModalOpen(true);
+  };
+
+  const handleDeleteCustomer = (customerId: string | number) => {
+    setCustomerToDelete(customerId);
+  };
+
+  const confirmDelete = async () => {
+    if (!customerToDelete) return;
+
+    try {
+      await CustomerApi.deleteCustomer(Number(customerToDelete));
+      await queryClient.invalidateQueries({ queryKey: ["customers-list"] });
+      toast.success("Xoá khách hàng thành công");
+    } catch (_error) {
+      toast.error("Không thể xoá khách hàng");
+    } finally {
+      setCustomerToDelete(null);
+    }
   };
 
   const handleEditModalOpenChange = (open: boolean) => {
@@ -97,6 +120,19 @@ export default function CustomersPage() {
         onOpenChange={handleEditModalOpenChange}
       />
 
+      <AlertDialog
+        open={!!customerToDelete}
+        onOpenChange={(open) => {
+          if (!open) setCustomerToDelete(null);
+        }}
+        title="Xoá khách hàng?"
+        description="Bạn có chắc muốn xoá khách hàng này không? Hành động này không thể hoàn tác."
+        actionLabel="Xoá"
+        cancelLabel="Huỷ"
+        onConfirm={confirmDelete}
+        variant="destructive"
+      />
+
       <main className="flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto bg-[#faf7f5] p-8">
           <Breadcrumb />
@@ -136,6 +172,7 @@ export default function CustomersPage() {
                 <CustomerTable
                   customers={paginatedCustomers}
                   onEditCustomer={handleEditCustomer}
+                  onDeleteCustomer={handleDeleteCustomer}
                 />
 
                 <div className="flex items-center justify-between mt-4">

@@ -5,11 +5,13 @@ import CustomerRow from "./customer-row";
 type CustomerTableProps = {
   customers: CustomerListItem[];
   onEditCustomer: (customer: CustomerListItem) => void;
+  onDeleteCustomer: (customerId: string | number) => void;
 };
 
 export default function CustomerTable({
   customers,
   onEditCustomer,
+  onDeleteCustomer,
 }: CustomerTableProps) {
   return (
     <div className="bg-white rounded-2xl shadow border overflow-hidden">
@@ -31,6 +33,7 @@ export default function CustomerTable({
               key={String(c.customer_id ?? c.id ?? index)}
               c={c}
               onEditCustomer={onEditCustomer}
+              onDeleteCustomer={onDeleteCustomer}
             />
           ))}
         </tbody>
