@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { X, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { CustomerApi } from "@/features/customer/api/customer-api";
+import AddCustomerModal from "@/features/customer/components/add-customer-modal";
 import { createOrder } from "@/features/pos/api";
 import { PetService } from "@/lib/pets";
 
@@ -30,10 +31,12 @@ export const CreateOrderModal = ({
   onRemoveItem,
   userName,
 }: CreateOrderModalProps) => {
+  const queryClient = useQueryClient();
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [selectedPetId, setSelectedPetId] = useState<string>("");
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const [isAddCustomerModalOpen, setIsAddCustomerModalOpen] = useState(false);
 
   const { data: customers = [] } = useQuery({
     queryKey: ["customers"],
@@ -52,6 +55,14 @@ export const CreateOrderModal = ({
     },
     enabled: !!selectedCustomerId,
   });
+
+  const handleAddCustomerSuccess = async () => {
+    // Refetch customers list to include the newly created customer
+    await queryClient.refetchQueries({
+      queryKey: ["customers"],
+    });
+    setIsAddCustomerModalOpen(false);
+  };
 
   const filteredCustomers = customers.filter((c) => {
     const term = customerSearchTerm.toLowerCase();
@@ -213,7 +224,8 @@ export const CreateOrderModal = ({
               />
               <button
                 type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#be9477] hover:text-[#2f231d]"
+                onClick={() => setIsAddCustomerModalOpen(true)}
+                className="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-[#be9477] hover:text-[#2f231d]"
               >
                 <span className="material-symbols-outlined text-[20px]">
                   person_add
@@ -396,6 +408,12 @@ export const CreateOrderModal = ({
           </div>
         </div>
       </div>
+
+      <AddCustomerModal
+        open={isAddCustomerModalOpen}
+        onOpenChange={setIsAddCustomerModalOpen}
+        onCreated={handleAddCustomerSuccess}
+      />
     </>
   );
 };

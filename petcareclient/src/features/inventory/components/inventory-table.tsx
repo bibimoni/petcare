@@ -30,6 +30,7 @@ import {
 } from "@/features/inventory/api/products.api";
 import api from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
+import { getStoredUser } from "@/lib/user";
 
 interface InventoryTableProps {
   categoryId?: string;
@@ -40,6 +41,9 @@ export function InventoryTable({
   categoryId = "all",
   searchTerm = "",
 }: InventoryTableProps) {
+  const storedUser = getStoredUser();
+  const isAdmin = storedUser?.role?.name?.toUpperCase() === "ADMIN";
+
   const categoriesQuery = useQuery({
     queryKey: ["inventory-categories"],
     queryFn: getProductCategories,
@@ -118,10 +122,13 @@ export function InventoryTable({
         name: editingProduct.name,
         category_id: Number(editingProduct.category_id),
         stock_quantity: Number(editingProduct.stock_quantity),
-        cost_price: Number(editingProduct.cost_price),
         sell_price: Number(editingProduct.sell_price),
         image_url: editingProduct.image_url,
       };
+
+      if (isAdmin) {
+        payload.cost_price = Number(editingProduct.cost_price);
+      }
 
       if (editingProduct.expiry_date) {
         payload.expiry_date = new Date(
@@ -223,9 +230,14 @@ export function InventoryTable({
                   <TableHead className="p-4 text-xs font-semibold text-text-secondary uppercase">
                     Tồn kho
                   </TableHead>
-                  <TableHead className="p-4 text-xs font-semibold text-text-secondary uppercase text-right">
-                    Giá nhập
+                  <TableHead className="p-4 text-xs font-semibold text-text-secondary uppercase">
+                    Hạn sử dụng
                   </TableHead>
+                  {isAdmin && (
+                    <TableHead className="p-4 text-xs font-semibold text-text-secondary uppercase text-right">
+                      Giá vốn
+                    </TableHead>
+                  )}
                   <TableHead className="p-4 text-xs font-semibold text-text-secondary uppercase text-right">
                     Giá bán
                   </TableHead>
@@ -266,7 +278,6 @@ export function InventoryTable({
                         </Avatar>
                       </TableCell>
                       <TableCell className="p-4">
-                        {/* Đã xóa mã SKU ở đây */}
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-text-primary">
                             {product.name}
@@ -298,19 +309,30 @@ export function InventoryTable({
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="p-4 text-right font-medium text-text-secondary italic">
-                        {Number(product.cost_price || 0).toLocaleString()}đ
+                      <TableCell className="p-4 text-sm">
+                        {product.expiry_date
+                          ? new Date(product.expiry_date).toLocaleDateString(
+                              "vi-VN",
+                            )
+                          : "-"}
                       </TableCell>
+                      {isAdmin && (
+                        <TableCell className="p-4 text-right font-medium text-text-secondary italic">
+                          {Number(product.cost_price || 0).toLocaleString()}đ
+                        </TableCell>
+                      )}
                       <TableCell className="p-4 text-right font-bold text-text-primary">
                         {Number(product.sell_price || 0).toLocaleString()}đ
                       </TableCell>
                       <TableCell className="p-4 text-center">
-                        <button
-                          onClick={() => openEditModal(product)}
-                          className="text-gray-400 hover:text-primary transition-colors p-1.5 rounded-full hover:bg-primary/10"
-                        >
-                          <Edit3 size={18} />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => openEditModal(product)}
+                            className="text-gray-400 hover:text-primary transition-colors p-1.5 rounded-full hover:bg-primary/10"
+                          >
+                            <Edit3 size={18} />
+                          </button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -523,28 +545,30 @@ export function InventoryTable({
                     />
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary ml-1">
-                      Giá vốn
-                    </label>
-                    <div className="relative">
-                      <input
-                        required
-                        className="w-full bg-[#fcf9f8] border border-[#f3ebe7] rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-[#1b110d] font-medium px-4 py-3 pr-10 outline-none transition-all"
-                        type="number"
-                        value={editingProduct.cost_price}
-                        onChange={(e) =>
-                          setEditingProduct({
-                            ...editingProduct,
-                            cost_price: e.target.value,
-                          })
-                        }
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary font-bold text-xs">
-                        ₫
-                      </span>
+                  {isAdmin && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary ml-1">
+                        Giá vốn
+                      </label>
+                      <div className="relative">
+                        <input
+                          required
+                          className="w-full bg-[#fcf9f8] border border-[#f3ebe7] rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-[#1b110d] font-medium px-4 py-3 pr-10 outline-none transition-all"
+                          type="number"
+                          value={editingProduct.cost_price}
+                          onChange={(e) =>
+                            setEditingProduct({
+                              ...editingProduct,
+                              cost_price: e.target.value,
+                            })
+                          }
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary font-bold text-xs">
+                          ₫
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary ml-1">

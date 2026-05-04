@@ -21,6 +21,7 @@ import {
 import { getProductCategories } from "@/features/inventory/api/products.api";
 import api from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
+import { getStoredUser } from "@/lib/user";
 
 interface Batch {
   id: string;
@@ -78,13 +79,13 @@ export function AddProductModal() {
   // States phụ phục vụ chức năng "Thêm danh mục khác"
   const [isOtherCategory, setIsOtherCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  // Check role - only ADMIN can add products
+  const storedUser = getStoredUser();
+  const isAdmin = storedUser?.role?.name?.toUpperCase() === "ADMIN";
 
-  // const addBatch = () => {
-  //   setBatches([
-  //     ...batches,
-  //     { id: crypto.randomUUID(), quantity: "", expiryDate: "" },
-  //   ]);
-  // };
+  if (!isAdmin) {
+    return null;
+  }
 
   const removeBatch = (id: string) => {
     setBatches(batches.filter((batch) => batch.id !== id));
