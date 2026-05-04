@@ -12,6 +12,7 @@ import {
   Patch,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from '../dto/create-service.dto';
@@ -20,6 +21,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiResponse,
   ApiTags,
@@ -85,7 +87,12 @@ export class ServicesController {
     @Body() createServiceDto: CreateServiceDto,
     @CurrentUser() user: any,
   ) {
-    return this.servicesService.create(user.store_id, createServiceDto);
+    return this.servicesService.create(
+      user.store_id,
+      createServiceDto,
+      user.user_id,
+      user.full_name,
+    );
   }
 
   @Get('/category/:categoryId')
@@ -173,6 +180,8 @@ export class ServicesController {
       user.store_id,
       serviceIdNum,
       updateServiceDto,
+      user.user_id,
+      user.full_name,
     );
   }
 
@@ -203,6 +212,32 @@ export class ServicesController {
     if (isNaN(serviceIdNum)) {
       throw new BadRequestException('Invalid service ID');
     }
-    return this.servicesService.deleteService(user.store_id, serviceIdNum);
+    return this.servicesService.deleteService(
+      user.store_id,
+      serviceIdNum,
+      user.user_id,
+      user.full_name,
+    );
+  }
+
+  @Get('/:serviceId/history')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.SERVICE_VIEW)
+  @ApiOperation({
+    summary: 'Get service audit history',
+    description:
+      'Retrieves the change history for a specific service (create, update, delete events)',
+  })
+  @ApiParam({ name: 'serviceId', type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Service history retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Service not found' })
+  getHistory(
+    @Param('serviceId', ParseIntPipe) serviceId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.servicesService.getHistory(user.store_id, serviceId);
   }
 }

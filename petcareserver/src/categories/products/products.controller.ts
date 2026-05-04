@@ -12,6 +12,7 @@ import {
   Patch,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from '../dto/create-product.dto';
@@ -20,6 +21,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiResponse,
   ApiTags,
@@ -177,6 +179,8 @@ export class ProductsController {
       user.store_id,
       createProductDto,
       expiryWarningDays,
+      user.user_id,
+      user.full_name,
     );
   }
 
@@ -277,6 +281,8 @@ export class ProductsController {
       productIdNum,
       updateProductDto,
       expiryWarningDays,
+      user.user_id,
+      user.full_name,
     );
   }
 
@@ -303,6 +309,32 @@ export class ProductsController {
     if (isNaN(productIdNum)) {
       throw new BadRequestException('Invalid product ID');
     }
-    return this.productsService.deleteProduct(user.store_id, productIdNum);
+    return this.productsService.deleteProduct(
+      user.store_id,
+      productIdNum,
+      user.user_id,
+      user.full_name,
+    );
+  }
+
+  @Get('/:productId/history')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.PRODUCT_VIEW)
+  @ApiOperation({
+    summary: 'Get product audit history',
+    description:
+      'Retrieves the change history for a specific product (create, update, delete events)',
+  })
+  @ApiParam({ name: 'productId', type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Product history retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Product not found' })
+  getHistory(
+    @Param('productId', ParseIntPipe) productId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.productsService.getHistory(user.store_id, productId);
   }
 }
