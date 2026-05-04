@@ -122,6 +122,7 @@ export class CustomersController {
     summary: 'Get customer history',
     description:
       'Retrieves the change history for a specific customer (create, update, delete events)',
+    deprecated: true,
   })
   @ApiParam({ name: 'customerId', type: Number })
   @ApiResponse({
@@ -134,6 +135,27 @@ export class CustomersController {
     @CurrentUser() user: any,
   ) {
     return this.customersService.getHistory(user.store_id, customerId);
+  }
+
+  @Get('/:customerId/details')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.CUSTOMER_VIEW)
+  @ApiOperation({
+    summary: 'Get customer details with history, products and services',
+    description:
+      'Retrieves customer info, audit history, and distinct products/services from their orders',
+  })
+  @ApiParam({ name: 'customerId', type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Customer details retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Customer not found' })
+  getCustomerDetails(
+    @Param('customerId', ParseIntPipe) customerId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.customersService.getCustomerDetails(user.store_id, customerId);
   }
 
   @Get('/:customerId')

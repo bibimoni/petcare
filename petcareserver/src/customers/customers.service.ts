@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { parseDateInAppTimezone } from '../common/utils/timezone';
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -15,6 +15,10 @@ import {
   CustomerHistoryAction,
 } from './entities/customer-history.entity';
 import { Pet } from '../pets/entities/pet.entity';
+import { Order } from '../orders/entities/order.entity';
+import { OrderDetail } from '../orders/entities/order-detail.entity';
+import { Product } from '../categories/entities/product.entity';
+import { Service } from '../categories/entities/service.entity';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
@@ -28,6 +32,18 @@ export class CustomersService {
 
     @InjectRepository(Pet)
     private petRepository: Repository<Pet>,
+
+    @InjectRepository(Order)
+    private orderRepository: Repository<Order>,
+
+    @InjectRepository(OrderDetail)
+    private orderDetailRepository: Repository<OrderDetail>,
+
+    @InjectRepository(Product)
+    private productRepository: Repository<Product>,
+
+    @InjectRepository(Service)
+    private serviceRepository: Repository<Service>,
 
     private cloudinaryService: CloudinaryService,
   ) {}
@@ -275,5 +291,65 @@ export class CustomersService {
       where: { customer_id: customerId, store_id: storeId },
       order: { created_at: 'DESC' },
     });
+  }
+
+  async getCustomerDetails(storeId: number, customerId: number) {
+    const customer = await this.customerRepository.findOne({
+      where: { customer_id: customerId, store_id: storeId },
+    });
+    if (!customer) {
+      throw new NotFoundException('Không tìm thấy khách hàng');
+    }
+
+    const history = await this.customerHistoryRepository.find({
+      where: { customer_id: customerId, store_id: storeId },
+      order: { created_at: 'DESC' },
+    });
+
+    const orders = await this.orderRepository.find({
+      where: { customer_id: customerId },
+      select: ['order_id'],
+    });
+
+    const orderIds = orders.map((o) => o.order_id);
+
+    let products: Product[] = [];
+    let services: Service[] = [];
+
+    if (orderIds.length > 0) {
+      const orderDetails = await this.orderDetailRepository.find({
+        where: { order_id: In(orderIds) },
+        select: ['product_id', 'service_id'],
+      });
+
+      const productIds = [
+        ...new Set(
+          orderDetails
+            .map((od) => od.product_id)
+            .filter((id): id is number => id !== null),
+        ),
+      ];
+      const serviceIds = [
+        ...new Set(
+          orderDetails
+            .map((od) => od.service_id)
+            .filter((id): id is number => id !== null),
+        ),
+      ];
+
+      if (productIds.length > 0) {
+        products = await this.productRepository.find({
+          where: { product_id: In(productIds) },
+        });
+      }
+
+      if (serviceIds.length > 0) {
+        services = await this.serviceRepository.find({
+          where: { id: In(serviceIds) },
+        });
+      }
+    }
+
+    return { customer, history, products, services };
   }
 }

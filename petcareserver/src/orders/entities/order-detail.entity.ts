@@ -4,7 +4,6 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
-  Check,
 } from 'typeorm';
 import { Order } from './order.entity';
 import { Product } from '../../categories/entities/product.entity';
@@ -12,11 +11,6 @@ import { Service } from '../../categories/entities/service.entity';
 import { Pet } from '../../pets/entities/pet.entity';
 import { CategoryType } from '../../common/enum';
 
-@Check(`
-  (item_type = 'PRODUCT' AND product_id IS NOT NULL AND service_id IS NULL)
-  OR
-  (item_type = 'SERVICE' AND service_id IS NOT NULL AND product_id IS NULL)
-`)
 @Entity('order_details')
 export class OrderDetail {
   @PrimaryGeneratedColumn()
@@ -37,14 +31,14 @@ export class OrderDetail {
   @Column({ name: 'product_id', nullable: true })
   product_id: number;
 
-  @ManyToOne(() => Product, { nullable: true, onDelete: 'RESTRICT' })
+  @ManyToOne(() => Product, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
   @Column({ name: 'service_id', nullable: true })
   service_id: number;
 
-  @ManyToOne(() => Service, { nullable: true, onDelete: 'RESTRICT' })
+  @ManyToOne(() => Service, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'service_id' })
   service: Service;
 

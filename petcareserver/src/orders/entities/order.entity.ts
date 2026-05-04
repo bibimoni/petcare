@@ -22,7 +22,7 @@ export class Order {
   @Column({ name: 'store_id' })
   store_id: number;
 
-  @ManyToOne(() => Store, (store) => store.orders, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Store, (store) => store.orders, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'store_id' })
   store: Store;
 

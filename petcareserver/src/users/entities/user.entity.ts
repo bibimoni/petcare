@@ -41,7 +41,7 @@ export class User {
 
   @ManyToOne(() => Store, (store) => store.users, {
     nullable: true,
-    onDelete: 'CASCADE',
+    onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'store_id' })
   store: Store;
