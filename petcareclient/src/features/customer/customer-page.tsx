@@ -58,14 +58,18 @@ export default function CustomersPage() {
   );
 
   if (tab === "new") {
-    filtered = filtered.slice(-5);
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      return sort === "desc" ? dateB - dateA : dateA - dateB;
+    });
+  } else {
+    filtered.sort((a, b) =>
+      sort === "desc"
+        ? Number(b.total_spend || 0) - Number(a.total_spend || 0)
+        : Number(a.total_spend || 0) - Number(b.total_spend || 0),
+    );
   }
-
-  filtered.sort((a, b) =>
-    sort === "desc"
-      ? Number(b.total_spend || 0) - Number(a.total_spend || 0)
-      : Number(a.total_spend || 0) - Number(b.total_spend || 0),
-  );
 
   const totalPage = Math.ceil(filtered.length / limit);
   const currentPage = totalPage > 0 ? Math.min(page, totalPage) : 1;

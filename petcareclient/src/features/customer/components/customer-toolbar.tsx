@@ -1,11 +1,6 @@
 import { Search } from "lucide-react";
 
-export default function CustomerToolbar({
-  search,
-  setSearch,
-  sort,
-  setSort,
-}: any) {
+export default function CustomerToolbar({ search, setSearch }: any) {
   return (
     <div className="flex items-center gap-3">
       {/* SEARCH */}
@@ -20,18 +15,6 @@ export default function CustomerToolbar({
           className="pl-9 pr-3 py-2 border rounded-xl text-sm"
         />
       </div>
-
-      {/* SORT */}
-
-      <select
-        value={sort}
-        onChange={(e) => setSort(e.target.value)}
-        className="border rounded-xl px-3 py-2 text-sm"
-      >
-        <option value="desc">Chi tiêu cao nhất</option>
-
-        <option value="asc">Chi tiêu thấp nhất</option>
-      </select>
     </div>
   );
 }

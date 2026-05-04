@@ -2,8 +2,6 @@ export default function CustomerTabs({ tab, setTab }: any) {
   const tabs = [
     { id: "all", label: "Tất cả" },
     { id: "new", label: "Khách hàng mới" },
-    { id: "high", label: "Chi tiêu cao" },
-    { id: "vip", label: "⭐ VIP" },
   ];
 
   return (

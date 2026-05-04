@@ -10,6 +10,8 @@ export type CustomerListItem = {
   full_name?: string;
   id?: number | string;
   [key: string]: unknown;
+  created_at: Date | string;
+  updated_at: Date | string;
   last_visit?: string | null;
   customer_id?: number | string;
   total_spend?: string | number;
