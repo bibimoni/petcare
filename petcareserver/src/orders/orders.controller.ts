@@ -27,7 +27,12 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 
-import { Currency, OrderStatus, PaymentMethod, CategoryType } from '../common/enum';
+import {
+  Currency,
+  OrderStatus,
+  PaymentMethod,
+  CategoryType,
+} from '../common/enum';
 import {
   CurrentUser,
   JwtAuthGuard,
@@ -47,7 +52,9 @@ export class OrdersController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions(STORE_PERMISSIONS.ORDER_CREATE)
-  @ApiOperation({ summary: 'Create a new order and return Stripe checkout URL' })
+  @ApiOperation({
+    summary: 'Create a new order and return Stripe checkout URL',
+  })
   @ApiResponse({ status: 201, description: 'Order created with checkout_url' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   async createOrder(
@@ -301,5 +308,17 @@ export class OrdersController {
     @CurrentUser() user: any,
   ) {
     return this.ordersService.refundOrder(orderId, user.store_id);
+  }
+
+  @Get(':orderId/history')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.ORDER_VIEW)
+  @ApiOperation({ summary: 'Get order audit history' })
+  @ApiResponse({ status: 200, description: 'Order history' })
+  async getOrderHistory(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.ordersService.getHistory(user.store_id, orderId);
   }
 }

@@ -11,6 +11,10 @@ import { parseDateInAppTimezone } from '../common/utils/timezone';
 import { Order } from './entities/order.entity';
 import { OrderDetail } from './entities/order-detail.entity';
 import { Payment } from './entities/payment.entity';
+import {
+  OrderHistory,
+  OrderHistoryAction,
+} from './entities/order-history.entity';
 import { CreateOrderDto } from './dto';
 import { StripeService } from './stripe.service';
 import {
@@ -20,6 +24,10 @@ import {
   PaymentStatus,
 } from '../common/enum';
 import { Product } from '../categories/entities/product.entity';
+import {
+  ProductHistory,
+  ProductHistoryAction,
+} from '../categories/entities/product-history.entity';
 import { Service as PetCareService } from '../categories/entities/service.entity';
 import { ConfigService } from '@nestjs/config';
 
@@ -36,6 +44,10 @@ export class OrdersService {
     private productsRepository: Repository<Product>,
     @InjectRepository(PetCareService)
     private servicesRepository: Repository<PetCareService>,
+    @InjectRepository(OrderHistory)
+    private orderHistoryRepository: Repository<OrderHistory>,
+    @InjectRepository(ProductHistory)
+    private productHistoryRepository: Repository<ProductHistory>,
     private stripeService: StripeService,
     private configService: ConfigService,
     private dataSource: DataSource,
@@ -734,6 +746,8 @@ export class OrdersService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let webhookOrderDetails: OrderDetail[];
+
     try {
       payment.status = PaymentStatus.REFUNDED;
       await queryRunner.manager.save(Payment, payment);
@@ -743,11 +757,11 @@ export class OrdersService {
         cancel_reason: 'Refunded via Stripe',
       });
 
-      const orderDetails = await queryRunner.manager.find(OrderDetail, {
+      webhookOrderDetails = await queryRunner.manager.find(OrderDetail, {
         where: { order_id: payment.order_id },
       });
 
-      for (const detail of orderDetails) {
+      for (const detail of webhookOrderDetails) {
         if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
           await queryRunner.manager
             .createQueryBuilder()
@@ -771,6 +785,53 @@ export class OrdersService {
       );
     } finally {
       await queryRunner.release();
+    }
+
+    try {
+      const refundedOrder = await this.ordersRepository.findOne({
+        where: { order_id: payment.order_id },
+      });
+
+      await this.orderHistoryRepository.save({
+        order_id: payment.order_id,
+        store_id: refundedOrder?.store_id ?? 0,
+        action: OrderHistoryAction.REFUNDED,
+        performed_by: null,
+        performed_by_name: null,
+        old_values: { status: OrderStatus.PAID },
+        new_values: {
+          status: OrderStatus.CANCELLED,
+          cancel_reason: 'Refunded via Stripe',
+        },
+      });
+
+      for (const detail of webhookOrderDetails!) {
+        if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
+          const product = await this.productsRepository.findOne({
+            where: { product_id: detail.product_id },
+          });
+          await this.productHistoryRepository.save({
+            product_id: detail.product_id,
+            store_id: refundedOrder?.store_id ?? 0,
+            action: ProductHistoryAction.STOCK_CHANGED,
+            performed_by: null,
+            performed_by_name: null,
+            old_values: {
+              stock_quantity: product
+                ? product.stock_quantity - detail.quantity
+                : null,
+            },
+            new_values: {
+              stock_quantity: product ? product.stock_quantity : null,
+            },
+          });
+        }
+      }
+    } catch (auditError) {
+      console.error(
+        `[WARN] Webhook refund for ${paymentIntentId} processed but audit log failed:`,
+        auditError,
+      );
     }
   }
 
@@ -811,6 +872,10 @@ export class OrdersService {
     // Thực hiện DB transaction TRƯỚC, Stripe cancel SAU.
     // Nếu làm ngược lại: Stripe cancel thành công nhưng DB rollback
     // → order vẫn PENDING nhưng intent đã bị huỷ → inconsistent state.
+    let previousStatus: OrderStatus;
+    let cancelledBy: number | null;
+    let orderDetailsForHistory: OrderDetail[];
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -820,7 +885,6 @@ export class OrdersService {
         where: { order_id: orderId },
       });
 
-      // Hoàn trả tồn kho atomic
       for (const detail of orderDetails) {
         if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
           await queryRunner.manager
@@ -836,12 +900,13 @@ export class OrdersService {
         }
       }
 
-      // Cập nhật payment thành FAILED trong cùng transaction
       if (pendingPayment) {
         pendingPayment.status = PaymentStatus.FAILED;
         pendingPayment.error_message = 'Order cancelled by user/staff';
         await queryRunner.manager.save(Payment, pendingPayment);
       }
+
+      previousStatus = order.status;
 
       order.status = OrderStatus.CANCELLED;
       order.cancel_reason = reason;
@@ -851,12 +916,46 @@ export class OrdersService {
 
       await queryRunner.manager.save(Order, order);
       await queryRunner.commitTransaction();
+
+      orderDetailsForHistory = orderDetails;
+      cancelledBy = cancelledByUserId ?? null;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error(`Failed to cancel order ${orderId}:`, error);
       throw new InternalServerErrorException('Failed to cancel order');
     } finally {
       await queryRunner.release();
+    }
+
+    try {
+      await this.orderHistoryRepository.save({
+        order_id: order.order_id,
+        store_id: storeId,
+        action: OrderHistoryAction.CANCELLED,
+        performed_by: cancelledBy!,
+        performed_by_name: null,
+        old_values: { status: previousStatus!, cancel_reason: null },
+        new_values: { status: OrderStatus.CANCELLED, cancel_reason: reason },
+      });
+
+      for (const detail of orderDetailsForHistory!) {
+        if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
+          const product = await this.productsRepository.findOne({
+            where: { product_id: detail.product_id },
+          });
+          await this.productHistoryRepository.save({
+            product_id: detail.product_id,
+            store_id: storeId,
+            action: ProductHistoryAction.STOCK_CHANGED,
+            performed_by: cancelledBy!,
+            performed_by_name: null,
+            old_values: { stock_quantity: product ? product.stock_quantity - detail.quantity : null },
+            new_values: { stock_quantity: product ? product.stock_quantity : null },
+          });
+        }
+      }
+    } catch (auditError) {
+      console.error(`[WARN] Order ${orderId} cancelled but audit log failed:`, auditError);
     }
 
     // Cancel Stripe intent SAU khi DB đã commit thành công.
@@ -1076,6 +1175,8 @@ export class OrdersService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let refundOrderDetails: OrderDetail[];
+
     try {
       payment.status = PaymentStatus.REFUNDED;
       await queryRunner.manager.save(Payment, payment);
@@ -1084,12 +1185,11 @@ export class OrdersService {
       order.cancel_reason = 'Refunded';
       await queryRunner.manager.save(Order, order);
 
-      const orderDetails = await queryRunner.manager.find(OrderDetail, {
+      refundOrderDetails = await queryRunner.manager.find(OrderDetail, {
         where: { order_id: orderId },
       });
 
-      // Restore stock
-      for (const detail of orderDetails) {
+      for (const detail of refundOrderDetails) {
         if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
           await queryRunner.manager
             .createQueryBuilder()
@@ -1119,6 +1219,49 @@ export class OrdersService {
     }
 
     try {
+      await this.orderHistoryRepository.save({
+        order_id: orderId,
+        store_id: storeId,
+        action: OrderHistoryAction.REFUNDED,
+        performed_by: null,
+        performed_by_name: null,
+        old_values: { status: OrderStatus.PAID },
+        new_values: {
+          status: OrderStatus.CANCELLED,
+          cancel_reason: 'Refunded',
+        },
+      });
+
+      for (const detail of refundOrderDetails!) {
+        if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
+          const product = await this.productsRepository.findOne({
+            where: { product_id: detail.product_id },
+          });
+          await this.productHistoryRepository.save({
+            product_id: detail.product_id,
+            store_id: storeId,
+            action: ProductHistoryAction.STOCK_CHANGED,
+            performed_by: null,
+            performed_by_name: null,
+            old_values: {
+              stock_quantity: product
+                ? product.stock_quantity - detail.quantity
+                : null,
+            },
+            new_values: {
+              stock_quantity: product ? product.stock_quantity : null,
+            },
+          });
+        }
+      }
+    } catch (auditError) {
+      console.error(
+        `[WARN] Order ${orderId} refunded but audit log failed:`,
+        auditError,
+      );
+    }
+
+    try {
       const chargeDetails = await this.stripeService.getChargeDetails(
         payment.stripe_charge_id!,
       );
@@ -1142,5 +1285,12 @@ export class OrdersService {
       refund_amount: Number(order.total_amount),
       status: 'REFUNDED',
     };
+  }
+
+  async getHistory(storeId: number, orderId: number) {
+    return this.orderHistoryRepository.find({
+      where: { order_id: orderId, store_id: storeId },
+      order: { created_at: 'DESC' },
+    });
   }
 }

@@ -6,32 +6,32 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Product } from './product.entity';
+import { Role } from './role.entity';
 
-export enum ProductHistoryAction {
+export enum RoleHistoryAction {
   CREATED = 'CREATED',
   UPDATED = 'UPDATED',
+  PERMISSIONS_CHANGED = 'PERMISSIONS_CHANGED',
   DELETED = 'DELETED',
-  STOCK_CHANGED = 'STOCK_CHANGED',
 }
 
-@Entity('product_history')
-export class ProductHistory {
+@Entity('role_history')
+export class RoleHistory {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'product_id', nullable: true })
-  product_id: number;
+  @Column({ name: 'role_id', nullable: true })
+  role_id: number;
 
-  @ManyToOne(() => Product, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'product_id' })
-  product: Product;
+  @ManyToOne(() => Role, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'role_id' })
+  role: Role;
 
   @Column({ name: 'store_id' })
   store_id: number;
 
-  @Column({ type: 'simple-enum', enum: ProductHistoryAction })
-  action: ProductHistoryAction;
+  @Column({ type: 'simple-enum', enum: RoleHistoryAction })
+  action: RoleHistoryAction;
 
   @Column({ name: 'performed_by', nullable: true, type: 'integer' })
   performed_by: number | null;

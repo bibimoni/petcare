@@ -23,6 +23,8 @@ import { Invitation } from './entities/invitation.entity';
 import { CustomerHistory } from '../customers/entities/customer-history.entity';
 import { ProductHistory } from '../categories/entities/product-history.entity';
 import { ServiceHistory } from '../categories/entities/service-history.entity';
+import { OrderHistory } from '../orders/entities/order-history.entity';
+import { RoleHistory } from '../roles/entities/role-history.entity';
 import {
   UserStatus,
   StoreStatus,
@@ -60,6 +62,10 @@ export class StoresService {
     private productHistoryRepository: Repository<ProductHistory>,
     @InjectRepository(ServiceHistory)
     private serviceHistoryRepository: Repository<ServiceHistory>,
+    @InjectRepository(OrderHistory)
+    private orderHistoryRepository: Repository<OrderHistory>,
+    @InjectRepository(RoleHistory)
+    private roleHistoryRepository: Repository<RoleHistory>,
     private readonly mailService: MailService,
     @Inject(forwardRef(() => NotificationScheduler))
     private readonly notificationScheduler: NotificationScheduler,
@@ -699,13 +705,13 @@ export class StoresService {
   async getActivity(
     storeId: number,
     filters?: {
-      entity_type?: 'CUSTOMER' | 'PRODUCT' | 'SERVICE';
+      entity_type?: 'CUSTOMER' | 'PRODUCT' | 'SERVICE' | 'ORDER' | 'ROLE';
       performed_by?: number;
     },
   ) {
     type ActivityEntry = {
       id: number;
-      entity_type: 'CUSTOMER' | 'PRODUCT' | 'SERVICE';
+      entity_type: 'CUSTOMER' | 'PRODUCT' | 'SERVICE' | 'ORDER' | 'ROLE';
       entity_id: number;
       action: string;
       performed_by: number | null;
@@ -719,7 +725,8 @@ export class StoresService {
 
     if (!filters?.entity_type || filters.entity_type === 'CUSTOMER') {
       const customerWhere: any = { store_id: storeId };
-      if (filters?.performed_by !== undefined) customerWhere.performed_by = filters.performed_by;
+      if (filters?.performed_by !== undefined)
+        customerWhere.performed_by = filters.performed_by;
       const rows = await this.customerHistoryRepository.find({
         where: customerWhere,
         order: { created_at: 'DESC' },
@@ -741,7 +748,8 @@ export class StoresService {
 
     if (!filters?.entity_type || filters.entity_type === 'PRODUCT') {
       const productWhere: any = { store_id: storeId };
-      if (filters?.performed_by !== undefined) productWhere.performed_by = filters.performed_by;
+      if (filters?.performed_by !== undefined)
+        productWhere.performed_by = filters.performed_by;
       const rows = await this.productHistoryRepository.find({
         where: productWhere,
         order: { created_at: 'DESC' },
@@ -763,7 +771,8 @@ export class StoresService {
 
     if (!filters?.entity_type || filters.entity_type === 'SERVICE') {
       const serviceWhere: any = { store_id: storeId };
-      if (filters?.performed_by !== undefined) serviceWhere.performed_by = filters.performed_by;
+      if (filters?.performed_by !== undefined)
+        serviceWhere.performed_by = filters.performed_by;
       const rows = await this.serviceHistoryRepository.find({
         where: serviceWhere,
         order: { created_at: 'DESC' },
@@ -773,6 +782,52 @@ export class StoresService {
           id: r.id,
           entity_type: 'SERVICE',
           entity_id: r.service_id,
+          action: r.action,
+          performed_by: r.performed_by,
+          performed_by_name: r.performed_by_name,
+          old_values: r.old_values,
+          new_values: r.new_values,
+          created_at: r.created_at,
+        });
+      }
+    }
+
+    if (!filters?.entity_type || filters.entity_type === 'ORDER') {
+      const orderWhere: any = { store_id: storeId };
+      if (filters?.performed_by !== undefined)
+        orderWhere.performed_by = filters.performed_by;
+      const rows = await this.orderHistoryRepository.find({
+        where: orderWhere,
+        order: { created_at: 'DESC' },
+      });
+      for (const r of rows) {
+        entries.push({
+          id: r.id,
+          entity_type: 'ORDER',
+          entity_id: r.order_id,
+          action: r.action,
+          performed_by: r.performed_by,
+          performed_by_name: r.performed_by_name,
+          old_values: r.old_values,
+          new_values: r.new_values,
+          created_at: r.created_at,
+        });
+      }
+    }
+
+    if (!filters?.entity_type || filters.entity_type === 'ROLE') {
+      const roleWhere: any = { store_id: storeId };
+      if (filters?.performed_by !== undefined)
+        roleWhere.performed_by = filters.performed_by;
+      const rows = await this.roleHistoryRepository.find({
+        where: roleWhere,
+        order: { created_at: 'DESC' },
+      });
+      for (const r of rows) {
+        entries.push({
+          id: r.id,
+          entity_type: 'ROLE',
+          entity_id: r.role_id,
           action: r.action,
           performed_by: r.performed_by,
           performed_by_name: r.performed_by_name,

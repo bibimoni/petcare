@@ -49,20 +49,31 @@ export class StoresController {
   @ApiOperation({
     summary: 'Get store activity log',
     description:
-      'Retrieves a unified timeline of customer, product, and service audit events for the store, sorted by time. Optional filters: entity_type, performed_by.',
+      'Retrieves a unified timeline of customer, product, service, order, and role audit events for the store, sorted by time. Optional filters: entity_type, performed_by.',
   })
-  @ApiQuery({ name: 'entity_type', required: false, enum: ['CUSTOMER', 'PRODUCT', 'SERVICE'] })
+  @ApiQuery({
+    name: 'entity_type',
+    required: false,
+    enum: ['CUSTOMER', 'PRODUCT', 'SERVICE', 'ORDER', 'ROLE'],
+  })
   @ApiQuery({ name: 'performed_by', required: false, type: Number })
-  @ApiResponse({ status: 200, description: 'Activity log retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Activity log retrieved successfully',
+  })
   getActivity(
     @CurrentUser() user: any,
-    @Query('entity_type') entity_type?: 'CUSTOMER' | 'PRODUCT' | 'SERVICE',
+    @Query('entity_type')
+    entity_type?: 'CUSTOMER' | 'PRODUCT' | 'SERVICE' | 'ORDER' | 'ROLE',
     @Query('performed_by') performed_by?: string,
   ) {
-    const performedByNum = performed_by ? parseInt(performed_by, 10) : undefined;
+    const performedByNum = performed_by
+      ? parseInt(performed_by, 10)
+      : undefined;
     return this.storesService.getActivity(user.store_id, {
       entity_type,
-      performed_by: performedByNum && !isNaN(performedByNum) ? performedByNum : undefined,
+      performed_by:
+        performedByNum && !isNaN(performedByNum) ? performedByNum : undefined,
     });
   }
 
