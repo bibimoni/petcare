@@ -9,6 +9,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -261,5 +262,33 @@ export class RolesController {
   ) {
     const admin = isSuperAdmin(user);
     return this.rolesService.deleteRole(parseInt(roleId), user.user_id, admin);
+  }
+
+  @Get(':roleId/history')
+  @ApiOperation({
+    summary: 'Get role audit history',
+    description:
+      'Retrieves the audit history for a specific role including permission changes',
+  })
+  @ApiParam({
+    name: 'storeId',
+    description: 'Store ID',
+    example: 1,
+  })
+  @ApiParam({
+    name: 'roleId',
+    description: 'Role ID',
+    example: 2,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Role history retrieved successfully',
+  })
+  async getRoleHistory(
+    @Param('storeId') storeId: string,
+    @Param('roleId', ParseIntPipe) roleId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.rolesService.getHistory(parseInt(storeId), roleId);
   }
 }

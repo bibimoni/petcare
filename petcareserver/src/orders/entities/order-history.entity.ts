@@ -6,32 +6,32 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Product } from './product.entity';
+import { Order } from './order.entity';
 
-export enum ProductHistoryAction {
+export enum OrderHistoryAction {
   CREATED = 'CREATED',
-  UPDATED = 'UPDATED',
-  DELETED = 'DELETED',
-  STOCK_CHANGED = 'STOCK_CHANGED',
+  CANCELLED = 'CANCELLED',
+  PAID = 'PAID',
+  REFUNDED = 'REFUNDED',
 }
 
-@Entity('product_history')
-export class ProductHistory {
+@Entity('order_history')
+export class OrderHistory {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'product_id', nullable: true })
-  product_id: number;
+  @Column({ name: 'order_id', nullable: true })
+  order_id: number;
 
-  @ManyToOne(() => Product, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'product_id' })
-  product: Product;
+  @ManyToOne(() => Order, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'order_id' })
+  order: Order;
 
   @Column({ name: 'store_id' })
   store_id: number;
 
-  @Column({ type: 'simple-enum', enum: ProductHistoryAction })
-  action: ProductHistoryAction;
+  @Column({ type: 'simple-enum', enum: OrderHistoryAction })
+  action: OrderHistoryAction;
 
   @Column({ name: 'performed_by', nullable: true, type: 'integer' })
   performed_by: number | null;

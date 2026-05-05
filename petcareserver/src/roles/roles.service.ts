@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from './entities/role.entity';
 import { RolePermission } from './entities/role-permission.entity';
+import { RoleHistory, RoleHistoryAction } from './entities/role-history.entity';
 import { Permission } from '../permissions/entities/permission.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -42,7 +43,19 @@ export class RolesService {
     private permissionRepository: Repository<Permission>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(RoleHistory)
+    private roleHistoryRepository: Repository<RoleHistory>,
   ) {}
+
+  private async getPerformedByName(
+    userId: number | null,
+  ): Promise<string | null> {
+    if (!userId) return null;
+    const user = await this.userRepository.findOne({
+      where: { user_id: userId },
+    });
+    return user?.full_name ?? null;
+  }
 
   async createRole(
     storeId: number,
@@ -88,10 +101,30 @@ export class RolesService {
 
     await this.rolePermissionRepository.save(rolePermissions);
 
+    const performedByName = await this.getPerformedByName(currentUserId);
+
+    await this.roleHistoryRepository.save({
+      role_id: savedRole.id,
+      store_id: storeId,
+      action: RoleHistoryAction.CREATED,
+      performed_by: currentUserId,
+      performed_by_name: performedByName,
+      old_values: null,
+      new_values: {
+        name: savedRole.name,
+        description: savedRole.description,
+        permission_ids: createRoleDto.permission_ids,
+      },
+    });
+
     return await this.getRole(savedRole.id, currentUserId, isSuperAdmin);
   }
 
-  async getRoles(storeId: number, currentUserId: number, isSuperAdmin: boolean = false) {
+  async getRoles(
+    storeId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
     await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
 
     const roles = await this.roleRepository.find({
@@ -122,7 +155,11 @@ export class RolesService {
     }));
   }
 
-  async getRole(roleId: number, currentUserId: number, isSuperAdmin: boolean = false) {
+  async getRole(
+    roleId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
     const role = await this.roleRepository.findOne({
       where: { id: roleId },
       relations: {
@@ -136,7 +173,11 @@ export class RolesService {
       throw new NotFoundException('Không tìm thấy vai trò');
     }
 
-    await this.validateStoreMembership(role.store_id, currentUserId, isSuperAdmin);
+    await this.validateStoreMembership(
+      role.store_id,
+      currentUserId,
+      isSuperAdmin,
+    );
 
     return {
       id: role.id,
@@ -165,6 +206,7 @@ export class RolesService {
   ) {
     const role = await this.roleRepository.findOne({
       where: { id: roleId },
+      relations: { role_permissions: { permission: true } },
     });
 
     if (!role) {
@@ -175,7 +217,18 @@ export class RolesService {
       throw new ForbiddenException('Vai trò này không thể chỉnh sửa');
     }
 
-    await this.validateStoreMembership(role.store_id, currentUserId, isSuperAdmin);
+    await this.validateStoreMembership(
+      role.store_id,
+      currentUserId,
+      isSuperAdmin,
+    );
+
+    const oldValues: Record<string, any> = {
+      name: role.name,
+      description: role.description,
+      permission_ids: role.role_permissions.map((rp) => rp.permission_id),
+      permission_slugs: role.role_permissions.map((rp) => rp.permission.slug),
+    };
 
     if (updateRoleDto.name) {
       const existingRole = await this.roleRepository.findOne({
@@ -221,10 +274,39 @@ export class RolesService {
     role.updated_at = new Date();
     const updatedRole = await this.roleRepository.save(role);
 
+    const newValues: Record<string, any> = {
+      name: updatedRole.name,
+      description: updatedRole.description,
+    };
+
+    if (updateRoleDto.permission_ids !== undefined) {
+      newValues.permission_ids = updateRoleDto.permission_ids;
+    }
+
+    const performedByName = await this.getPerformedByName(currentUserId);
+    const historyAction =
+      updateRoleDto.permission_ids !== undefined
+        ? RoleHistoryAction.PERMISSIONS_CHANGED
+        : RoleHistoryAction.UPDATED;
+
+    await this.roleHistoryRepository.save({
+      role_id: roleId,
+      store_id: role.store_id,
+      action: historyAction,
+      performed_by: currentUserId,
+      performed_by_name: performedByName,
+      old_values: oldValues,
+      new_values: newValues,
+    });
+
     return await this.getRole(updatedRole.id, currentUserId, isSuperAdmin);
   }
 
-  async deleteRole(roleId: number, currentUserId: number, isSuperAdmin: boolean = false) {
+  async deleteRole(
+    roleId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
     const role = await this.roleRepository.findOne({
       where: { id: roleId },
     });
@@ -237,7 +319,11 @@ export class RolesService {
       throw new ForbiddenException('Không thể xóa vai trò hệ thống');
     }
 
-    await this.validateStoreMembership(role.store_id, currentUserId, isSuperAdmin);
+    await this.validateStoreMembership(
+      role.store_id,
+      currentUserId,
+      isSuperAdmin,
+    );
 
     const usersWithRole = await this.userRepository.count({
       where: { role_id: roleId },
@@ -249,6 +335,18 @@ export class RolesService {
       );
     }
 
+    const performedByName = await this.getPerformedByName(currentUserId);
+
+    await this.roleHistoryRepository.save({
+      role_id: roleId,
+      store_id: role.store_id,
+      action: RoleHistoryAction.DELETED,
+      performed_by: currentUserId,
+      performed_by_name: performedByName,
+      old_values: { name: role.name, description: role.description },
+      new_values: null,
+    });
+
     await this.rolePermissionRepository.delete({ role_id: roleId });
 
     await this.roleRepository.delete(roleId);
@@ -258,7 +356,11 @@ export class RolesService {
     };
   }
 
-  async getAvailablePermissions(storeId: number, currentUserId: number, isSuperAdmin: boolean = false) {
+  async getAvailablePermissions(
+    storeId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
     await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
 
     const permissions = await this.permissionRepository.find({
@@ -273,5 +375,12 @@ export class RolesService {
       module: permission.module,
       is_system_defined: permission.is_system_defined,
     }));
+  }
+
+  async getHistory(storeId: number, roleId: number) {
+    return this.roleHistoryRepository.find({
+      where: { role_id: roleId, store_id: storeId },
+      order: { created_at: 'DESC' },
+    });
   }
 }
