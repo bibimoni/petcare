@@ -37,7 +37,13 @@ describe('OrdersService - Audit Logging', () => {
     paymentsRepo = { findOne: jest.fn() };
     orderDetailsRepo = { find: jest.fn() };
     servicesRepo = { findOne: jest.fn() };
-    stripeService = { cancelPaymentIntent: jest.fn() };
+    stripeService = {
+      cancelPaymentIntent: jest.fn(),
+      getChargeDetails: jest.fn().mockResolvedValue({
+        payment_method: { card: { last4: '4242' } },
+      }),
+      refundCharge: jest.fn().mockResolvedValue({}),
+    };
 
     queryRunner = {
       connect: jest.fn(),
