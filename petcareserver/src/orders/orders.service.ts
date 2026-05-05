@@ -1262,7 +1262,6 @@ export class OrdersService {
     }
 
     try {
-      await this.stripeService.refundCharge(payment.stripe_charge_id!);
       const chargeDetails = await this.stripeService.getChargeDetails(
         payment.stripe_charge_id!,
       );
