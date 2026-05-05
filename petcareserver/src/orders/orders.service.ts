@@ -1263,6 +1263,13 @@ export class OrdersService {
 
     try {
       await this.stripeService.refundCharge(payment.stripe_charge_id!);
+      const chargeDetails = await this.stripeService.getChargeDetails(
+        payment.stripe_charge_id!,
+      );
+      await this.stripeService.refundCharge(
+        payment.stripe_charge_id!,
+        chargeDetails.currency,
+      );
     } catch (err) {
       console.error(
         `[CRITICAL] DB updated but Stripe refund failed for order ${orderId}:`,
