@@ -746,6 +746,8 @@ export class OrdersService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let webhookOrderDetails: OrderDetail[];
+
     try {
       payment.status = PaymentStatus.REFUNDED;
       await queryRunner.manager.save(Payment, payment);
@@ -755,7 +757,7 @@ export class OrdersService {
         cancel_reason: 'Refunded via Stripe',
       });
 
-      const webhookOrderDetails = await queryRunner.manager.find(OrderDetail, {
+      webhookOrderDetails = await queryRunner.manager.find(OrderDetail, {
         where: { order_id: payment.order_id },
       });
 
@@ -772,7 +774,20 @@ export class OrdersService {
       }
 
       await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error(
+        `[CRITICAL] Webhook charge.refunded for ${paymentIntentId} — DB update failed:`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Failed to process refund webhook',
+      );
+    } finally {
+      await queryRunner.release();
+    }
 
+    try {
       const refundedOrder = await this.ordersRepository.findOne({
         where: { order_id: payment.order_id },
       });
@@ -790,7 +805,7 @@ export class OrdersService {
         },
       });
 
-      for (const detail of webhookOrderDetails) {
+      for (const detail of webhookOrderDetails!) {
         if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
           const product = await this.productsRepository.findOne({
             where: { product_id: detail.product_id },
@@ -812,17 +827,11 @@ export class OrdersService {
           });
         }
       }
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
+    } catch (auditError) {
       console.error(
-        `[CRITICAL] Webhook charge.refunded for ${paymentIntentId} — DB update failed:`,
-        error,
+        `[WARN] Webhook refund for ${paymentIntentId} processed but audit log failed:`,
+        auditError,
       );
-      throw new InternalServerErrorException(
-        'Failed to process refund webhook',
-      );
-    } finally {
-      await queryRunner.release();
     }
   }
 
@@ -863,6 +872,10 @@ export class OrdersService {
     // Thực hiện DB transaction TRƯỚC, Stripe cancel SAU.
     // Nếu làm ngược lại: Stripe cancel thành công nhưng DB rollback
     // → order vẫn PENDING nhưng intent đã bị huỷ → inconsistent state.
+    let previousStatus: OrderStatus;
+    let cancelledBy: number | null;
+    let orderDetailsForHistory: OrderDetail[];
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -872,7 +885,6 @@ export class OrdersService {
         where: { order_id: orderId },
       });
 
-      // Hoàn trả tồn kho atomic
       for (const detail of orderDetails) {
         if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
           await queryRunner.manager
@@ -888,14 +900,13 @@ export class OrdersService {
         }
       }
 
-      // Cập nhật payment thành FAILED trong cùng transaction
       if (pendingPayment) {
         pendingPayment.status = PaymentStatus.FAILED;
         pendingPayment.error_message = 'Order cancelled by user/staff';
         await queryRunner.manager.save(Payment, pendingPayment);
       }
 
-      const previousStatus = order.status;
+      previousStatus = order.status;
 
       order.status = OrderStatus.CANCELLED;
       order.cancel_reason = reason;
@@ -906,20 +917,28 @@ export class OrdersService {
       await queryRunner.manager.save(Order, order);
       await queryRunner.commitTransaction();
 
-      const orderDetailsForHistory = orderDetails;
-      const cancelledBy = cancelledByUserId ?? null;
+      orderDetailsForHistory = orderDetails;
+      cancelledBy = cancelledByUserId ?? null;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error(`Failed to cancel order ${orderId}:`, error);
+      throw new InternalServerErrorException('Failed to cancel order');
+    } finally {
+      await queryRunner.release();
+    }
 
+    try {
       await this.orderHistoryRepository.save({
         order_id: order.order_id,
         store_id: storeId,
         action: OrderHistoryAction.CANCELLED,
-        performed_by: cancelledBy,
+        performed_by: cancelledBy!,
         performed_by_name: null,
-        old_values: { status: previousStatus, cancel_reason: null },
+        old_values: { status: previousStatus!, cancel_reason: null },
         new_values: { status: OrderStatus.CANCELLED, cancel_reason: reason },
       });
 
-      for (const detail of orderDetailsForHistory) {
+      for (const detail of orderDetailsForHistory!) {
         if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
           const product = await this.productsRepository.findOne({
             where: { product_id: detail.product_id },
@@ -928,25 +947,15 @@ export class OrdersService {
             product_id: detail.product_id,
             store_id: storeId,
             action: ProductHistoryAction.STOCK_CHANGED,
-            performed_by: cancelledBy,
+            performed_by: cancelledBy!,
             performed_by_name: null,
-            old_values: {
-              stock_quantity: product
-                ? product.stock_quantity - detail.quantity
-                : null,
-            },
-            new_values: {
-              stock_quantity: product ? product.stock_quantity : null,
-            },
+            old_values: { stock_quantity: product ? product.stock_quantity - detail.quantity : null },
+            new_values: { stock_quantity: product ? product.stock_quantity : null },
           });
         }
       }
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      console.error(`Failed to cancel order ${orderId}:`, error);
-      throw new InternalServerErrorException('Failed to cancel order');
-    } finally {
-      await queryRunner.release();
+    } catch (auditError) {
+      console.error(`[WARN] Order ${orderId} cancelled but audit log failed:`, auditError);
     }
 
     // Cancel Stripe intent SAU khi DB đã commit thành công.
@@ -1166,6 +1175,8 @@ export class OrdersService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let refundOrderDetails: OrderDetail[];
+
     try {
       payment.status = PaymentStatus.REFUNDED;
       await queryRunner.manager.save(Payment, payment);
@@ -1174,7 +1185,7 @@ export class OrdersService {
       order.cancel_reason = 'Refunded';
       await queryRunner.manager.save(Order, order);
 
-      const refundOrderDetails = await queryRunner.manager.find(OrderDetail, {
+      refundOrderDetails = await queryRunner.manager.find(OrderDetail, {
         where: { order_id: orderId },
       });
 
@@ -1194,7 +1205,20 @@ export class OrdersService {
       }
 
       await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error(
+        `[CRITICAL] Refund DB update failed for order ${orderId}:`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Failed to process refund in database.',
+      );
+    } finally {
+      await queryRunner.release();
+    }
 
+    try {
       await this.orderHistoryRepository.save({
         order_id: orderId,
         store_id: storeId,
@@ -1208,7 +1232,7 @@ export class OrdersService {
         },
       });
 
-      for (const detail of refundOrderDetails) {
+      for (const detail of refundOrderDetails!) {
         if (detail.item_type === CategoryType.PRODUCT && detail.product_id) {
           const product = await this.productsRepository.findOne({
             where: { product_id: detail.product_id },
@@ -1230,17 +1254,11 @@ export class OrdersService {
           });
         }
       }
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
+    } catch (auditError) {
       console.error(
-        `[CRITICAL] Refund DB update failed for order ${orderId}:`,
-        error,
+        `[WARN] Order ${orderId} refunded but audit log failed:`,
+        auditError,
       );
-      throw new InternalServerErrorException(
-        'Failed to process refund in database.',
-      );
-    } finally {
-      await queryRunner.release();
     }
 
     try {

@@ -12,6 +12,8 @@ import { Permission } from '../src/permissions/entities/permission.entity';
 import { CustomerHistory } from '../src/customers/entities/customer-history.entity';
 import { ProductHistory } from '../src/categories/entities/product-history.entity';
 import { ServiceHistory } from '../src/categories/entities/service-history.entity';
+import { OrderHistory } from '../src/orders/entities/order-history.entity';
+import { RoleHistory } from '../src/roles/entities/role-history.entity';
 import { MailService } from '../src/mail/mail.service';
 import { NotificationsService } from '../src/notifications/notifications.service';
 import { NotificationScheduler } from '../src/notifications/notification.scheduler';
@@ -197,6 +199,14 @@ describe('StoresService - Staff Removal', () => {
         },
         {
           provide: getRepositoryToken(ServiceHistory),
+          useValue: createMockRepository(),
+        },
+        {
+          provide: getRepositoryToken(OrderHistory),
+          useValue: createMockRepository(),
+        },
+        {
+          provide: getRepositoryToken(RoleHistory),
           useValue: createMockRepository(),
         },
         {
