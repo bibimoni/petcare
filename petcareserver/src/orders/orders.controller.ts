@@ -188,53 +188,6 @@ export class OrdersController {
     );
   }
 
-  @Post('payment/intent')
-  @HttpCode(HttpStatus.OK)
-  @RequirePermissions(STORE_PERMISSIONS.ORDER_CREATE)
-  @ApiOperation({ deprecated: true })
-  @ApiOperation({ summary: 'Create a Stripe payment intent for an order' })
-  @ApiResponse({ status: 200, description: 'Payment intent created' })
-  @ApiResponse({ status: 404, description: 'Order not found' })
-  async createPaymentIntent(
-    @CurrentUser() user: any,
-    @Body() createPaymentIntentDto: CreatePaymentIntentDto,
-  ) {
-    const currency = createPaymentIntentDto.currency ?? Currency.VND;
-    return this.ordersService.createPaymentIntent(
-      createPaymentIntentDto.order_id,
-      user.store_id,
-      currency,
-    );
-  }
-
-  @Post('checkout')
-  @HttpCode(HttpStatus.OK)
-  @RequirePermissions(STORE_PERMISSIONS.ORDER_CREATE)
-  @ApiOperation({ deprecated: true })
-  @ApiOperation({
-    summary:
-      'Create Stripe Checkout Session — redirects to Stripe payment page',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Checkout session created, returns checkout_url',
-  })
-  @ApiResponse({ status: 404, description: 'Order not found' })
-  @ApiResponse({ status: 400, description: 'Order already paid or cancelled' })
-  async createCheckout(
-    @Body() dto: CreateCheckoutDto,
-    @CurrentUser() user: any,
-  ) {
-    const currency = dto.currency ?? Currency.VND;
-    return this.ordersService.createCheckoutSession(
-      dto.order_id,
-      user.store_id,
-      currency,
-      dto.success_url,
-      dto.cancel_url,
-    );
-  }
-
   @Get(':orderId/payment/status')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.ORDER_VIEW)
@@ -281,18 +234,32 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.ORDER_CANCEL)
   @ApiOperation({ summary: 'Cancel an order' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['cancel_reason'],
+      properties: {
+        cancel_reason: {
+          type: 'string',
+          example: 'Khách hàng yêu cầu huỷ đơn',
+          description: 'Lý do huỷ đơn hàng',
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 200, description: 'Order cancelled' })
   @ApiResponse({ status: 400, description: 'Cannot cancel this order' })
   async cancelOrder(
     @Param('orderId', ParseIntPipe) orderId: number,
-    @Body('reason') reason: string,
+    @Body('cancel_reason') cancelReason: string,
     @CurrentUser() user: any,
   ) {
     return this.ordersService.cancelOrder(
       orderId,
       user.store_id,
-      reason,
+      cancelReason,
       user.user_id,
+      user.full_name,
     );
   }
 
@@ -300,14 +267,34 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.ORDER_REFUND)
   @ApiOperation({ summary: 'Refund a paid order' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['refund_reason'],
+      properties: {
+        refund_reason: {
+          type: 'string',
+          example: 'Sản phẩm bị lỗi',
+          description: 'Lý do hoàn tiền',
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 200, description: 'Refund processed' })
   @ApiResponse({ status: 400, description: 'Cannot refund this order' })
   @ApiResponse({ status: 404, description: 'Order or payment not found' })
   async refundOrder(
     @Param('orderId', ParseIntPipe) orderId: number,
+    @Body('refund_reason') refundReason: string,
     @CurrentUser() user: any,
   ) {
-    return this.ordersService.refundOrder(orderId, user.store_id);
+    return this.ordersService.refundOrder(
+      orderId,
+      user.store_id,
+      refundReason,
+      user.user_id,
+      user.full_name,
+    );
   }
 
   @Get(':orderId/history')

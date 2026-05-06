@@ -20,6 +20,8 @@ import { Payment } from '../src/orders/entities/payment.entity';
 import { Customer } from '../src/customers/entities/customer.entity';
 import { Pet } from '../src/pets/entities/pet.entity';
 import { PetWeightHistory } from '../src/pets/entities/pet-weight-history.entity';
+import { OrderHistory } from '../src/orders/entities/order-history.entity';
+import { ProductHistory } from '../src/categories/entities/product-history.entity';
 
 export const ENTITIES = [
   User,
@@ -38,6 +40,8 @@ export const ENTITIES = [
   Customer,
   Pet,
   PetWeightHistory,
+  OrderHistory,
+  ProductHistory,
 ];
 
 export {
@@ -57,6 +61,8 @@ export {
   Customer,
   Pet,
   PetWeightHistory,
+  OrderHistory,
+  ProductHistory,
 };
 
 export {

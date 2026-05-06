@@ -55,6 +55,7 @@ describe('OrdersService - Audit Logging', () => {
         find: jest.fn(),
         save: jest.fn(),
         update: jest.fn(),
+        findOne: jest.fn(),
         createQueryBuilder: jest.fn().mockReturnValue({
           update: jest.fn().mockReturnThis(),
           set: jest.fn().mockReturnThis(),
@@ -65,8 +66,15 @@ describe('OrdersService - Audit Logging', () => {
       },
     };
 
-    const dataSource = { createQueryRunner: jest.fn().mockReturnValue(queryRunner) };
+    const dataSource = { createQueryRunner: jest.fn().mockReturnValue(queryRunner), manager: queryRunner.manager };
     const configService = { get: jest.fn().mockReturnValue('http://localhost:3000') };
+    const customersRepo = { findOne: jest.fn(), save: jest.fn(), createQueryBuilder: jest.fn().mockReturnValue({
+      update: jest.fn().mockReturnThis(),
+      set: jest.fn().mockReturnThis(),
+      setParameter: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue({}),
+    }) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -78,6 +86,7 @@ describe('OrdersService - Audit Logging', () => {
         { provide: 'ServiceRepository', useValue: servicesRepo },
         { provide: 'OrderHistoryRepository', useValue: orderHistoryRepo },
         { provide: 'ProductHistoryRepository', useValue: productHistoryRepo },
+        { provide: 'CustomerRepository', useValue: customersRepo },
         { provide: StripeService, useValue: stripeService },
         { provide: ConfigService, useValue: configService },
         { provide: DataSource, useValue: dataSource },
@@ -211,7 +220,7 @@ describe('OrdersService - Audit Logging', () => {
       queryRunner.manager.save.mockImplementation((_, entity) => entity);
       stripeService.refundCharge = jest.fn().mockResolvedValue({});
 
-      await service.refundOrder(orderId, storeId);
+      await service.refundOrder(orderId, storeId, 'Refund reason', 5);
 
       expect(orderHistoryRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -220,8 +229,7 @@ describe('OrdersService - Audit Logging', () => {
           action: OrderHistoryAction.REFUNDED,
           old_values: expect.objectContaining({ status: OrderStatus.PAID }),
           new_values: expect.objectContaining({
-            status: OrderStatus.CANCELLED,
-            cancel_reason: 'Refunded',
+            status: OrderStatus.REFUNDED,
           }),
         }),
       );
@@ -247,7 +255,7 @@ describe('OrdersService - Audit Logging', () => {
       queryRunner.manager.save.mockImplementation((_, entity) => entity);
       stripeService.refundCharge = jest.fn().mockResolvedValue({});
 
-      await service.refundOrder(orderId, storeId);
+      await service.refundOrder(orderId, storeId, 'Refund reason', 5);
 
       expect(productHistoryRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -274,7 +282,7 @@ describe('OrdersService - Audit Logging', () => {
       });
       queryRunner.manager.find.mockRejectedValue(new Error('DB error'));
 
-      await expect(service.refundOrder(orderId, storeId)).rejects.toThrow();
+      await expect(service.refundOrder(orderId, storeId, 'Sản phẩm bị lỗi', 5)).rejects.toThrow();
 
       expect(orderHistoryRepo.save).not.toHaveBeenCalled();
       expect(productHistoryRepo.save).not.toHaveBeenCalled();
@@ -381,3 +389,4 @@ describe('ProductHistoryAction - STOCK_CHANGED', () => {
     expect(ProductHistoryAction.DELETED).toBe('DELETED');
   });
 });
+
