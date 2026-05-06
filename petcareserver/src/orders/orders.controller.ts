@@ -188,53 +188,6 @@ export class OrdersController {
     );
   }
 
-  // @Post('payment/intent')
-  // @HttpCode(HttpStatus.OK)
-  // @RequirePermissions(STORE_PERMISSIONS.ORDER_CREATE)
-  // @ApiOperation({ deprecated: true })
-  // @ApiOperation({ summary: 'Create a Stripe payment intent for an order' })
-  // @ApiResponse({ status: 200, description: 'Payment intent created' })
-  // @ApiResponse({ status: 404, description: 'Order not found' })
-  // async createPaymentIntent(
-  //   @CurrentUser() user: any,
-  //   @Body() createPaymentIntentDto: CreatePaymentIntentDto,
-  // ) {
-  //   const currency = createPaymentIntentDto.currency ?? Currency.VND;
-  //   return this.ordersService.createPaymentIntent(
-  //     createPaymentIntentDto.order_id,
-  //     user.store_id,
-  //     currency,
-  //   );
-  // }
-
-  // @Post('checkout')
-  // @HttpCode(HttpStatus.OK)
-  // @RequirePermissions(STORE_PERMISSIONS.ORDER_CREATE)
-  // @ApiOperation({ deprecated: true })
-  // @ApiOperation({
-  //   summary:
-  //     'Create Stripe Checkout Session — redirects to Stripe payment page',
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Checkout session created, returns checkout_url',
-  // })
-  // @ApiResponse({ status: 404, description: 'Order not found' })
-  // @ApiResponse({ status: 400, description: 'Order already paid or cancelled' })
-  // async createCheckout(
-  //   @Body() dto: CreateCheckoutDto,
-  //   @CurrentUser() user: any,
-  // ) {
-  //   const currency = dto.currency ?? Currency.VND;
-  //   return this.ordersService.createCheckoutSession(
-  //     dto.order_id,
-  //     user.store_id,
-  //     currency,
-  //     dto.success_url,
-  //     dto.cancel_url,
-  //   );
-  // }
-
   @Get(':orderId/payment/status')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.ORDER_VIEW)

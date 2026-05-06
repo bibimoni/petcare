@@ -282,7 +282,7 @@ describe('OrdersService - Audit Logging', () => {
       });
       queryRunner.manager.find.mockRejectedValue(new Error('DB error'));
 
-      await expect(service.refundOrder(orderId, storeId, 'Sáº£n pháº©m bá»‹ lá»—i', 5)).rejects.toThrow();
+      await expect(service.refundOrder(orderId, storeId, 'Sản phẩm bị lỗi', 5)).rejects.toThrow();
 
       expect(orderHistoryRepo.save).not.toHaveBeenCalled();
       expect(productHistoryRepo.save).not.toHaveBeenCalled();
