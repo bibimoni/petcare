@@ -73,12 +73,15 @@ export class OrdersService {
       .update(Customer)
       .where('customer_id = :id', { id: order.customer_id });
 
-    if (options.addSpend !== undefined && options.addSpend !== 0) {
+    if (options.addSpend !== undefined) {
       const delta = Number(options.addSpend);
+
+      if (!Number.isFinite(delta) || delta === 0) return;
+
       qb.set({
         ...(options.updateLastVisit ? { last_visit: new Date() } : {}),
-        total_spend: () => `total_spend + ${delta}`,
-      });
+        total_spend: () => 'total_spend + :delta',
+      }).setParameter('delta', delta);
     } else if (options.updateLastVisit) {
       qb.set({ last_visit: new Date() });
     } else {
