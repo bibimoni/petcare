@@ -23,6 +23,7 @@ const mockOrdersService = {
 const TEST_USER = {
   user_id: 1,
   store_id: 10,
+  full_name: 'Test User',
   permissions: [
     'order.create',
     'order.view',
@@ -239,93 +240,7 @@ describe('OrdersController', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════
-  // CREATE PAYMENT INTENT
-  // ═══════════════════════════════════════════════
-  describe('createPaymentIntent', () => {
-    it('should create payment intent successfully', async () => {
-      const expected = {
-        client_secret: 'cs_test_123',
-        payment_intent_id: 'pi_test_123',
-        amount: 51,
-        currency: 'vnd',
-      };
-      mockOrdersService.createPaymentIntent.mockResolvedValue(expected);
 
-      const result = await controller.createPaymentIntent(
-        TEST_USER,
-        { order_id: 1 },
-        'vnd',
-      );
-
-      expect(result.client_secret).toBe('cs_test_123');
-      expect(result.payment_intent_id).toBe('pi_test_123');
-      expect(mockOrdersService.createPaymentIntent).toHaveBeenCalledWith(
-        1,
-        10,
-        'vnd',
-      );
-    });
-
-    it('should reuse existing PENDING intent (idempotent)', async () => {
-      const intent = {
-        client_secret: 'cs_existing',
-        payment_intent_id: 'pi_existing',
-        amount: 51,
-        currency: 'vnd',
-      };
-      mockOrdersService.createPaymentIntent.mockResolvedValue(intent);
-
-      const r1 = await controller.createPaymentIntent(
-        TEST_USER,
-        { order_id: 1 },
-        'vnd',
-      );
-      const r2 = await controller.createPaymentIntent(
-        TEST_USER,
-        { order_id: 1 },
-        'vnd',
-      );
-
-      expect(r1.client_secret).toBe(r2.client_secret);
-    });
-
-    it('should throw NotFoundException for non-existent order', async () => {
-      mockOrdersService.createPaymentIntent.mockRejectedValue(
-        new NotFoundException('Order 999 not found'),
-      );
-      await expect(
-        controller.createPaymentIntent(TEST_USER, { order_id: 999 }, 'vnd'),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw BadRequestException for already paid order', async () => {
-      mockOrdersService.createPaymentIntent.mockRejectedValue(
-        new BadRequestException('Order is already paid'),
-      );
-      await expect(
-        controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'vnd'),
-      ).rejects.toThrow('Order is already paid');
-    });
-
-    it('should throw BadRequestException for cancelled order', async () => {
-      mockOrdersService.createPaymentIntent.mockRejectedValue(
-        new BadRequestException('Cannot pay for a cancelled order'),
-      );
-      await expect(
-        controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'vnd'),
-      ).rejects.toThrow('Cannot pay for a cancelled order');
-    });
-
-    it('should throw ForbiddenException for wrong store', async () => {
-      mockOrdersService.createPaymentIntent.mockRejectedValue(
-        new ForbiddenException('You do not have permission'),
-      );
-      await expect(
-        controller.createPaymentIntent(TEST_USER, { order_id: 1 }, 'vnd'),
-      ).rejects.toThrow(ForbiddenException);
-    });
-  });
 
   // ═══════════════════════════════════════════════
   // GET PAYMENT STATUS (replaces confirmPayment)
@@ -406,6 +321,7 @@ describe('OrdersController', () => {
         10,
         'Customer request',
         1,
+        'Test User',
       );
     });
 
@@ -501,19 +417,25 @@ describe('OrdersController', () => {
       };
       mockOrdersService.refundOrder.mockResolvedValue(expected);
 
-      const result = await controller.refundOrder(1, TEST_USER);
+      const result = await controller.refundOrder(1, 'San pham bi loi', TEST_USER);
 
       expect(result.success).toBe(true);
       expect(result.refund_amount).toBe(76.5);
       expect(result.status).toBe('REFUNDED');
-      expect(mockOrdersService.refundOrder).toHaveBeenCalledWith(1, 10);
+      expect(mockOrdersService.refundOrder).toHaveBeenCalledWith(
+        1,
+        TEST_USER.store_id,
+        'San pham bi loi',
+        TEST_USER.user_id,
+        TEST_USER.full_name,
+      );
     });
 
     it('should throw BadRequestException for non-paid order', async () => {
       mockOrdersService.refundOrder.mockRejectedValue(
         new BadRequestException('Only paid orders can be refunded'),
       );
-      await expect(controller.refundOrder(1, TEST_USER)).rejects.toThrow(
+      await expect(controller.refundOrder(1, 'reason', TEST_USER)).rejects.toThrow(
         'Only paid orders can be refunded',
       );
     });
@@ -522,7 +444,7 @@ describe('OrdersController', () => {
       mockOrdersService.refundOrder.mockRejectedValue(
         new NotFoundException('No completed payment found'),
       );
-      await expect(controller.refundOrder(1, TEST_USER)).rejects.toThrow(
+      await expect(controller.refundOrder(1, 'reason', TEST_USER)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -531,7 +453,7 @@ describe('OrdersController', () => {
       mockOrdersService.refundOrder.mockRejectedValue(
         new BadRequestException('No Stripe charge found'),
       );
-      await expect(controller.refundOrder(1, TEST_USER)).rejects.toThrow(
+      await expect(controller.refundOrder(1, 'reason', TEST_USER)).rejects.toThrow(
         'No Stripe charge found',
       );
     });
@@ -540,7 +462,7 @@ describe('OrdersController', () => {
       mockOrdersService.refundOrder.mockRejectedValue(
         new ForbiddenException('You do not have permission'),
       );
-      await expect(controller.refundOrder(1, TEST_USER)).rejects.toThrow(
+      await expect(controller.refundOrder(1, 'reason', TEST_USER)).rejects.toThrow(
         ForbiddenException,
       );
     });

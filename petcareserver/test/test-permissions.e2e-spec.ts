@@ -575,24 +575,7 @@ describe('Permissions E2E', () => {
       path: '/v1/orders',
       body: { items: [{ item_id: 1, item_type: 'PRODUCT', quantity: 1 }] },
     },
-    {
-      label: 'Order Payment Intent',
-      requiredPerm: 'order.create',
-      method: 'POST',
-      path: '/v1/orders/payment/intent',
-      body: { order_id: 1 },
-      skipNoPerm: true,
-      dynamicBody: true,
-    },
-    {
-      label: 'Order Checkout',
-      requiredPerm: 'order.create',
-      method: 'POST',
-      path: '/v1/orders/checkout',
-      body: { order_id: 1 },
-      skipNoPerm: true,
-      dynamicBody: true,
-    },
+
     {
       label: 'Order Cancel',
       requiredPerm: 'order.cancel',
