@@ -29,6 +29,7 @@ import {
   ProductHistoryAction,
 } from '../categories/entities/product-history.entity';
 import { Service as PetCareService } from '../categories/entities/service.entity';
+import { Customer } from '../customers/entities/customer.entity';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -48,10 +49,44 @@ export class OrdersService {
     private orderHistoryRepository: Repository<OrderHistory>,
     @InjectRepository(ProductHistory)
     private productHistoryRepository: Repository<ProductHistory>,
+    @InjectRepository(Customer)
+    private customersRepository: Repository<Customer>,
     private stripeService: StripeService,
     private configService: ConfigService,
     private dataSource: DataSource,
   ) {}
+
+  private async updateCustomerStats(
+    orderId: number,
+    options: { addSpend?: number; updateLastVisit?: boolean },
+    manager: import('typeorm').EntityManager,
+  ): Promise<void> {
+    const order = await manager.findOne(Order, {
+      where: { order_id: orderId },
+      select: ['customer_id'],
+    });
+
+    if (!order?.customer_id) return;
+
+    const qb = manager
+      .createQueryBuilder()
+      .update(Customer)
+      .where('customer_id = :id', { id: order.customer_id });
+
+    if (options.addSpend !== undefined && options.addSpend !== 0) {
+      const delta = Number(options.addSpend);
+      qb.set({
+        ...(options.updateLastVisit ? { last_visit: new Date() } : {}),
+        total_spend: () => `total_spend + ${delta}`,
+      });
+    } else if (options.updateLastVisit) {
+      qb.set({ last_visit: new Date() });
+    } else {
+      return;
+    }
+
+    await qb.execute();
+  }
 
   async createOrder(
     createOrderDto: CreateOrderDto,
@@ -246,171 +281,171 @@ export class OrdersService {
     }
   }
 
-  async createPaymentIntent(
-    orderId: number,
-    storeId: number,
-    currency: string = 'vnd',
-  ): Promise<{
-    client_secret: string;
-    payment_intent_id: string;
-    amount: number;
-    currency: string;
-  }> {
-    const order = await this.ordersRepository.findOne({
-      where: { order_id: orderId },
-    });
+  // async createPaymentIntent(
+  //   orderId: number,
+  //   storeId: number,
+  //   currency: string = 'vnd',
+  // ): Promise<{
+  //   client_secret: string;
+  //   payment_intent_id: string;
+  //   amount: number;
+  //   currency: string;
+  // }> {
+  //   const order = await this.ordersRepository.findOne({
+  //     where: { order_id: orderId },
+  //   });
 
-    if (!order) {
-      throw new NotFoundException(`Order ${orderId} not found`);
-    }
+  //   if (!order) {
+  //     throw new NotFoundException(`Order ${orderId} not found`);
+  //   }
 
-    if (order.store_id !== storeId) {
-      throw new ForbiddenException(
-        'You do not have permission to pay for this order',
-      );
-    }
+  //   if (order.store_id !== storeId) {
+  //     throw new ForbiddenException(
+  //       'You do not have permission to pay for this order',
+  //     );
+  //   }
 
-    if (order.status === OrderStatus.PAID) {
-      throw new BadRequestException('Order is already paid');
-    }
+  //   if (order.status === OrderStatus.PAID) {
+  //     throw new BadRequestException('Order is already paid');
+  //   }
 
-    if (order.status === OrderStatus.CANCELLED) {
-      throw new BadRequestException('Cannot pay for a cancelled order');
-    }
+  //   if (order.status === OrderStatus.CANCELLED) {
+  //     throw new BadRequestException('Cannot pay for a cancelled order');
+  //   }
 
-    // Reuse existing PENDING intent nếu còn hợp lệ
-    const existing = await this.paymentsRepository.findOne({
-      where: { order_id: orderId, status: PaymentStatus.PENDING },
-    });
+  //   // Reuse existing PENDING intent nếu còn hợp lệ
+  //   const existing = await this.paymentsRepository.findOne({
+  //     where: { order_id: orderId, status: PaymentStatus.PENDING },
+  //   });
 
-    if (existing) {
-      if (
-        !existing.stripe_client_secret ||
-        !existing.stripe_payment_intent_id
-      ) {
-        // Intent bị corrupt → xoá và tạo lại
-        await this.paymentsRepository.delete({
-          payment_id: existing.payment_id,
-        });
-      } else {
-        return {
-          client_secret: existing.stripe_client_secret,
-          payment_intent_id: existing.stripe_payment_intent_id,
-          amount: Number(existing.amount),
-          currency,
-        };
-      }
-    }
+  //   if (existing) {
+  //     if (
+  //       !existing.stripe_client_secret ||
+  //       !existing.stripe_payment_intent_id
+  //     ) {
+  //       // Intent bị corrupt → xoá và tạo lại
+  //       await this.paymentsRepository.delete({
+  //         payment_id: existing.payment_id,
+  //       });
+  //     } else {
+  //       return {
+  //         client_secret: existing.stripe_client_secret,
+  //         payment_intent_id: existing.stripe_payment_intent_id,
+  //         amount: Number(existing.amount),
+  //         currency,
+  //       };
+  //     }
+  //   }
 
-    const paymentIntentData = await this.stripeService.createPaymentIntent(
-      orderId,
-      Number(order.total_amount),
-      currency,
-    );
+  //   const paymentIntentData = await this.stripeService.createPaymentIntent(
+  //     orderId,
+  //     Number(order.total_amount),
+  //     currency,
+  //   );
 
-    const payment = this.paymentsRepository.create({
-      order_id: orderId,
-      payment_method: PaymentMethod.STRIPE,
-      amount: order.total_amount,
-      status: PaymentStatus.PENDING,
-      stripe_payment_intent_id: paymentIntentData.payment_intent_id,
-      stripe_client_secret: paymentIntentData.client_secret,
-    });
+  //   const payment = this.paymentsRepository.create({
+  //     order_id: orderId,
+  //     payment_method: PaymentMethod.STRIPE,
+  //     amount: order.total_amount,
+  //     status: PaymentStatus.PENDING,
+  //     stripe_payment_intent_id: paymentIntentData.payment_intent_id,
+  //     stripe_client_secret: paymentIntentData.client_secret,
+  //   });
 
-    await this.paymentsRepository.save(payment);
+  //   await this.paymentsRepository.save(payment);
 
-    return paymentIntentData;
-  }
+  //   return paymentIntentData;
+  // }
 
-  async createCheckoutSession(
-    orderId: number,
-    storeId: number,
-    currency: string = 'vnd',
-    successUrl?: string,
-    cancelUrl?: string,
-  ): Promise<{
-    checkout_url: string;
-    session_id: string;
-    order_id: number;
-    amount: number;
-  }> {
-    const order = await this.ordersRepository.findOne({
-      where: { order_id: orderId },
-    });
+  // async createCheckoutSession(
+  //   orderId: number,
+  //   storeId: number,
+  //   currency: string = 'vnd',
+  //   successUrl?: string,
+  //   cancelUrl?: string,
+  // ): Promise<{
+  //   checkout_url: string;
+  //   session_id: string;
+  //   order_id: number;
+  //   amount: number;
+  // }> {
+  //   const order = await this.ordersRepository.findOne({
+  //     where: { order_id: orderId },
+  //   });
 
-    if (!order) {
-      throw new NotFoundException(`Order ${orderId} not found`);
-    }
+  //   if (!order) {
+  //     throw new NotFoundException(`Order ${orderId} not found`);
+  //   }
 
-    if (order.store_id !== storeId) {
-      throw new ForbiddenException(
-        'You do not have permission to pay for this order',
-      );
-    }
+  //   if (order.store_id !== storeId) {
+  //     throw new ForbiddenException(
+  //       'You do not have permission to pay for this order',
+  //     );
+  //   }
 
-    if (order.status === OrderStatus.PAID) {
-      throw new BadRequestException('Order is already paid');
-    }
+  //   if (order.status === OrderStatus.PAID) {
+  //     throw new BadRequestException('Order is already paid');
+  //   }
 
-    if (order.status === OrderStatus.CANCELLED) {
-      throw new BadRequestException('Cannot pay for a cancelled order');
-    }
+  //   if (order.status === OrderStatus.CANCELLED) {
+  //     throw new BadRequestException('Cannot pay for a cancelled order');
+  //   }
 
-    // Reuse existing PENDING payment if checkout URL is still valid
-    const existing = await this.paymentsRepository.findOne({
-      where: { order_id: orderId, status: PaymentStatus.PENDING },
-    });
+  //   // Reuse existing PENDING payment if checkout URL is still valid
+  //   const existing = await this.paymentsRepository.findOne({
+  //     where: { order_id: orderId, status: PaymentStatus.PENDING },
+  //   });
 
-    if (existing?.stripe_checkout_session_id) {
-      // Already has a checkout session → return existing
-      return {
-        checkout_url: existing.stripe_checkout_url ?? '',
-        session_id: existing.stripe_checkout_session_id,
-        order_id: orderId,
-        amount: Number(existing.amount),
-      };
-    }
+  //   if (existing?.stripe_checkout_session_id) {
+  //     // Already has a checkout session → return existing
+  //     return {
+  //       checkout_url: existing.stripe_checkout_url ?? '',
+  //       session_id: existing.stripe_checkout_session_id,
+  //       order_id: orderId,
+  //       amount: Number(existing.amount),
+  //     };
+  //   }
 
-    // Clean up corrupt payment if exists
-    if (existing) {
-      await this.paymentsRepository.delete({ payment_id: existing.payment_id });
-    }
+  //   // Clean up corrupt payment if exists
+  //   if (existing) {
+  //     await this.paymentsRepository.delete({ payment_id: existing.payment_id });
+  //   }
 
-    const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-    const finalSuccessUrl =
-      successUrl ||
-      `${frontendUrl}/orders/${orderId}/success?session_id={CHECKOUT_SESSION_ID}`;
-    const finalCancelUrl =
-      cancelUrl || `${frontendUrl}/orders/${orderId}/cancel`;
+  //   const frontendUrl =
+  //     this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+  //   const finalSuccessUrl =
+  //     successUrl ||
+  //     `${frontendUrl}/orders/${orderId}/success?session_id={CHECKOUT_SESSION_ID}`;
+  //   const finalCancelUrl =
+  //     cancelUrl || `${frontendUrl}/orders/${orderId}/cancel`;
 
-    const sessionData = await this.stripeService.createCheckoutSession(
-      orderId,
-      Number(order.total_amount),
-      currency,
-      finalSuccessUrl,
-      finalCancelUrl,
-    );
+  //   const sessionData = await this.stripeService.createCheckoutSession(
+  //     orderId,
+  //     Number(order.total_amount),
+  //     currency,
+  //     finalSuccessUrl,
+  //     finalCancelUrl,
+  //   );
 
-    const payment = this.paymentsRepository.create({
-      order_id: orderId,
-      payment_method: PaymentMethod.STRIPE,
-      amount: order.total_amount,
-      status: PaymentStatus.PENDING,
-      stripe_checkout_session_id: sessionData.session_id,
-      stripe_checkout_url: sessionData.checkout_url,
-      stripe_payment_intent_id: undefined,
-    });
+  //   const payment = this.paymentsRepository.create({
+  //     order_id: orderId,
+  //     payment_method: PaymentMethod.STRIPE,
+  //     amount: order.total_amount,
+  //     status: PaymentStatus.PENDING,
+  //     stripe_checkout_session_id: sessionData.session_id,
+  //     stripe_checkout_url: sessionData.checkout_url,
+  //     stripe_payment_intent_id: undefined,
+  //   });
 
-    await this.paymentsRepository.save(payment);
+  //   await this.paymentsRepository.save(payment);
 
-    return {
-      checkout_url: sessionData.checkout_url,
-      session_id: sessionData.session_id,
-      order_id: orderId,
-      amount: Number(order.total_amount),
-    };
-  }
+  //   return {
+  //     checkout_url: sessionData.checkout_url,
+  //     session_id: sessionData.session_id,
+  //     order_id: orderId,
+  //     amount: Number(order.total_amount),
+  //   };
+  // }
 
   async getPaymentStatus(
     orderId: number,
@@ -633,6 +668,12 @@ export class OrdersService {
         await queryRunner.manager.update(Order, lockedPayment.order_id, {
           status: OrderStatus.PAID,
         });
+
+        await this.updateCustomerStats(
+          lockedPayment.order_id,
+          { addSpend: Number(lockedPayment.amount), updateLastVisit: true },
+          queryRunner.manager,
+        );
       }
 
       await queryRunner.commitTransaction();
@@ -683,6 +724,12 @@ export class OrdersService {
         status: OrderStatus.PAID,
       });
 
+      await this.updateCustomerStats(
+        payment.order_id,
+        { addSpend: Number(payment.amount), updateLastVisit: true },
+        queryRunner.manager,
+      );
+
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -724,6 +771,12 @@ export class OrdersService {
     payment.status = PaymentStatus.FAILED;
     payment.error_message = errorMessage;
     await this.paymentsRepository.save(payment);
+
+    await this.updateCustomerStats(
+      payment.order_id,
+      { updateLastVisit: true },
+      this.dataSource.manager,
+    );
   }
 
   async handleChargeRefunded(paymentIntentId: string): Promise<void> {
@@ -772,6 +825,12 @@ export class OrdersService {
             .execute();
         }
       }
+
+      await this.updateCustomerStats(
+        payment.order_id,
+        { addSpend: -Number(payment.amount), updateLastVisit: true },
+        queryRunner.manager,
+      );
 
       await queryRunner.commitTransaction();
     } catch (error) {
@@ -840,6 +899,7 @@ export class OrdersService {
     storeId: number,
     reason: string,
     cancelledByUserId?: number,
+    cancelledByUserName?: string,
   ): Promise<Order> {
     const order = await this.ordersRepository.findOne({
       where: { order_id: orderId },
@@ -933,7 +993,7 @@ export class OrdersService {
         store_id: storeId,
         action: OrderHistoryAction.CANCELLED,
         performed_by: cancelledBy!,
-        performed_by_name: null,
+        performed_by_name: cancelledByUserName ?? null,
         old_values: { status: previousStatus!, cancel_reason: null },
         new_values: { status: OrderStatus.CANCELLED, cancel_reason: reason },
       });
@@ -948,14 +1008,23 @@ export class OrdersService {
             store_id: storeId,
             action: ProductHistoryAction.STOCK_CHANGED,
             performed_by: cancelledBy!,
-            performed_by_name: null,
-            old_values: { stock_quantity: product ? product.stock_quantity - detail.quantity : null },
-            new_values: { stock_quantity: product ? product.stock_quantity : null },
+            performed_by_name: cancelledByUserName ?? null,
+            old_values: {
+              stock_quantity: product
+                ? product.stock_quantity - detail.quantity
+                : null,
+            },
+            new_values: {
+              stock_quantity: product ? product.stock_quantity : null,
+            },
           });
         }
       }
     } catch (auditError) {
-      console.error(`[WARN] Order ${orderId} cancelled but audit log failed:`, auditError);
+      console.error(
+        `[WARN] Order ${orderId} cancelled but audit log failed:`,
+        auditError,
+      );
     }
 
     // Cancel Stripe intent SAU khi DB đã commit thành công.
@@ -1132,6 +1201,9 @@ export class OrdersService {
   async refundOrder(
     orderId: number,
     storeId: number,
+    reason: string,
+    userId: number,
+    userName?: string,
   ): Promise<{
     success: boolean;
     order_id: number;
@@ -1181,8 +1253,9 @@ export class OrdersService {
       payment.status = PaymentStatus.REFUNDED;
       await queryRunner.manager.save(Payment, payment);
 
-      order.status = OrderStatus.CANCELLED;
-      order.cancel_reason = 'Refunded';
+      order.status = OrderStatus.REFUNDED;
+      order.cancel_reason = reason;
+      order.cancelled_by_user_id = userId;
       await queryRunner.manager.save(Order, order);
 
       refundOrderDetails = await queryRunner.manager.find(OrderDetail, {
@@ -1204,6 +1277,12 @@ export class OrdersService {
         }
       }
 
+      await this.updateCustomerStats(
+        orderId,
+        { addSpend: -Number(order.total_amount), updateLastVisit: true },
+        queryRunner.manager,
+      );
+
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -1223,12 +1302,12 @@ export class OrdersService {
         order_id: orderId,
         store_id: storeId,
         action: OrderHistoryAction.REFUNDED,
-        performed_by: null,
-        performed_by_name: null,
+        performed_by: userId,
+        performed_by_name: userName ?? null,
         old_values: { status: OrderStatus.PAID },
         new_values: {
-          status: OrderStatus.CANCELLED,
-          cancel_reason: 'Refunded',
+          status: OrderStatus.REFUNDED,
+          cancel_reason: reason,
         },
       });
 
@@ -1241,8 +1320,8 @@ export class OrdersService {
             product_id: detail.product_id,
             store_id: storeId,
             action: ProductHistoryAction.STOCK_CHANGED,
-            performed_by: null,
-            performed_by_name: null,
+            performed_by: userId,
+            performed_by_name: userName ?? null,
             old_values: {
               stock_quantity: product
                 ? product.stock_quantity - detail.quantity
