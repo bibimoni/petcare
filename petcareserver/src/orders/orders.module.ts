@@ -12,6 +12,7 @@ import { StripeService } from './stripe.service';
 import { Product } from '../categories/entities/product.entity';
 import { Service } from '../categories/entities/service.entity';
 import { ProductHistory } from '../categories/entities/product-history.entity';
+import { Customer } from '../customers/entities/customer.entity';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ProductHistory } from '../categories/entities/product-history.entity';
       OrderDetail,
       Payment,
       OrderHistory,
+      Customer,
       Product,
       Service,
       ProductHistory,
