@@ -3,11 +3,17 @@ import axiosClient from "./api";
 export interface Customer {
   phone: string;
   email: string;
+  notes?: string;
   address: string;
   store_id: number;
   full_name: string;
   created_at: string;
+  avatar_url?: string;
   customer_id: number;
+  updated_at?: string;
+  deleted_at?: string | null;
+  last_visit?: string | null;
+  total_spend?: string | number;
 }
 
 export interface Pet {
@@ -42,7 +48,7 @@ class ProfileService {
   async getCustomerById(customerId: number): Promise<Customer> {
     try {
       const response = await axiosClient.get(`/customers/${customerId}`);
-      return response as unknown as Customer;
+      return (response.data || response) as unknown as Customer;
     } catch (error) {
       console.error("Error fetching customer by id:", error);
       throw error;
@@ -52,7 +58,7 @@ class ProfileService {
   async getCustomerByPhone(phone: string): Promise<Customer> {
     try {
       const response = await axiosClient.get(`/customers/phone/${phone}`);
-      return response as unknown as Customer;
+      return (response.data || response) as unknown as Customer;
     } catch (error) {
       console.error("Error fetching customer by phone:", error);
       throw error;
@@ -68,7 +74,7 @@ class ProfileService {
         `/customers/${customerId}`,
         data,
       );
-      return response as unknown as Customer;
+      return (response.data || response) as unknown as Customer;
     } catch (error) {
       console.error("Error updating customer:", error);
       throw error;

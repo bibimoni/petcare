@@ -15,7 +15,7 @@ export default function CustomerRow({
   onDeleteCustomer,
 }: CustomerRowProps) {
   // const navigate = useNavigate();
-  const displayName = c.full_name || c.fullName || "Khách hàng";
+  const displayName = c.full_name || "Khách hàng";
   const displayId = c.customer_id || c.id || "-";
   const petCount = Array.isArray(c.pets) ? c.pets.length : Number(c.pets || 0);
   const lastVisit = c.last_visit

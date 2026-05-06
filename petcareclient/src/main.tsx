@@ -14,6 +14,7 @@ import AboutUsPage from "./features/about-us/page";
 import AuthPage from "./features/auth-page/auth-page";
 import ForgotPasswordPage from "./features/auth-page/forgot-password-page";
 import ResetPasswordPage from "./features/auth-page/reset-password-page";
+import CustomerDetailPage from "./features/customer/customer-detail-page";
 import CustomersPage from "./features/customer/customer-page";
 import { DashboardPage } from "./features/dashboard";
 import EmployeesPage from "./features/employees/page";
@@ -101,6 +102,14 @@ createRoot(document.getElementById("root")!).render(
             element={
               <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <CustomersPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/customers/:id"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <CustomerDetailPage />
               </RoleRoute>
             }
           />

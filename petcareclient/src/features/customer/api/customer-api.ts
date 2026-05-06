@@ -6,11 +6,9 @@ export type CustomerListItem = {
   email?: string;
   pets?: unknown[];
   address?: string;
-  fullName?: string;
   full_name?: string;
   avatar_url?: string;
   id?: number | string;
-  [key: string]: unknown;
   created_at: Date | string;
   updated_at: Date | string;
   last_visit?: string | null;
@@ -62,6 +60,11 @@ export const CustomerApi = {
   getCustomers: async () => {
     const response = await axiosClient.get("/customers");
     return normalizeCustomers(response.data ?? response);
+  },
+
+  getCustomerById: async (id: number | string) => {
+    const response = await axiosClient.get(`/customers/${id}`);
+    return response.data;
   },
 
   createCustomer: async (data: CreateCustomerPayload) => {
