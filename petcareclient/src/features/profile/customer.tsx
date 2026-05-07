@@ -84,8 +84,8 @@ export default function CustomerProfilePage() {
       const foundCustomer = isPhone
         ? allCustomers.find((c) => c.phone === identifier)
         : allCustomers.find(
-            (c) => String(c.customer_id || c.id) === String(identifier),
-          );
+          (c) => String(c.customer_id || c.id) === String(identifier),
+        );
 
       if (!foundCustomer) {
         setCustomer(null);
@@ -331,93 +331,6 @@ export default function CustomerProfilePage() {
     return null;
   }
 
-  if (!loading && !customer && !id && !phoneFromUrl) {
-    return (
-      <div className="flex w-full overflow-hidden min-h-screen bg-[#f6f1ee]">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <div className="bg-[#fbf6f3] border-b border-[#eddcd3]">
-            <div className="max-w-7xl mx-auto px-6 py-4">
-              <h1 className="text-2xl font-bold text-gray-800">
-                Tra cứu khách hàng
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex-1 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8">
-              <div className="text-center mb-6">
-                <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg
-                    className="w-10 h-10 text-orange-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Tra cứu khách hàng
-                </h2>
-                <p className="text-gray-500 mt-2">
-                  Nhập số điện thoại để xem thông tin khách hàng
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Số điện thoại
-                  </label>
-                  <input
-                    type="tel"
-                    value={searchPhone}
-                    onChange={(e) => setSearchPhone(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-                    placeholder="VD: 0912345678"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-
-                <button
-                  onClick={handleSearch}
-                  disabled={isSearching}
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 transition flex items-center justify-center gap-2"
-                >
-                  {isSearching ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  ) : (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                  )}
-                  {isSearching ? "Đang tìm kiếm..." : "Tìm kiếm"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -431,9 +344,9 @@ export default function CustomerProfilePage() {
 
   if (!customer) {
     return (
-      <div className="flex w-full overflow-hidden min-h-screen bg-[#f6f1ee]">
+      <div className="flex w-full overflow-hidden h-screen bg-[#f6f1ee]">
         <Sidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-y-auto">
           <div className="bg-[#fbf6f3] border-b border-[#eddcd3]">
             <div className="max-w-7xl mx-auto px-6 py-4">
               <h1 className="text-2xl font-bold text-gray-800">
@@ -442,7 +355,7 @@ export default function CustomerProfilePage() {
             </div>
           </div>
           <div className="flex-1 flex items-center justify-center p-4">
-            <div className="text-center bg-white p-8 rounded-lg shadow-lg">
+            <div className="text-center bg-white p-6 rounded-lg shadow-lg">
               <p className="text-gray-600 mb-4">
                 Không tìm thấy thông tin khách hàng
               </p>
@@ -464,10 +377,10 @@ export default function CustomerProfilePage() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f6f1ee]">
       <Sidebar />
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-y-auto">
         {/* Header */}
         <div className="bg-[#fbf6f3] border-b border-[#eddcd3] sticky top-0 z-10">
-          <div className="max-w-full mx-auto px-6 py-4">
+          <div className="max-w-full mx-auto px-6 py-3">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-4">
                 <button
@@ -491,7 +404,7 @@ export default function CustomerProfilePage() {
                   </svg>
                   Quay lại
                 </button>
-                <h1 className="text-2xl font-bold text-gray-800">
+                <h1 className="text-xl font-bold text-gray-800">
                   Chi tiết Khách hàng
                 </h1>
               </div>
@@ -541,12 +454,12 @@ export default function CustomerProfilePage() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="max-w-8xl mx-auto px-6 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Customer Info & Pets */}
-            <div className="lg:col-span-1 space-y-8">
-              <div className="bg-white rounded-3xl shadow-xl overflow-hidden sticky top-24 border border-gray-100">
-                <div className="p-8">
+            <div className="lg:col-span-1 space-y-6">
+              <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+                <div className="p-6">
                   {isEditing ? (
                     <div className="space-y-4">
                       <div className="flex justify-center mb-6">
@@ -608,20 +521,20 @@ export default function CustomerProfilePage() {
                     </div>
                   ) : (
                     <>
-                      <div className="flex items-center gap-4 mb-8">
+                      <div className="flex items-center gap-4 mb-6">
                         {customer.avatar_url ? (
                           <img
                             src={customer.avatar_url}
                             alt={customer.full_name}
-                            className="w-20 h-20 rounded-2xl object-cover shadow-md"
+                            className="w-16 h-16 rounded-2xl object-cover shadow-md"
                           />
                         ) : (
-                          <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center text-3xl font-bold text-gray-300">
+                          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-3xl font-bold text-gray-300">
                             {customer.full_name?.charAt(0).toUpperCase()}
                           </div>
                         )}
                         <div>
-                          <h2 className="text-2xl font-black text-gray-800 tracking-tight">
+                          <h2 className="text-lg font-black text-gray-800 tracking-tight">
                             {customer.full_name}
                           </h2>
                           <div className="flex items-center gap-2 mt-1">
@@ -635,7 +548,7 @@ export default function CustomerProfilePage() {
                         </div>
                       </div>
 
-                      <div className="space-y-6">
+                      <div className="space-y-4">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 shadow-sm">
                             <Phone size={18} />
@@ -685,13 +598,13 @@ export default function CustomerProfilePage() {
 
               {/* Pets Section */}
               <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-                <div className="flex justify-between items-center p-8 border-b border-gray-50">
-                  <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
-                    <span className="text-xl">🐾</span> Thú cưng của{" "}
+                <div className="flex justify-between items-center p-6 border-b border-gray-50">
+                  <h3 className="text-base font-black text-gray-800 flex items-center gap-2">
+                    <span className="text-lg">🐾</span> Thú cưng của{" "}
                     {customer.full_name?.split(" ").pop()} ({pets.length})
                   </h3>
                 </div>
-                <div className="p-8">
+                <div className="p-6">
                   {pets.length > 0 ? (
                     <div className="grid grid-cols-2 gap-4">
                       {pets.map((pet) => (
@@ -740,7 +653,7 @@ export default function CustomerProfilePage() {
             </div>
 
             {/* Right Column - Chart & Orders */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-6">
               {/* Spending Chart Card */}
               <div className="bg-white">
                 <RevenueChart
@@ -749,14 +662,14 @@ export default function CustomerProfilePage() {
                   noteText="Tổng chi tiêu"
                   period="year"
                   selectedYear={new Date().getFullYear()}
-                  onYearChange={() => {}}
-                  onPeriodChange={() => {}}
+                  onYearChange={() => { }}
+                  onPeriodChange={() => { }}
                 />
               </div>
 
               {/* Order History Section */}
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-                <div className="flex justify-between items-center p-6 border-b">
+                <div className="flex justify-between items-center p-5 border-b">
                   <h3 className="text-xl font-bold text-gray-800">
                     Lịch sử giao dịch
                   </h3>
@@ -777,10 +690,10 @@ export default function CustomerProfilePage() {
                   <table className="w-full">
                     <thead className="bg-gray-50/50">
                       <tr className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
-                        <th className="px-6 py-4">Ngày</th>
-                        <th className="px-6 py-4">Dịch vụ/Sản phẩm</th>
-                        <th className="px-6 py-4">Tổng tiền</th>
-                        <th className="px-6 py-4 text-center">Trạng thái</th>
+                        <th className="px-4 py-3">Ngày</th>
+                        <th className="px-4 py-3">Dịch vụ/Sản phẩm</th>
+                        <th className="px-4 py-3">Tổng tiền</th>
+                        <th className="px-4 py-3 text-center">Trạng thái</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -791,7 +704,7 @@ export default function CustomerProfilePage() {
                             className="hover:bg-gray-50 cursor-pointer transition-colors group"
                             onClick={() => setSelectedOrder(order)}
                           >
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-3">
                               <p className="text-sm font-bold text-gray-800">
                                 {formatDate(order.created_at)}
                               </p>
@@ -802,7 +715,7 @@ export default function CustomerProfilePage() {
                                 )}
                               </p>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-3">
                               <div className="space-y-1">
                                 {order.order_details
                                   .slice(0, 2)
@@ -825,12 +738,12 @@ export default function CustomerProfilePage() {
                                 )}
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-3">
                               <span className="text-sm font-black text-gray-800">
                                 {formatCurrency(order.total_amount)}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-center">
+                            <td className="px-4 py-3 text-center">
                               <span
                                 className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(order.status).color}`}
                               >
@@ -841,7 +754,7 @@ export default function CustomerProfilePage() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={4} className="px-6 py-8 text-center">
+                          <td colSpan={4} className="px-4 py-6 text-center">
                             <div className="text-gray-400">
                               <p className="font-medium text-gray-600 mb-2">
                                 Không có dữ liệu
