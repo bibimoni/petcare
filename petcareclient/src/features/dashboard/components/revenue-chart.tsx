@@ -3,6 +3,8 @@ import { useState } from "react";
 import { type RevenueData, type ProfitPeriod } from "../api/dashboard-api";
 
 interface RevenueChartProps {
+  titleText: string;
+  noteText: string;
   data: RevenueData;
   period: ProfitPeriod;
   selectedYear: number;
@@ -13,6 +15,8 @@ interface RevenueChartProps {
 export const RevenueChart = ({
   data,
   period,
+  titleText,
+  noteText,
   onPeriodChange,
   selectedYear,
   onYearChange,
@@ -35,7 +39,7 @@ export const RevenueChart = ({
     const x =
       data.values.length > 1
         ? (index / (data.values.length - 1)) * (chartWidth - padding * 2) +
-          padding
+        padding
         : chartWidth / 2; // Canh giữa đồ thị nếu chỉ có 1 điểm
 
     const y =
@@ -67,10 +71,10 @@ export const RevenueChart = ({
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-bold text-charcoal dark:text-white">
-            Lợi nhuận
+            {titleText}
           </h3>
           <p className="text-sm text-gray-500">
-            Tổng thu:{" "}
+            {noteText}:{" "}
             <span className="font-bold text-charcoal dark:text-gray-300">
               {data.totalWeekly}
             </span>

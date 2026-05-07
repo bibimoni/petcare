@@ -105,7 +105,7 @@ createRoot(document.getElementById("root")!).render(
             }
           />
           <Route
-            path="/customer-profile"
+            path="/customers/:id"
             element={
               <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <CustomerProfilePage />

@@ -108,7 +108,7 @@ export default function PetProfile({ petId }: { petId: number }) {
   const navigate = useNavigate();
 
   const owner = pet?.customer;
-  const ownerId = owner?.customer_id;
+  const ownerId = owner?.customer_id || (owner as any)?.id;
 
   const latestWeight = useMemo(() => {
     if (!weights.length) {
@@ -473,8 +473,8 @@ export default function PetProfile({ petId }: { petId: number }) {
                           {service.service_name}
                         </p>
                         <p className="text-sm text-[#ad7f6a]">
-                          {service.duration_minutes > 0
-                            ? `${service.duration_minutes} phút`
+                          {service.type === 'SERVICE'
+                            ? "Dịch vụ"
                             : "Sản phẩm"}
                         </p>
                       </div>
