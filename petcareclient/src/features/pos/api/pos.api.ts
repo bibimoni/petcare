@@ -339,11 +339,13 @@ export const getOrders = async (
 
 export const cancelOrder = async (
   orderId: number | string,
-  cancel_reason: string,
+  cancel_reason?: string,
 ) => axiosClient.patch(`/orders/${Number(orderId)}/cancel`, { cancel_reason });
 
-export const refundOrder = async (orderId: number | string) =>
-  axiosClient.post(`/orders/${Number(orderId)}/refund`);
+export const refundOrder = async (
+  orderId: number | string,
+  refund_reason: string,
+) => axiosClient.post(`/orders/${Number(orderId)}/refund`, { refund_reason });
 
 export const createOrder = async (payload: unknown) =>
   axiosClient.post("/orders", payload);

@@ -7,7 +7,9 @@ import {
   X as Close,
   CheckCircle,
   ShoppingBag,
+  RotateCcw,
 } from "lucide-react";
+
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -41,7 +43,9 @@ export const OrderDetailModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showRefundConfirm, setShowRefundConfirm] = useState(false);
   const [isRefunding, setIsRefunding] = useState(false);
+  const [refundReason, setRefundReason] = useState("");
   const queryClient = useQueryClient();
+
 
   // Tải chi tiết đơn hàng
   useEffect(() => {
@@ -81,8 +85,9 @@ export const OrderDetailModal = ({
   const handleRefund = async () => {
     setIsRefunding(true);
     try {
-      await refundOrder(orderId ?? order?.order_id ?? 0);
+      await refundOrder(orderId ?? order?.order_id ?? 0, refundReason);
       toast.success(
+
         "Hoàn tiền thành công, vui lòng kiểm tra hoá đơn hoàn tiền để xem thêm chi tiết",
       );
       onStatusChange();
@@ -204,7 +209,7 @@ export const OrderDetailModal = ({
                     </div>
                   </div>
 
-                  <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                  {order.order_details[0].pet && (<div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
                     <div className="absolute top-0 right-0 w-20 h-20 bg-[#f7b297]/5 rounded-bl-full -mr-4 -mt-4 group-hover:bg-[#f7b297]/10 transition-colors"></div>
                     <div className="flex items-start justify-between relative z-10 mb-3">
                       <div className="flex items-center gap-3">
@@ -233,6 +238,25 @@ export const OrderDetailModal = ({
                         <span>{order.order_details[0].pet?.notes}</span>
                       </div>
                     </div>
+                  </div>)}
+
+                  {/* Lý do hoàn tiền */}
+                  <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/5 rounded-bl-full -mr-4 -mt-4 group-hover:bg-orange-500/10 transition-colors"></div>
+                    <div className="flex items-center gap-2 mb-2 relative z-10">
+                      <div className="size-8 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center border border-orange-100">
+                        <RotateCcw size={16} />
+                      </div>
+                      <div className="text-[10px] text-[#9a624c] uppercase tracking-wider font-bold">
+                        Lý do hoàn tiền
+                      </div>
+                    </div>
+                    <textarea
+                      value={refundReason}
+                      onChange={(e) => setRefundReason(e.target.value)}
+                      placeholder="Nhập lý do hoàn tiền..."
+                      className="w-full bg-[#fcf9f8] border border-[#f3ebe7] rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#f7b297]/20 focus:border-[#f7b297] outline-none transition-all resize-none h-24 relative z-10"
+                    />
                   </div>
                 </div>
 
@@ -353,8 +377,8 @@ export const OrderDetailModal = ({
                 <button
                   type="button"
                   onClick={() => setShowRefundConfirm(true)}
-                  disabled={isRefunding}
-                  className="min-w-[140px] bg-white cursor-pointer hover:bg-red-50 text-[#9a624c] hover:text-red-600 font-semibold py-3.5 px-6 rounded-xl border border-gray-200 hover:border-red-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  disabled={isRefunding || !refundReason.trim()}
+                  className="min-w-[140px] bg-white cursor-pointer hover:bg-red-50 text-[#9a624c] hover:text-red-600 font-semibold py-3.5 px-6 rounded-xl border border-gray-200 hover:border-red-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Ban className="w-5 h-5" />
                   Hoàn tiền
