@@ -57,7 +57,6 @@ export default function CustomerProfilePage() {
   const [searchPhone, setSearchPhone] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [ordersError, setOrdersError] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<LocalOrder | null>(null);
 
   useEffect(() => {
@@ -73,7 +72,6 @@ export default function CustomerProfilePage() {
   const fetchCustomerData = async (identifier: string | number, isPhone = false) => {
     try {
       setLoading(true);
-      setOrdersError(false);
 
       // Lấy danh sách tất cả khách hàng và tìm người khớp số điện thoại hoặc ID
       const allCustomers = await CustomerApi.getCustomers();
@@ -136,7 +134,6 @@ export default function CustomerProfilePage() {
         } catch (orderError: any) {
           console.error("Error fetching orders:", orderError);
           setOrders([]);
-          setOrdersError(true);
         }
       }
 
