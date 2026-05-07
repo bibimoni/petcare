@@ -1,10 +1,11 @@
 import { Eye, Info } from "lucide-react";
-import { type HistoryEntry, getRefInfo } from "../api/audit-logs.api";
+
+import { getRefInfo, type HistoryEntry } from "../api/audit-logs.api";
 
 interface AuditLogTableProps {
+  isLoading: boolean;
   entries: HistoryEntry[];
   onViewDetail: (entry: HistoryEntry) => void;
-  isLoading: boolean;
 }
 
 export const AuditLogTable = ({
@@ -16,7 +17,9 @@ export const AuditLogTable = ({
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-[#f3ebe7] p-20 flex flex-col items-center justify-center">
         <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-gray-500 font-medium">Đang tải nhật ký hệ thống...</p>
+        <p className="text-gray-500 font-medium">
+          Đang tải nhật ký hệ thống...
+        </p>
       </div>
     );
   }
@@ -27,8 +30,12 @@ export const AuditLogTable = ({
         <div className="size-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
           <Info size={32} className="text-gray-300" />
         </div>
-        <h3 className="text-lg font-bold text-charcoal">Không tìm thấy nhật ký</h3>
-        <p className="text-gray-500">Hiện tại chưa có hoạt động nào được ghi lại.</p>
+        <h3 className="text-lg font-bold text-charcoal">
+          Không tìm thấy nhật ký
+        </h3>
+        <p className="text-gray-500">
+          Hiện tại chưa có hoạt động nào được ghi lại.
+        </p>
       </div>
     );
   }
@@ -41,9 +48,12 @@ export const AuditLogTable = ({
   };
 
   const getStatusColor = (action: string) => {
-    if (action.includes("CANCEL")) return "bg-red-100 text-red-600 border-red-200";
-    if (action.includes("UPDATE")) return "bg-blue-100 text-blue-600 border-blue-200";
-    if (action.includes("CREATE")) return "bg-green-100 text-green-600 border-green-200";
+    if (action.includes("CANCEL"))
+      return "bg-red-100 text-red-600 border-red-200";
+    if (action.includes("UPDATE"))
+      return "bg-blue-100 text-blue-600 border-blue-200";
+    if (action.includes("CREATE"))
+      return "bg-green-100 text-green-600 border-green-200";
     return "bg-gray-100 text-gray-600 border-gray-200";
   };
 
@@ -64,14 +74,20 @@ export const AuditLogTable = ({
             {entries.map((entry) => {
               const ref = getRefInfo(entry);
               return (
-                <tr key={`${entry.entity_type}-${entry.id}-${entry.created_at}`} className="group hover:bg-gray-50/50 transition-colors">
+                <tr
+                  key={`${entry.entity_type}-${entry.id}-${entry.created_at}`}
+                  className="group hover:bg-gray-50/50 transition-colors"
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-charcoal">
                         {new Date(entry.created_at).toLocaleDateString("vi-VN")}
                       </span>
                       <span className="text-xs text-gray-400">
-                        {new Date(entry.created_at).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(entry.created_at).toLocaleTimeString(
+                          "vi-VN",
+                          { hour: "2-digit", minute: "2-digit" },
+                        )}
                       </span>
                     </div>
                   </td>
@@ -80,11 +96,15 @@ export const AuditLogTable = ({
                       <div className="size-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-[10px] font-bold border border-orange-200">
                         {entry.performed_by_name?.charAt(0).toUpperCase()}
                       </div>
-                      <span className="text-sm font-medium text-charcoal">{entry.performed_by_name}</span>
+                      <span className="text-sm font-medium text-charcoal">
+                        {entry.performed_by_name}
+                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusColor(entry.action)}`}>
+                    <div
+                      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusColor(entry.action)}`}
+                    >
                       <span className="material-symbols-outlined text-[14px]">
                         {getIcon(entry.action)}
                       </span>

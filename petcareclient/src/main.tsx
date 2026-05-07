@@ -11,6 +11,7 @@ import NotFound from "./components/not-found";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRoute from "./components/RoleRoutes";
 import AboutUsPage from "./features/about-us/page";
+import AuditLogsPage from "./features/audit-logs/page";
 import AuthPage from "./features/auth-page/auth-page";
 import ForgotPasswordPage from "./features/auth-page/forgot-password-page";
 import ResetPasswordPage from "./features/auth-page/reset-password-page";
@@ -18,6 +19,7 @@ import CustomersPage from "./features/customer/customer-page";
 import { DashboardPage } from "./features/dashboard";
 import EmployeesPage from "./features/employees/page";
 import FaqPage from "./features/faq/page";
+import FinancePage from "./features/finance/page";
 import ExpiringSoonPage from "./features/inventory/expiring-soon-page";
 import InventoryPage from "./features/inventory/inventory-page";
 import LowStockPage from "./features/inventory/low-stock-page";
@@ -38,7 +40,6 @@ import SettingsPage from "./features/settings/page";
 import CreateStorePage from "./features/store/create-store-page";
 import TermAndServicePage from "./features/term-and-service/page";
 import { queryClient } from "./lib/query-client";
-import AuditLogsPage from "./features/audit-logs/page";
 
 function PetProfileWrapper() {
   const { id } = useParams();
@@ -223,6 +224,14 @@ createRoot(document.getElementById("root")!).render(
             element={
               <RoleRoute allowedRoles={["ADMIN"]}>
                 <AuditLogsPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/finance"
+            element={
+              <RoleRoute allowedRoles={["ADMIN"]}>
+                <FinancePage />
               </RoleRoute>
             }
           />

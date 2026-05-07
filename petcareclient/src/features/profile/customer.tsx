@@ -84,8 +84,8 @@ export default function CustomerProfilePage() {
       const foundCustomer = isPhone
         ? allCustomers.find((c) => c.phone === identifier)
         : allCustomers.find(
-          (c) => String(c.customer_id || c.id) === String(identifier),
-        );
+            (c) => String(c.customer_id || c.id) === String(identifier),
+          );
 
       if (!foundCustomer) {
         setCustomer(null);
@@ -662,8 +662,8 @@ export default function CustomerProfilePage() {
                   noteText="Tổng chi tiêu"
                   period="year"
                   selectedYear={new Date().getFullYear()}
-                  onYearChange={() => { }}
-                  onPeriodChange={() => { }}
+                  onYearChange={() => {}}
+                  onPeriodChange={() => {}}
                 />
               </div>
 
