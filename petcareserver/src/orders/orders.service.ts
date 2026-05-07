@@ -95,6 +95,7 @@ export class OrdersService {
     createOrderDto: CreateOrderDto,
     storeId: number,
     userId: number,
+    userName?: string,
     checkoutOptions?: {
       currency?: string;
       success_url?: string;
@@ -112,6 +113,7 @@ export class OrdersService {
       unit_price: number;
       original_cost: number;
       subtotal: number;
+      original_stock_quantity?: number;
     };
 
     let totalAmount = 0;
@@ -146,6 +148,7 @@ export class OrdersService {
           original_cost: costPrice * item.quantity,
           subtotal: unitPrice * item.quantity,
           pet_id: item.pet_id,
+          original_stock_quantity: product.stock_quantity,
         });
 
         totalAmount += unitPrice * item.quantity;
@@ -182,6 +185,8 @@ export class OrdersService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let savedOrder: Order;
+
     try {
       const orderData: DeepPartial<Order> = {
         store_id: storeId,
@@ -193,7 +198,7 @@ export class OrdersService {
       };
 
       const order = queryRunner.manager.create(Order, orderData);
-      const savedOrder = await queryRunner.manager.save(Order, order);
+      savedOrder = await queryRunner.manager.save(Order, order);
 
       for (const payload of detailPayloads) {
         await queryRunner.manager.save(OrderDetail, {
@@ -222,66 +227,106 @@ export class OrdersService {
       }
 
       await queryRunner.commitTransaction();
-
-      const completeOrder = await this.ordersRepository.findOne({
-        where: { order_id: savedOrder.order_id },
-        relations: [
-          'order_details',
-          'order_details.product',
-          'order_details.service',
-          'order_details.pet',
-          'customer',
-          'store',
-        ],
-      });
-
-      if (!completeOrder) {
-        throw new InternalServerErrorException(
-          'Failed to retrieve created order',
-        );
-      }
-
-      const currency = checkoutOptions?.currency || 'usd';
-      const frontendUrl =
-        this.configService.get<string>('FRONTEND_URL') ||
-        'http://localhost:3000';
-      const successUrl =
-        checkoutOptions?.success_url ||
-        `${frontendUrl}/orders/${completeOrder.order_id}/success?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl =
-        checkoutOptions?.cancel_url ||
-        `${frontendUrl}/orders/${completeOrder.order_id}/cancel`;
-
-      const sessionData = await this.stripeService.createCheckoutSession(
-        completeOrder.order_id,
-        totalAmount,
-        currency,
-        successUrl,
-        cancelUrl,
-      );
-
-      const payment = this.paymentsRepository.create({
-        order_id: completeOrder.order_id,
-        payment_method: PaymentMethod.STRIPE,
-        amount: totalAmount,
-        status: PaymentStatus.PENDING,
-        stripe_checkout_session_id: sessionData.session_id,
-        stripe_checkout_url: sessionData.checkout_url,
-        stripe_payment_intent_id: sessionData.payment_intent_id || undefined,
-      });
-      await this.paymentsRepository.save(payment);
-
-      return {
-        order: completeOrder,
-        checkout_url: sessionData.checkout_url,
-        session_id: sessionData.session_id,
-      };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       await queryRunner.release();
     }
+
+    const completeOrder = await this.ordersRepository.findOne({
+      where: { order_id: savedOrder.order_id },
+      relations: [
+        'order_details',
+        'order_details.product',
+        'order_details.service',
+        'order_details.pet',
+        'customer',
+        'store',
+      ],
+    });
+
+    if (!completeOrder) {
+      throw new InternalServerErrorException(
+        'Failed to retrieve created order',
+      );
+    }
+
+    const currency = checkoutOptions?.currency || 'usd';
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') ||
+      'http://localhost:3000';
+    const successUrl =
+      checkoutOptions?.success_url ||
+      `${frontendUrl}/orders/${completeOrder.order_id}/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl =
+      checkoutOptions?.cancel_url ||
+      `${frontendUrl}/orders/${completeOrder.order_id}/cancel`;
+
+    const sessionData = await this.stripeService.createCheckoutSession(
+      completeOrder.order_id,
+      totalAmount,
+      currency,
+      successUrl,
+      cancelUrl,
+    );
+
+    const payment = this.paymentsRepository.create({
+      order_id: completeOrder.order_id,
+      payment_method: PaymentMethod.STRIPE,
+      amount: totalAmount,
+      status: PaymentStatus.PENDING,
+      stripe_checkout_session_id: sessionData.session_id,
+      stripe_checkout_url: sessionData.checkout_url,
+      stripe_payment_intent_id: sessionData.payment_intent_id || undefined,
+    });
+    await this.paymentsRepository.save(payment);
+
+    try {
+      await this.orderHistoryRepository.save({
+        order_id: savedOrder.order_id,
+        store_id: storeId,
+        action: OrderHistoryAction.CREATED,
+        performed_by: userId,
+        performed_by_name: userName ?? null,
+        old_values: null,
+        new_values: {
+          status: OrderStatus.PENDING,
+          total_amount: totalAmount,
+          customer_id: customer_id ?? null,
+          note: note ?? null,
+        },
+      });
+
+      for (const payload of detailPayloads) {
+        if (payload.item_type === CategoryType.PRODUCT && payload.product_id) {
+          await this.productHistoryRepository.save({
+            product_id: payload.product_id,
+            store_id: storeId,
+            action: ProductHistoryAction.STOCK_CHANGED,
+            performed_by: userId,
+            performed_by_name: userName ?? null,
+            old_values: {
+              stock_quantity: payload.original_stock_quantity!,
+            },
+            new_values: {
+              stock_quantity: payload.original_stock_quantity! - payload.quantity,
+            },
+          });
+        }
+      }
+    } catch (auditError) {
+      console.error(
+        `[WARN] Order ${savedOrder.order_id} created but audit log failed:`,
+        auditError,
+      );
+    }
+
+    return {
+      order: completeOrder,
+      checkout_url: sessionData.checkout_url,
+      session_id: sessionData.session_id,
+    };
   }
 
   async getPaymentStatus(
@@ -325,6 +370,8 @@ export class OrdersService {
   async confirmOrder(
     orderId: number,
     storeId: number,
+    userId?: number,
+    userName?: string,
   ): Promise<{
     order_id: number;
     status: string;
@@ -354,6 +401,7 @@ export class OrdersService {
     let receiptUrl = payment?.stripe_receipt_url ?? null;
     let paymentStatus = payment?.status ?? null;
     let orderStatus = order.status;
+    let didMarkAsPaid = false;
 
     // Proactive sync if webhook is delayed or receipt_url is missing
     if (payment && (!receiptUrl || paymentStatus === PaymentStatus.PENDING)) {
@@ -382,6 +430,7 @@ export class OrdersService {
           if (intentInfo.success && intentInfo.charge_id) {
             // It's actually paid!
             if (paymentStatus === PaymentStatus.PENDING) {
+              didMarkAsPaid = true;
               paymentStatus = PaymentStatus.COMPLETED as any;
               orderStatus = OrderStatus.PAID as any;
               payment.status = PaymentStatus.COMPLETED;
@@ -412,6 +461,25 @@ export class OrdersService {
         }
       } catch (err) {
         console.error('Proactive sync failed in confirmOrder:', err);
+      }
+    }
+
+    if (didMarkAsPaid) {
+      try {
+        await this.orderHistoryRepository.save({
+          order_id: orderId,
+          store_id: storeId,
+          action: OrderHistoryAction.PAID,
+          performed_by: userId ?? null,
+          performed_by_name: userName ?? null,
+          old_values: { status: OrderStatus.PENDING },
+          new_values: { status: OrderStatus.PAID },
+        });
+      } catch (auditError) {
+        console.error(
+          `[WARN] Order ${orderId} confirmed as PAID but audit log failed:`,
+          auditError,
+        );
       }
     }
 
@@ -460,6 +528,8 @@ export class OrdersService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let orderStoreId: number | undefined;
+
     try {
       // Pessimistic lock with SQLite fallback
       let lockedPayment: Payment | null;
@@ -502,6 +572,12 @@ export class OrdersService {
       await queryRunner.manager.save(Payment, lockedPayment);
 
       if (!isAlreadyCompleted) {
+        const order = await queryRunner.manager.findOne(Order, {
+          where: { order_id: lockedPayment.order_id },
+          select: ['order_id', 'store_id'],
+        });
+        orderStoreId = order?.store_id;
+
         await queryRunner.manager.update(Order, lockedPayment.order_id, {
           status: OrderStatus.PAID,
         });
@@ -525,6 +601,25 @@ export class OrdersService {
       );
     } finally {
       await queryRunner.release();
+    }
+
+    if (orderStoreId) {
+      try {
+        await this.orderHistoryRepository.save({
+          order_id: payment.order_id,
+          store_id: orderStoreId,
+          action: OrderHistoryAction.PAID,
+          performed_by: null,
+          performed_by_name: null,
+          old_values: { status: OrderStatus.PENDING },
+          new_values: { status: OrderStatus.PAID },
+        });
+      } catch (auditError) {
+        console.error(
+          `[WARN] Webhook payment_intent.succeeded processed for ${paymentIntentId} but audit log failed:`,
+          auditError,
+        );
+      }
     }
   }
 
@@ -550,12 +645,20 @@ export class OrdersService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let orderStoreId: number | undefined;
+
     try {
       // Lưu payment_intent_id + update COMPLETED ngay tại đây
       // Không chờ payment_intent.succeeded vì có thể đến trước khi DB lưu kịp
       payment.stripe_payment_intent_id = paymentIntentId;
       payment.status = PaymentStatus.COMPLETED;
       await queryRunner.manager.save(Payment, payment);
+
+      const order = await queryRunner.manager.findOne(Order, {
+        where: { order_id: payment.order_id },
+        select: ['order_id', 'store_id'],
+      });
+      orderStoreId = order?.store_id;
 
       await queryRunner.manager.update(Order, payment.order_id, {
         status: OrderStatus.PAID,
@@ -579,6 +682,25 @@ export class OrdersService {
       );
     } finally {
       await queryRunner.release();
+    }
+
+    if (orderStoreId) {
+      try {
+        await this.orderHistoryRepository.save({
+          order_id: payment.order_id,
+          store_id: orderStoreId,
+          action: OrderHistoryAction.PAID,
+          performed_by: null,
+          performed_by_name: null,
+          old_values: { status: OrderStatus.PENDING },
+          new_values: { status: OrderStatus.PAID },
+        });
+      } catch (auditError) {
+        console.error(
+          `[WARN] Webhook checkout.session.completed processed for ${sessionId} but audit log failed:`,
+          auditError,
+        );
+      }
     }
   }
 

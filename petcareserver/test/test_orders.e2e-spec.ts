@@ -69,11 +69,17 @@ describe('OrdersController', () => {
       const result = await controller.createOrder(dto, TEST_USER);
 
       expect(result).toEqual(expected);
-      expect(mockOrdersService.createOrder).toHaveBeenCalledWith(dto, 10, 1, {
-        currency: undefined,
-        success_url: undefined,
-        cancel_url: undefined,
-      });
+      expect(mockOrdersService.createOrder).toHaveBeenCalledWith(
+        dto,
+        10,
+        1,
+        TEST_USER.full_name,
+        {
+          currency: undefined,
+          success_url: undefined,
+          cancel_url: undefined,
+        },
+      );
     });
 
     it('should propagate NotFoundException for missing product', async () => {
