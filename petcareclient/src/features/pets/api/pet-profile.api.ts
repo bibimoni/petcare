@@ -14,15 +14,14 @@ export type PetProfileData = {
 export const getPetProfileData = async (
   petId: number,
 ): Promise<PetProfileData> => {
-  const [pet, weights, services] = await Promise.all([
+  const [pet, weights] = await Promise.all([
     PetService.getPetDetails(petId),
     PetService.getPetWeightHistory(petId, 20),
-    PetService.getPetServiceHistory(petId),
   ]);
 
   return {
     pet,
     weights,
-    services,
+    services: [],
   };
 };

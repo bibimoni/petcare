@@ -49,6 +49,7 @@ export default function AddPetModal({ open, onClose, onCreated }: Props) {
     avatarPublicId: "",
     image: "",
     status: "ALIVE",
+    weight: "",
   });
 
   const [customers, setCustomers] = useState<ApiCustomer[]>([]);
@@ -64,6 +65,7 @@ export default function AddPetModal({ open, onClose, onCreated }: Props) {
     avatarPublicId: "",
     image: "",
     status: "ALIVE",
+    weight: "",
   };
 
   const resetForm = () => {
@@ -162,6 +164,12 @@ export default function AddPetModal({ open, onClose, onCreated }: Props) {
       }
 
       await PetService.uploadAvatar(petId, selectedFile);
+
+      if (pet.weight) {
+        await PetService.addWeightRecord(petId, {
+          weight: Number(pet.weight),
+        });
+      }
 
       resetForm();
       onClose();
@@ -291,6 +299,20 @@ export default function AddPetModal({ open, onClose, onCreated }: Props) {
               {errors.breed && (
                 <p className="text-red-500 text-xs mt-1">{errors.breed}</p>
               )}
+            </div>
+
+            {/* weight */}
+            <div>
+              <label className="font-semibold text-sm">Cân nặng (kg)</label>
+
+              <input
+                type="number"
+                step="0.1"
+                className="w-full mt-2 px-3 py-2.5 rounded-xl border bg-gray-50"
+                placeholder="VD: 12.5"
+                value={pet.weight}
+                onChange={(e) => setPet({ ...pet, weight: e.target.value })}
+              />
             </div>
           </div>
 

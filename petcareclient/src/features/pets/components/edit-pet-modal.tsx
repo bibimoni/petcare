@@ -21,6 +21,7 @@ export default function EditPetModal({ open, onClose, pet, onUpdated }: Props) {
     notes: "",
     image: "",
     status: "ALIVE",
+    weight: "",
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<any>({});
@@ -34,6 +35,7 @@ export default function EditPetModal({ open, onClose, pet, onUpdated }: Props) {
         notes: pet.notes || "",
         image: (pet as any).avatar_url || pet.image_url || "",
         status: pet.status || "ALIVE",
+        weight: pet.weight_history?.[0]?.weight?.toString() || "",
       });
       setSelectedFile(null);
       setErrors({});
@@ -94,6 +96,14 @@ export default function EditPetModal({ open, onClose, pet, onUpdated }: Props) {
       if (selectedFile) {
         await PetService.uploadAvatar(petId, selectedFile);
       }
+      if (
+        form.weight &&
+        form.weight !== pet.weight_history?.[0]?.weight?.toString()
+      ) {
+        await PetService.addWeightRecord(petId, {
+          weight: Number(form.weight),
+        });
+      }
       toast.success("Cập nhật thú cưng thành công!");
       onClose();
       if (onUpdated) await onUpdated(updated);
@@ -151,6 +161,17 @@ export default function EditPetModal({ open, onClose, pet, onUpdated }: Props) {
               {errors.breed && (
                 <p className="text-red-500 text-xs mt-1">{errors.breed}</p>
               )}
+            </div>
+            <div>
+              <label className="font-semibold text-sm">Cân nặng (kg)</label>
+              <input
+                type="number"
+                step="0.1"
+                className="w-full mt-2 px-3 py-2.5 rounded-xl border bg-gray-50"
+                placeholder="VD: 12.5"
+                value={form.weight}
+                onChange={(e) => setForm({ ...form, weight: e.target.value })}
+              />
             </div>
           </div>
           {/* row 2 */}

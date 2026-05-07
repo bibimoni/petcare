@@ -113,7 +113,6 @@ export const PetService = {
     petId: number,
     payload: {
       weight: number;
-      recorded_date?: string;
     },
   ): Promise<PetWeightHistory> {
     const res = await axiosClient.post(`/pets/${petId}/weight`, payload);
@@ -123,26 +122,5 @@ export const PetService = {
   async updatePet(petId: number, data: Partial<Pet>): Promise<Pet> {
     const res = await axiosClient.patch(`/pets/${petId}`, data);
     return unwrap<Pet>(res);
-  },
-
-  async getPetServiceHistory(_petId: number): Promise<ServiceHistory[]> {
-    return [
-      {
-        order_id: 1,
-        created_at: "2023-10-10",
-        service_name: "Tiêm phòng",
-        duration_minutes: 30,
-        price: 200000,
-        status: "COMPLETED",
-      },
-      {
-        order_id: 2,
-        created_at: "2023-09-15",
-        service_name: "Tẩy giun",
-        duration_minutes: 15,
-        price: 100000,
-        status: "COMPLETED",
-      },
-    ];
   },
 };
