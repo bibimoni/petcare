@@ -1,29 +1,64 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
-import type { Pet, Order, Customer } from "@/lib/profile";
-
 import { Sidebar } from "@/components/Sidebar";
-import { profileService } from "@/lib/profile";
+import { Phone, MapPin, Calendar, PawPrint } from "lucide-react";
+import { CustomerApi, type CustomerListItem } from "@/features/customer/api/customer-api";
+import { PetService } from "@/lib/pets";
+import { getOrders, type OrderListItemDto } from "@/features/pos/api/pos.api";
+import { CancelledOrderModal } from "@/features/pos/cancelled-order-modal";
+import { OrderDetailModal } from "@/features/pos/completed-order-modal";
+import { PendingOrderModal } from "@/features/pos/pending-order-modal";
+import { RefundedOrderModal } from "@/features/pos/refunded-order-modal";
+import { RevenueChart } from "@/features/dashboard/components/revenue-chart";
+
+interface LocalPet {
+  age?: number;
+  breed: string;
+  pet_id: number;
+  species: string;
+  weight?: number;
+  pet_name: string;
+  avatar_url?: string;
+}
+
+interface LocalOrderDetail {
+  id: number;
+  name: string;
+  quantity: number;
+  subtotal: number;
+  pet_name?: string;
+  unit_price: number;
+}
+
+interface LocalOrder {
+  status: string;
+  order_id: number;
+  created_at: string;
+  total_amount: number;
+  order_details: LocalOrderDetail[];
+}
 
 export default function CustomerProfilePage() {
   const navigate = useNavigate();
 
+  const { id } = useParams();
   const [searchParams] = useSearchParams();
   const phoneFromUrl = searchParams.get("phone");
 
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [pets, setPets] = useState<Pet[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [customer, setCustomer] = useState<CustomerListItem | null>(null);
+  const [pets, setPets] = useState<LocalPet[]>([]);
+  const [orders, setOrders] = useState<LocalOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState<Partial<Customer>>({});
+  const [editData, setEditData] = useState<Partial<CustomerListItem>>({});
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [searchPhone, setSearchPhone] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [ordersError, setOrdersError] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<LocalOrder | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -35,23 +70,44 @@ export default function CustomerProfilePage() {
     setIsAuthenticated(true);
   }, [navigate]);
 
-  const fetchCustomerData = async (phone: string) => {
+  const fetchCustomerData = async (identifier: string | number, isPhone = false) => {
     try {
       setLoading(true);
       setOrdersError(false);
 
-      // Lấy thông tin khách hàng
-      const customerResponse = await profileService.getCustomerByPhone(phone);
-      setCustomer(customerResponse);
-      setEditData(customerResponse);
+      // Lấy danh sách tất cả khách hàng và tìm người khớp số điện thoại hoặc ID
+      const allCustomers = await CustomerApi.getCustomers();
+      const foundCustomer = isPhone
+        ? allCustomers.find(c => c.phone === identifier)
+        : allCustomers.find(c => String(c.customer_id || c.id) === String(identifier));
 
-      if (customerResponse?.customer_id) {
-        // Lấy danh sách thú cưng (bắt buộc)
+      if (!foundCustomer) {
+        setCustomer(null);
+        setLoading(false);
+        return;
+      }
+
+      setCustomer(foundCustomer);
+      setEditData(foundCustomer);
+
+      const customerId = Number(foundCustomer.customer_id || foundCustomer.id);
+
+      if (customerId) {
+        // Lấy danh sách thú cưng
         try {
-          const petsResponse = await profileService.getPetsByCustomer(
-            customerResponse.customer_id,
-          );
-          setPets(petsResponse || []);
+          const petsRes = await PetService.getByCustomer(customerId);
+          const petsArray = Array.isArray(petsRes) ? petsRes : (petsRes?.data && Array.isArray(petsRes.data) ? petsRes.data : []);
+
+          const mappedPets: LocalPet[] = petsArray.map((item: any) => ({
+            pet_id: item.pet_id || item.id,
+            pet_name: item.name || item.pet_name,
+            breed: item.breed || "",
+            species: item.species || (item.breed?.toLowerCase().includes("chó") ? "DOG" : "CAT"),
+            age: item.age,
+            weight: item.weight,
+            avatar_url: item.avatar_url || item.image_url,
+          }));
+          setPets(mappedPets);
         } catch (petError) {
           console.error("Error fetching pets:", petError);
           setPets([]);
@@ -59,10 +115,24 @@ export default function CustomerProfilePage() {
 
         // Lấy lịch sử giao dịch
         try {
-          const ordersResponse = await profileService.getOrdersByCustomer(
-            customerResponse.customer_id,
-          );
-          setOrders(ordersResponse || []);
+          const ordersRes = await getOrders(1, 1000, { customer_id: customerId });
+          const mappedOrders: LocalOrder[] = (ordersRes.data || []).map((item: OrderListItemDto) => ({
+            order_id: item.order_id,
+            created_at: item.created_at,
+            total_amount: Number(item.total_amount),
+            status: item.status,
+            order_details: (item.order_details || []).map((detail: any) => ({
+              id: detail.id,
+              name: detail.item_type === "SERVICE"
+                ? (detail.service?.combo_name ?? "Dịch vụ")
+                : (detail.product?.name ?? "Sản phẩm"),
+              quantity: detail.quantity,
+              unit_price: Number(detail.unit_price),
+              subtotal: Number(detail.subtotal),
+              pet_name: detail.pet?.name,
+            })),
+          }));
+          setOrders(mappedOrders);
         } catch (orderError: any) {
           console.error("Error fetching orders:", orderError);
           setOrders([]);
@@ -89,17 +159,17 @@ export default function CustomerProfilePage() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const phone = phoneFromUrl;
-
     const fetchData = async () => {
-      if (phone) {
-        await fetchCustomerData(phone);
+      if (id) {
+        await fetchCustomerData(id, false);
+      } else if (phoneFromUrl) {
+        await fetchCustomerData(phoneFromUrl, true);
       } else {
         setLoading(false);
       }
     };
     fetchData();
-  }, [phoneFromUrl, isAuthenticated]);
+  }, [id, phoneFromUrl, isAuthenticated]);
 
   const handleSearch = async () => {
     if (!searchPhone.trim()) {
@@ -108,25 +178,38 @@ export default function CustomerProfilePage() {
     }
 
     setIsSearching(true);
-    await fetchCustomerData(searchPhone);
+    await fetchCustomerData(searchPhone, true);
     setIsSearching(false);
 
     if (customer) {
-      navigate(`/customer-profile?phone=${searchPhone}`, { replace: true });
+      navigate(`/customers/${customer.customer_id || customer.id}`, { replace: true });
     }
   };
 
   const handleSaveProfile = async () => {
     try {
-      if (!customer?.customer_id) {
+      const customerId = customer?.customer_id || customer?.id;
+      if (!customerId) {
         toast.error("ID khách hàng không tìm thấy");
         return;
       }
-      const updated = await profileService.updateCustomer(
-        customer.customer_id,
-        editData,
-      );
-      setCustomer(updated);
+
+      const payload = {
+        id: String(customerId),
+        fullName: editData.full_name || editData.fullName,
+        email: editData.email,
+        address: editData.address,
+        notes: editData.notes,
+      };
+
+      await CustomerApi.editCustomer(payload);
+
+      // Refresh data
+      const currentId = customer?.customer_id || customer?.id;
+      if (currentId) {
+        await fetchCustomerData(currentId, false);
+      }
+
       setIsEditing(false);
       toast.success("Cập nhật thông tin thành công");
     } catch (error: any) {
@@ -134,8 +217,11 @@ export default function CustomerProfilePage() {
     }
   };
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = (dateString?: string | Date) => {
     if (!dateString) return "-";
+    if (dateString instanceof Date) {
+      return dateString.toLocaleDateString("vi-VN");
+    }
     return new Date(dateString).toLocaleDateString("vi-VN");
   };
 
@@ -153,6 +239,7 @@ export default function CustomerProfilePage() {
       PENDING: "bg-yellow-100 text-yellow-700",
       PROCESSING: "bg-blue-100 text-blue-700",
       COMPLETED: "bg-green-100 text-green-700",
+      REFUNDED: "bg-blue-100 text-blue-700",
     };
     const statusTextMap: Record<string, string> = {
       PAID: "Đã thanh toán",
@@ -160,11 +247,22 @@ export default function CustomerProfilePage() {
       PENDING: "Chờ xử lý",
       PROCESSING: "Đang xử lý",
       COMPLETED: "Hoàn thành",
+      REFUNDED: "Đã hoàn tiền",
     };
     return {
       color: statusMap[status] || "bg-gray-100 text-gray-700",
       text: statusTextMap[status] || status,
     };
+  };
+
+  const getOrderStatus = (status: string, cancel_reason?: string | null) => {
+    if (status === "CANCELLED") {
+      if (cancel_reason === "Refunded") {
+        return "REFUNDED";
+      }
+    }
+    if (status === "PAID" || status === "COMPLETED") return "PAID";
+    return status;
   };
 
   const filteredOrders = orders.filter((order) => {
@@ -173,13 +271,23 @@ export default function CustomerProfilePage() {
   });
 
   const totalSpent = orders.reduce((sum, order) => sum + order.total_amount, 0);
-  const totalOrders = orders.length;
+
+  const chartData = useMemo(() => {
+    // Basic aggregation for last 6 months (mocked for now to match image style)
+    const months = ["T1", "T2", "T3", "T4", "T5", "T6"];
+    const values = [1200000, 800000, 2500000, 1800000, 3200000, totalSpent];
+    return {
+      days: months,
+      values: values,
+      totalWeekly: formatCurrency(totalSpent),
+    };
+  }, [totalSpent]);
 
   if (!isAuthenticated) {
     return null;
   }
 
-  if (!loading && !customer && !phoneFromUrl) {
+  if (!loading && !customer && !id && !phoneFromUrl) {
     return (
       <div className="flex w-full overflow-hidden min-h-screen bg-gradient-to-br from-orange-50 to-gray-100">
         <Sidebar />
@@ -294,7 +402,7 @@ export default function CustomerProfilePage() {
             </p>
             <button
               onClick={() => {
-                navigate("/customer-profile");
+                navigate("/customers");
               }}
               className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600"
             >
@@ -315,7 +423,7 @@ export default function CustomerProfilePage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => {
-                  navigate("/customer-profile");
+                  navigate("/customers");
                 }}
                 className="text-gray-600 hover:text-gray-800 flex items-center gap-1"
               >
@@ -407,366 +515,295 @@ export default function CustomerProfilePage() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Customer Info */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden sticky top-24">
-              <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm text-3xl font-bold">
-                    {customer.full_name?.charAt(0).toUpperCase()}
+          {/* Left Column - Customer Info & Pets */}
+          <div className="lg:col-span-1 space-y-8">
+            <div className="bg-white rounded-3xl shadow-xl overflow-hidden sticky top-24 border border-gray-100">
+              <div className="p-8">
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <div className="flex justify-center mb-6">
+                      <div className="w-24 h-24 bg-orange-50 rounded-2xl flex items-center justify-center text-4xl font-bold text-orange-200 border-2 border-dashed border-orange-200">
+                        {editData.full_name?.charAt(0).toUpperCase()}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Họ và tên</label>
+                      <input
+                        type="text"
+                        value={editData.full_name || ""}
+                        onChange={(e) => setEditData({ ...editData, full_name: e.target.value })}
+                        className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Địa chỉ</label>
+                      <input
+                        type="text"
+                        value={editData.address || ""}
+                        onChange={(e) => setEditData({ ...editData, address: e.target.value })}
+                        className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={editData.email || ""}
+                        onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                        className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <button
+                      onClick={handleSaveProfile}
+                      className="w-full bg-orange-500 text-white py-3 rounded-xl hover:bg-orange-600 transition font-bold mt-4 shadow-lg shadow-orange-200"
+                    >
+                      Lưu thay đổi
+                    </button>
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold">{customer.full_name}</h2>
-                    <p className="text-sm opacity-90">Khách hàng thân thiết</p>
-                  </div>
-                </div>
-              </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-4 mb-8">
+                      {customer.avatar_url ? (
+                        <img src={customer.avatar_url} alt={customer.full_name} className="w-20 h-20 rounded-2xl object-cover shadow-md" />
+                      ) : (
+                        <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center text-3xl font-bold text-gray-300">
+                          {customer.full_name?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <h2 className="text-2xl font-black text-gray-800 tracking-tight">{customer.full_name}</h2>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-gray-400 text-xs font-medium">#KH{String(customer.customer_id || customer.id).padStart(3, '0')}</span>
+                        </div>
+                      </div>
+                    </div>
 
-              <div className="p-6">
-                <div className="space-y-4">
-                  {isEditing ? (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Tên khách hàng
-                        </label>
-                        <input
-                          type="text"
-                          value={editData.full_name || ""}
-                          onChange={(e) =>
-                            setEditData({
-                              ...editData,
-                              full_name: e.target.value,
-                            })
-                          }
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Số điện thoại
-                        </label>
-                        <input
-                          type="text"
-                          value={editData.phone || ""}
-                          disabled
-                          className="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-2 text-gray-500"
-                        />
-                        <p className="text-xs text-gray-400 mt-1">
-                          Số điện thoại không thể thay đổi
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Địa chỉ
-                        </label>
-                        <input
-                          type="text"
-                          value={editData.address || ""}
-                          onChange={(e) =>
-                            setEditData({
-                              ...editData,
-                              address: e.target.value,
-                            })
-                          }
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          value={editData.email || ""}
-                          onChange={(e) =>
-                            setEditData({ ...editData, email: e.target.value })
-                          }
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        />
-                      </div>
-                      <button
-                        onClick={handleSaveProfile}
-                        className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition font-medium"
-                      >
-                        Lưu thay đổi
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase">
-                          Số điện thoại
-                        </p>
-                        <p className="font-medium text-gray-800">
-                          {customer.phone || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase">
-                          Địa chỉ
-                        </p>
-                        <p className="font-medium text-gray-700 text-sm">
-                          {customer.address || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase">
-                          Ngày tham gia
-                        </p>
-                        <p className="font-medium text-gray-800">
-                          {formatDate(customer.created_at)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase">Email</p>
-                        <p className="font-medium text-gray-700 text-sm">
-                          {customer.email || "-"}
-                        </p>
-                      </div>
-                      <div className="pt-4 border-t mt-2">
-                        <div className="flex justify-between items-center">
-                          <p className="text-sm text-gray-600">Tổng chi tiêu</p>
-                          <p className="text-xl font-bold text-orange-600">
-                            {formatCurrency(totalSpent)}
-                          </p>
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 shadow-sm">
+                          <Phone size={18} />
                         </div>
-                        <div className="flex justify-between items-center mt-2">
-                          <p className="text-sm text-gray-600">Số đơn hàng</p>
-                          <p className="text-lg font-semibold text-gray-800">
-                            {totalOrders}
-                          </p>
+                        <div>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Số điện thoại</p>
+                          <p className="text-sm font-bold text-gray-800">{customer.phone || "-"}</p>
                         </div>
                       </div>
-                    </>
-                  )}
-                </div>
+
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center text-teal-500 shadow-sm">
+                          <MapPin size={18} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Địa chỉ</p>
+                          <p className="text-sm font-bold text-gray-800 line-clamp-2 leading-relaxed">{customer.address || "-"}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 shadow-sm">
+                          <Calendar size={18} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ngày tham gia</p>
+                          <p className="text-sm font-bold text-gray-800">{formatDate(customer.created_at)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Right Column - Pets & Orders */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Pets Section - HIỂN THỊ LÊN TRƯỚC */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="flex justify-between items-center p-6 border-b">
-                <h3 className="text-xl font-semibold flex items-center gap-2">
-                  <span>🐕</span> Thú cưng ({pets.length})
+            {/* Pets Section */}
+            <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+              <div className="flex justify-between items-center p-8 border-b border-gray-50">
+                <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
+                  <span className="text-xl">🐾</span> Thú cưng của {customer.full_name?.split(' ').pop()} ({pets.length})
                 </h3>
                 <button
-                  onClick={() =>
-                    navigate(`/pets/create?customerId=${customer.customer_id}`)
-                  }
-                  className="flex items-center gap-1 text-orange-600 hover:text-orange-700 font-medium"
+                  onClick={() => navigate(`/pets/create?customerId=${customer.customer_id || customer.id}`)}
+                  className="text-orange-500 hover:text-orange-600 font-bold text-sm"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
                   Thêm mới
                 </button>
               </div>
-              <div className="p-6">
+              <div className="p-8">
                 {pets.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     {pets.map((pet) => (
                       <div
                         key={pet.pet_id}
                         onClick={() => navigate(`/pets/${pet.pet_id}`)}
-                        className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 hover:shadow-md cursor-pointer transition transform hover:scale-105"
+                        className="group cursor-pointer"
                       >
-                        <div className="flex items-start gap-3">
+                        <div className="relative aspect-square rounded-3xl overflow-hidden mb-3 shadow-md group-hover:shadow-xl transition-all duration-300">
                           {pet.avatar_url ? (
-                            <img
-                              src={pet.avatar_url}
-                              alt={pet.pet_name}
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
+                            <img src={pet.avatar_url} alt={pet.pet_name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                           ) : (
-                            <div className="text-4xl">
+                            <div className="w-full h-full bg-gradient-to-br from-orange-100 to-yellow-50 flex items-center justify-center text-5xl group-hover:scale-110 transition-transform duration-500">
                               {pet.species === "DOG" ? "🐕" : "🐈"}
                             </div>
                           )}
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-800">
-                              {pet.pet_name}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              {pet.breed || "Không rõ giống"}
-                            </p>
-                            {pet.weight && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                ⚖️ {pet.weight} kg
-                              </p>
-                            )}
-                            {pet.age && (
-                              <p className="text-xs text-gray-500">
-                                🎂 {pet.age} tuổi
-                              </p>
-                            )}
-                          </div>
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                        </div>
+                        <div className="text-center">
+                          <h4 className="font-bold text-gray-800 group-hover:text-orange-600 transition-colors">{pet.pet_name}</h4>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{pet.breed || "Không rõ giống"}</p>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <div className="text-6xl mb-4">🐕</div>
-                    <p className="text-gray-500">Chưa có thú cưng nào</p>
-                    <button
-                      onClick={() =>
-                        navigate(
-                          `/pets/create?customerId=${customer.customer_id}`,
-                        )
-                      }
-                      className="mt-3 text-orange-500 text-sm hover:underline flex items-center gap-1 mx-auto"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                      Thêm thú cưng đầu tiên
-                    </button>
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <PawPrint className="text-gray-200" />
+                    </div>
+                    <p className="text-sm text-gray-400 font-medium">Chưa có thú cưng nào</p>
                   </div>
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Right Column - Chart & Orders */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Spending Chart Card */}
+            <div className="bg-white">
+              <RevenueChart
+                data={chartData}
+                titleText="Biểu đồ chi tiêu"
+                noteText="Tổng chi tiêu"
+                period="year"
+                selectedYear={new Date().getFullYear()}
+                onYearChange={() => { }}
+                onPeriodChange={() => { }}
+              />
+            </div>
 
             {/* Order History Section */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
               <div className="flex justify-between items-center p-6 border-b">
-                <h3 className="text-xl font-semibold">📋 Lịch sử giao dịch</h3>
-                {orders.length > 0 && (
-                  <select
-                    value={activeFilter}
-                    onChange={(e) => setActiveFilter(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="all">Tất cả</option>
-                    <option value="PAID">Đã thanh toán</option>
-                    <option value="PENDING">Chờ xử lý</option>
-                    <option value="CANCELLED">Đã hủy</option>
-                  </select>
-                )}
+                <h3 className="text-xl font-bold text-gray-800">Lịch sử giao dịch</h3>
+                <select
+                  value={activeFilter}
+                  onChange={(e) => setActiveFilter(e.target.value)}
+                  className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none"
+                >
+                  <option value="all">Tất cả dịch vụ</option>
+                  <option value="PAID">Đã thanh toán</option>
+                  <option value="PENDING">Chờ xử lý</option>
+                  <option value="CANCELLED">Đã hủy</option>
+                  <option value="REFUNDED">Đã hoàn tiền</option>
+                </select>
               </div>
 
-              {ordersError && orders.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-500">
-                    Không thể tải lịch sử giao dịch
-                  </p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Vui lòng thử lại sau
-                  </p>
-                </div>
-              ) : filteredOrders.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="text-left p-4 text-sm font-medium text-gray-600">
-                          NGÀY
-                        </th>
-                        <th className="text-left p-4 text-sm font-medium text-gray-600">
-                          DỊCH VỤ/SẢN PHẨM
-                        </th>
-                        <th className="text-left p-4 text-sm font-medium text-gray-600">
-                          TỔNG TIỀN
-                        </th>
-                        <th className="text-center p-4 text-sm font-medium text-gray-600">
-                          TRẠNG THÁI
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredOrders.map((order) => (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50/50">
+                    <tr className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      <th className="px-6 py-4">Ngày</th>
+                      <th className="px-6 py-4">Dịch vụ/Sản phẩm</th>
+                      <th className="px-6 py-4">Tổng tiền</th>
+                      <th className="px-6 py-4 text-center">Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredOrders.length > 0 ? (
+                      filteredOrders.map((order) => (
                         <tr
                           key={order.order_id}
-                          className="border-b hover:bg-gray-50 cursor-pointer transition"
-                          onClick={() => navigate(`/orders/${order.order_id}`)}
+                          className="hover:bg-gray-50 cursor-pointer transition-colors group"
+                          onClick={() => setSelectedOrder(order)}
                         >
-                          <td className="p-4 text-sm text-gray-700">
-                            {formatDate(order.created_at)}
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-bold text-gray-800">{formatDate(order.created_at)}</p>
+                            <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
                           </td>
-                          <td className="p-4">
-                            {order.order_details &&
-                            order.order_details.length > 0 ? (
-                              <div className="space-y-1">
-                                {order.order_details.map((detail) => (
-                                  <div key={detail.id} className="text-sm">
-                                    <span className="font-medium text-gray-800">
-                                      {detail.name}
-                                    </span>
-                                    <span className="text-gray-500 text-xs ml-2">
-                                      x{detail.quantity}
-                                    </span>
-                                    {detail.pet_name && (
-                                      <span className="text-xs text-gray-400 ml-2">
-                                        (Cho {detail.pet_name})
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
+                          <td className="px-6 py-4">
+                            <div className="space-y-1">
+                              {order.order_details.slice(0, 2).map((detail) => (
+                                <div key={detail.id} className="text-sm">
+                                  <span className="font-bold text-gray-700">{detail.name}</span>
+                                  {detail.pet_name && <span className="text-xs text-gray-400 ml-1">Cho {detail.pet_name}</span>}
+                                </div>
+                              ))}
+                              {order.order_details.length > 2 && (
+                                <p className="text-xs text-orange-500">+ {order.order_details.length - 2} mục khác</p>
+                              )}
+                            </div>
                           </td>
-                          <td className="p-4 font-semibold text-gray-800">
-                            {formatCurrency(order.total_amount)}
+                          <td className="px-6 py-4">
+                            <span className="text-sm font-black text-gray-800">{formatCurrency(order.total_amount)}</span>
                           </td>
-                          <td className="p-4 text-center">
-                            <span
-                              className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status).color}`}
-                            >
+                          <td className="px-6 py-4 text-center">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(order.status).color}`}>
                               {getStatusColor(order.status).text}
                             </span>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">📦</div>
-                  <p className="text-gray-500">Chưa có giao dịch nào</p>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center">
+                          <div className="text-gray-400">
+                            <p className="font-medium text-gray-600 mb-2">Không có dữ liệu</p>
+                            <p className="text-sm">Chưa có giao dịch nào</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {orders.length > 5 && (
+                <div className="p-4 border-t text-center">
+                  <button className="text-orange-500 text-sm font-bold hover:underline">
+                    Xem toàn bộ lịch sử
+                  </button>
                 </div>
               )}
-
-              {filteredOrders.length > 0 &&
-                filteredOrders.length < orders.length && (
-                  <div className="text-center py-4 border-t">
-                    <button
-                      onClick={() => setActiveFilter("all")}
-                      className="text-orange-500 text-sm hover:underline"
-                    >
-                      Xem tất cả {orders.length} giao dịch
-                    </button>
-                  </div>
-                )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <OrderDetailModal
+        isOpen={!!selectedOrder && getOrderStatus(selectedOrder.status) === "PAID"}
+        orderId={selectedOrder?.order_id || null}
+        onClose={() => setSelectedOrder(null)}
+        onStatusChange={() => {
+          setSelectedOrder(null);
+        }}
+      />
+
+      <PendingOrderModal
+        isOpen={!!selectedOrder && selectedOrder.status === "PENDING"}
+        orderId={selectedOrder?.order_id || null}
+        onClose={() => setSelectedOrder(null)}
+        onStatusChange={() => {
+          setSelectedOrder(null);
+        }}
+      />
+
+      <CancelledOrderModal
+        isOpen={!!selectedOrder && selectedOrder.status === "CANCELLED"}
+        orderId={selectedOrder?.order_id || null}
+        onClose={() => setSelectedOrder(null)}
+      />
+
+      <RefundedOrderModal
+        isOpen={
+          !!selectedOrder &&
+          getOrderStatus(
+            selectedOrder.status,
+            (selectedOrder as any).cancel_reason,
+          ) === "REFUNDED"
+        }
+        orderId={selectedOrder?.order_id || null}
+        onClose={() => setSelectedOrder(null)}
+      />
     </div>
   );
 }

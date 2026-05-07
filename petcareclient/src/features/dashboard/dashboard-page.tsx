@@ -136,6 +136,8 @@ export const DashboardPage = () => {
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                   {revenue && (
                     <RevenueChart
+                      titleText="Lợi nhuận"
+                      noteText="Tổng thu"
                       data={revenue}
                       period={revenuePeriod}
                       onPeriodChange={setRevenuePeriod}

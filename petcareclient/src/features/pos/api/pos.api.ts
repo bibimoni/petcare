@@ -286,6 +286,7 @@ export const getOrders = async (
   filters?: {
     status?: string;
     pet_id?: number;
+    customer_id?: number;
     date_to?: string;
     date_from?: string;
   },
@@ -299,6 +300,10 @@ export const getOrders = async (
 
     if (filters.pet_id) {
       params.pet_id = filters.pet_id;
+    }
+
+    if (filters.customer_id) {
+      params.customer_id = filters.customer_id;
     }
 
     if (typeof filters.date_from === "string" && filters.date_from.trim()) {
