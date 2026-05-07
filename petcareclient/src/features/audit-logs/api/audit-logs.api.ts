@@ -2,40 +2,46 @@ import apiClient from "@/lib/api";
 
 export interface HistoryEntry {
     id: number;
-    store_id: number;
-    action: "CREATED" | "UPDATED" | "CANCELLED" | string;
+    entity_type: "CUSTOMER" | "PRODUCT" | "SERVICE" | "ORDER" | "ROLE" | string;
+    entity_id: number;
+    action: "CREATED" | "UPDATED" | "CANCELLED" | "STOCK_CHANGED" | "REFUNDED" | string;
     performed_by: number;
     performed_by_name: string;
     old_values: any;
     new_values: any;
     created_at: string;
-    // Resource specific IDs
-    order_id?: number;
-    product_id?: number;
-    service_id?: number;
-    role_id?: number;
 }
 
-export interface ActivityItem {
-    type: string;
-    title: string;
-    created_at: string;
-    description: string;
-    reference_id: number;
-    reference_type: "ORDER" | "PRODUCT" | "SERVICE" | "ROLE" | string;
-}
+export const getRefInfo = (entry: HistoryEntry) => {
+    const typeMap: Record<string, { type: string, label: string }> = {
+        CUSTOMER: { type: "CUSTOMER", label: "Khách hàng" },
+        PRODUCT: { type: "PRODUCT", label: "Sản phẩm" },
+        SERVICE: { type: "SERVICE", label: "Dịch vụ" },
+        ORDER: { type: "ORDER", label: "Hóa đơn" },
+        ROLE: { type: "ROLE", label: "Quyền hạn" },
+    };
 
-export interface AuditLogsResponse {
-    activities: ActivityItem[];
-}
-
-export const getAuditLogs = async (limit = 50): Promise<ActivityItem[]> => {
-    const response = await apiClient.get<ActivityItem[]>(
-        `/analytics/activities?limit=${limit}`,
-    );
-    return Array.isArray(response.data) ? response.data : [];
+    const info = typeMap[entry.entity_type] || { type: entry.entity_type, label: entry.entity_type };
+    return { ...info, id: entry.entity_id };
 };
 
+export const getAuditLogs = async (params?: { entity_type?: string, performed_by?: number }): Promise<HistoryEntry[]> => {
+    const response = await apiClient.get<HistoryEntry[]>("/stores/activity", { params });
+    const data = Array.isArray(response.data) ? response.data : [];
+
+    // Deduplicate using a composite key (type + id + timestamp)
+    // This handles cases where different entity types share the same numeric ID
+    const uniqueData = Array.from(
+        new Map(
+            data.map(item => [`${item.entity_type}-${item.id}-${item.created_at}`, item])
+        ).values()
+    );
+
+    return uniqueData;
+};
+
+// These might still be useful for fetching history of a specific item if needed, 
+// but the global activity endpoint is preferred for the main list.
 export const getOrderHistory = async (orderId: number): Promise<HistoryEntry[]> => {
     const response = await apiClient.get<HistoryEntry[]>(`/orders/${orderId}/history`);
     return Array.isArray(response.data) ? response.data : [];
