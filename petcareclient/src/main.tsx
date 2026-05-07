@@ -38,6 +38,7 @@ import SettingsPage from "./features/settings/page";
 import CreateStorePage from "./features/store/create-store-page";
 import TermAndServicePage from "./features/term-and-service/page";
 import { queryClient } from "./lib/query-client";
+import AuditLogsPage from "./features/audit-logs/page";
 
 function PetProfileWrapper() {
   const { id } = useParams();
@@ -214,6 +215,14 @@ createRoot(document.getElementById("root")!).render(
             element={
               <RoleRoute allowedRoles={["ADMIN", "STAFF", "NULL"]}>
                 <SettingsPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/audit-logs"
+            element={
+              <RoleRoute allowedRoles={["ADMIN"]}>
+                <AuditLogsPage />
               </RoleRoute>
             }
           />
