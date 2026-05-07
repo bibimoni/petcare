@@ -39,7 +39,7 @@ export const RevenueChart = ({
     const x =
       data.values.length > 1
         ? (index / (data.values.length - 1)) * (chartWidth - padding * 2) +
-          padding
+        padding
         : chartWidth / 2; // Canh giữa đồ thị nếu chỉ có 1 điểm
 
     const y =
@@ -50,17 +50,28 @@ export const RevenueChart = ({
   });
 
   // Create line path
-  const linePath = points
-    .map((point, index) => `${index === 0 ? "M" : "L"}${point.x},${point.y}`)
-    .join(" ");
+  const linePath =
+    points.length > 0
+      ? points
+        .map(
+          (point, index) => `${index === 0 ? "M" : "L"}${point.x},${point.y}`,
+        )
+        .join(" ")
+      : "";
 
   // Create fill area path
-  const areaPath = `${linePath} L${points[points.length - 1].x},${chartHeight} L${points[0].x},${chartHeight} Z`;
+  const areaPath =
+    points.length > 0
+      ? `${linePath} L${points[points.length - 1].x},${chartHeight} L${points[0].x},${chartHeight} Z`
+      : "";
 
   // Find the highest point for default tooltip
-  const highestPoint = points.reduce((prev, current) =>
-    prev.value > current.value ? prev : current,
-  );
+  const highestPoint =
+    points.length > 0
+      ? points.reduce((prev, current) =>
+        prev.value > current.value ? prev : current,
+      )
+      : null;
 
   // Điểm hiển thị tooltip hiện tại (ưu tiên điểm đang hover, nếu không hover thì hiện điểm cao nhất)
   const activePoint =

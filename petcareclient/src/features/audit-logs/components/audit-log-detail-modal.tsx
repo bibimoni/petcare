@@ -1,5 +1,6 @@
 import { X, User, Calendar } from "lucide-react";
-import { type HistoryEntry, getRefInfo } from "../api/audit-logs.api";
+
+import { getRefInfo, type HistoryEntry } from "../api/audit-logs.api";
 
 interface AuditLogDetailModalProps {
   isOpen: boolean;
@@ -17,15 +18,18 @@ export const AuditLogDetailModal = ({
   const ref = getRefInfo(entry);
 
   const renderValue = (val: any) => {
-    if (val === null || val === undefined) return <span className="text-gray-400 italic">null</span>;
+    if (val === null || val === undefined)
+      return <span className="text-gray-400 italic">null</span>;
     if (typeof val === "object") return JSON.stringify(val);
     return String(val);
   };
 
-  const allKeys = Array.from(new Set([
-    ...Object.keys(entry.old_values || {}),
-    ...Object.keys(entry.new_values || {})
-  ]));
+  const allKeys = Array.from(
+    new Set([
+      ...Object.keys(entry.old_values || {}),
+      ...Object.keys(entry.new_values || {}),
+    ]),
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm p-4">
@@ -67,7 +71,9 @@ export const AuditLogDetailModal = ({
 
             <div className="bg-[#fcfafa] rounded-xl border border-gray-100 overflow-hidden">
               <div className="grid grid-cols-2 bg-gray-50/50 border-b border-gray-100 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                <div className="px-6 py-2 border-r border-gray-100">Giá trị cũ</div>
+                <div className="px-6 py-2 border-r border-gray-100">
+                  Giá trị cũ
+                </div>
                 <div className="px-6 py-2">Giá trị mới</div>
               </div>
               <div className="divide-y divide-gray-100">
@@ -78,14 +84,25 @@ export const AuditLogDetailModal = ({
                     const isChanged = oldVal !== newVal;
 
                     return (
-                      <div key={key} className={`grid grid-cols-2 text-sm ${isChanged ? "bg-orange-50/30" : ""}`}>
+                      <div
+                        key={key}
+                        className={`grid grid-cols-2 text-sm ${isChanged ? "bg-orange-50/30" : ""}`}
+                      >
                         <div className="px-6 py-3 border-r border-gray-100 flex flex-col gap-1">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase">{key}</span>
-                          <div className="text-gray-600 break-all">{renderValue(oldVal)}</div>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase">
+                            {key}
+                          </span>
+                          <div className="text-gray-600 break-all">
+                            {renderValue(oldVal)}
+                          </div>
                         </div>
                         <div className="px-6 py-3 flex flex-col gap-1">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase">{key}</span>
-                          <div className={`font-bold break-all ${isChanged ? "text-orange-600" : "text-charcoal"}`}>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase">
+                            {key}
+                          </span>
+                          <div
+                            className={`font-bold break-all ${isChanged ? "text-orange-600" : "text-charcoal"}`}
+                          >
                             {renderValue(newVal)}
                           </div>
                         </div>
@@ -94,7 +111,9 @@ export const AuditLogDetailModal = ({
                   })
                 ) : entry.action === "CREATED" ? (
                   <div className="p-6">
-                    <div className="text-[10px] font-bold text-gray-400 uppercase mb-2">Thông tin khởi tạo</div>
+                    <div className="text-[10px] font-bold text-gray-400 uppercase mb-2">
+                      Thông tin khởi tạo
+                    </div>
                     <pre className="text-xs bg-white p-4 rounded-lg border border-gray-100 overflow-x-auto">
                       {JSON.stringify(entry.new_values, null, 2)}
                     </pre>

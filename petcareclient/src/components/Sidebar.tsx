@@ -71,7 +71,7 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
   },
   { id: "pos", label: "POS", icon: "point_of_sale", href: "/pos" },
   { id: "inventory", label: "Kho", icon: "inventory_2", href: "/inventory" },
-  { id: "reports", label: "Báo cáo", icon: "bar_chart", href: "/reports" },
+  { id: "reports", label: "Báo cáo", icon: "bar_chart", href: "/finance" },
   {
     id: "audit-logs",
     label: "Nhật ký hệ thống",
