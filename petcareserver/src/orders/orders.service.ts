@@ -307,10 +307,10 @@ export class OrdersService {
             performed_by: userId,
             performed_by_name: userName ?? null,
             old_values: {
-              stock_quantity: payload.original_stock_quantity,
+              stock_quantity: payload.original_stock_quantity!,
             },
             new_values: {
-              stock_quantity: payload.original_stock_quantity - payload.quantity,
+              stock_quantity: payload.original_stock_quantity! - payload.quantity,
             },
           });
         }
