@@ -72,6 +72,12 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: "pos", label: "POS", icon: "point_of_sale", href: "/pos" },
   { id: "inventory", label: "Kho", icon: "inventory_2", href: "/inventory" },
   { id: "reports", label: "Báo cáo", icon: "bar_chart", href: "/reports" },
+  {
+    id: "audit-logs",
+    label: "Nhật ký hệ thống",
+    icon: "history",
+    href: "/audit-logs",
+  },
 ];
 
 const LIMITED_NAV_ITEMS: NavItem[] = [
@@ -241,11 +247,10 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
               onClick={() => handleNavigation(item.href)}
               title={isCollapsed ? item.label : undefined}
               type="button"
-              className={`group flex w-full items-center gap-3 rounded-xl cursor-pointer py-3 font-medium transition-all ${navItemLayoutClass} ${
-                isActive
+              className={`group flex w-full items-center gap-3 rounded-xl cursor-pointer py-3 font-medium transition-all ${navItemLayoutClass} ${isActive
                   ? "bg-orange-100 dark:bg-primary/20 font-bold text-orange-800 dark:text-primary shadow-sm"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-charcoal dark:hover:text-gray-200"
-              }`}
+                }`}
             >
               <span
                 className={`material-symbols-outlined ${isActive ? "filled" : ""}`}
@@ -272,9 +277,8 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
         </button>
 
         <div
-          className={`mt-2 flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-700/50 dark:bg-gray-800/50 ${
-            isCollapsed ? "justify-center" : ""
-          }`}
+          className={`mt-2 flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-700/50 dark:bg-gray-800/50 ${isCollapsed ? "justify-center" : ""
+            }`}
         >
           <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full">
             <CircleUser className="h-6 w-6" />
