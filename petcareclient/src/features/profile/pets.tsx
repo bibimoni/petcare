@@ -9,6 +9,7 @@ import { queryClient } from "@/lib/query-client";
 
 import { getPetProfileData } from "../pets/api/pet-profile.api";
 import EditPetModal from "../pets/components/edit-pet-modal";
+import { getOrders } from "../pos/api";
 
 function Modal({
   open,
@@ -74,7 +75,31 @@ export default function PetProfile({ petId }: { petId: number }) {
 
   const loading = petQuery.isPending;
   const pet = (petQuery.data?.pet as PetProfileDetail | undefined) ?? null;
-  const services = petQuery.data?.services ?? [];
+
+  const ordersQuery = useQuery({
+    queryKey: ["pet-orders", petId],
+    queryFn: () => getOrders(1, 100, { pet_id: petId }),
+    enabled: !!petId,
+  });
+
+  const petOrders = ordersQuery.data?.data ?? [];
+
+  const services = useMemo(() => {
+    return petOrders.flatMap((order) =>
+      (order.order_details ?? [])
+        .filter((detail) => Number(detail.pet_id) === Number(petId))
+        .map((detail) => ({
+          order_id: order.order_id,
+          created_at: order.created_at,
+          service_name:
+            detail.item_type === "SERVICE"
+              ? (detail.service?.combo_name ?? "Dịch vụ")
+              : (detail.product?.name ?? "Sản phẩm"),
+          type: detail.item_type,
+          price: Number(detail.subtotal || detail.unit_price || 0),
+        })),
+    );
+  }, [petOrders, petId]);
   const weights = useMemo(
     () => (petQuery.data?.weights ?? []) as PetWeightWithNotes[],
     [petQuery.data?.weights],
@@ -328,66 +353,6 @@ export default function PetProfile({ petId }: { petId: number }) {
               <div className="rounded-3xl border border-[#ead8cf] bg-white p-5 shadow-sm">
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="text-lg font-black text-[#241811]">
-                    Tình trạng sức khỏe gần đây
-                  </h3>
-                  <button
-                    type="button"
-                    className="text-sm font-semibold text-orange-600/80"
-                    onClick={() => setModalOpen("weights")}
-                  >
-                    Xem tất cả
-                  </button>
-                </div>
-                <div className="overflow-x-auto rounded-2xl border border-[#f1e2d9]">
-                  <table className="w-full min-w-[560px] text-sm">
-                    <thead className="bg-[#fcf5f1] text-left text-[#b6856d]">
-                      <tr>
-                        <th className="px-4 py-3 font-semibold">Ngày</th>
-                        <th className="px-4 py-3 font-semibold">Loại khám</th>
-                        <th className="px-4 py-3 font-semibold">Ghi chú</th>
-                        <th className="px-4 py-3 text-right font-semibold">
-                          Trạng thái
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {weights.slice(0, 5).map((weight) => (
-                        <tr
-                          key={weight.id}
-                          className="border-t border-[#f1e2d9] text-[#5f453a]"
-                        >
-                          <td className="px-4 py-3">
-                            {formatDate(weight.recorded_date)}
-                          </td>
-                          <td className="px-4 py-3">Theo dõi cân nặng</td>
-                          <td className="px-4 py-3">
-                            {weight.notes || "Định kỳ"}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <span className="rounded-full bg-[#def4e8] px-3 py-1 text-xs font-semibold text-[#2d9b65]">
-                              Hoàn thành
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                      {!weights.length && (
-                        <tr>
-                          <td
-                            className="px-4 py-6 text-center text-sm text-[#a67d6c]"
-                            colSpan={4}
-                          >
-                            Chưa có dữ liệu cân nặng.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-[#ead8cf] bg-white p-5 shadow-sm">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-lg font-black text-[#241811]">
                     Lịch sử dịch vụ & Mua hàng
                   </h3>
                   <button
@@ -399,29 +364,36 @@ export default function PetProfile({ petId }: { petId: number }) {
                   </button>
                 </div>
                 <div className="space-y-3">
-                  {services.slice(0, 5).map((service) => (
-                    <div
-                      key={service.order_id}
-                      className="flex items-center justify-between rounded-2xl border border-[#f1e2d9] bg-[#fffaf8] px-4 py-3"
-                    >
-                      <div>
-                        <p className="font-semibold text-[#3d2a21]">
-                          {service.service_name}
-                        </p>
-                        <p className="text-sm text-[#ad7f6a]">
-                          {service.duration_minutes} phút
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-[#3d2a21]">
-                          {service.price.toLocaleString("vi-VN")}đ
-                        </p>
-                        <p className="text-sm text-[#ad7f6a]">
-                          {formatDate(service.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                  {services.slice(0, 3).map(
+                    (service, idx) => (
+                      console.log(service),
+                      (
+                        <div
+                          key={`${service.order_id}-${idx}`}
+                          className="flex items-center justify-between rounded-2xl border border-[#f1e2d9] bg-[#fffaf8] px-4 py-3"
+                        >
+                          <div>
+                            <p className="font-semibold text-[#3d2a21]">
+                              {service.service_name}
+                            </p>
+                            <p className="text-sm text-[#ad7f6a]">
+                              {service.type === "SERVICE"
+                                ? "Dịch vụ"
+                                : "Sản phẩm"}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-[#3d2a21]">
+                              {service.price.toLocaleString("vi-VN")}đ
+                            </p>
+                            <p className="text-sm text-[#ad7f6a]">
+                              {formatDate(service.created_at)}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    ),
+                  )}
                   {!services.length && (
                     <div className="rounded-2xl border border-[#f1e2d9] bg-[#fffaf8] px-4 py-6 text-center text-sm text-[#ad7f6a]">
                       Chưa có lịch sử dịch vụ.
@@ -491,9 +463,9 @@ export default function PetProfile({ petId }: { petId: number }) {
                 width="max-w-4xl"
               >
                 <div className="space-y-3">
-                  {services.map((service) => (
+                  {services.map((service, idx) => (
                     <div
-                      key={service.order_id}
+                      key={`${service.order_id}-${idx}`}
                       className="flex items-center justify-between rounded-2xl border border-[#f1e2d9] bg-[#fffaf8] px-4 py-3"
                     >
                       <div>
@@ -501,7 +473,9 @@ export default function PetProfile({ petId }: { petId: number }) {
                           {service.service_name}
                         </p>
                         <p className="text-sm text-[#ad7f6a]">
-                          {service.duration_minutes} phút
+                          {service.duration_minutes > 0
+                            ? `${service.duration_minutes} phút`
+                            : "Sản phẩm"}
                         </p>
                       </div>
                       <div className="text-right">

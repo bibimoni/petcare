@@ -152,16 +152,17 @@ export type OrderListItemDto = {
     quantity: number;
     subtotal: string;
     unit_price: string;
+    pet_id?: number | null;
     product_id?: number | null;
     service_id?: number | null;
     item_type: "PRODUCT" | "SERVICE";
-    service?: {
-      id: number;
-      combo_name?: string | null;
-    } | null;
     product?: {
       product_id: number;
       name?: string | null;
+    } | null;
+    service?: {
+      service_id: number;
+      combo_name?: string | null;
     } | null;
   }>;
 };
@@ -282,13 +283,22 @@ export const confirmOrder = async (orderId: number | string) =>
 export const getOrders = async (
   page = 1,
   limit = 10,
-  filters?: { status?: string; date_to?: string; date_from?: string },
+  filters?: {
+    status?: string;
+    pet_id?: number;
+    date_to?: string;
+    date_from?: string;
+  },
 ): Promise<OrdersListResponseDto> => {
   const params: Record<string, any> = { page, limit };
 
   if (filters) {
     if (typeof filters.status === "string" && filters.status !== "") {
       params.status = filters.status;
+    }
+
+    if (filters.pet_id) {
+      params.pet_id = filters.pet_id;
     }
 
     if (typeof filters.date_from === "string" && filters.date_from.trim()) {
