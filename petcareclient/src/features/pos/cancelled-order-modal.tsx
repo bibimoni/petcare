@@ -191,6 +191,22 @@ export const CancelledOrderModal = ({
                       </div>
                     </div>
                   </div>
+
+                  {/* Lý do hủy */}
+                  <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/5 rounded-bl-full -mr-4 -mt-4 group-hover:bg-red-500/10 transition-colors"></div>
+                    <div className="flex items-center gap-2 mb-2 relative z-10">
+                      <div className="size-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center border border-red-100">
+                        <XCircleIcon size={16} />
+                      </div>
+                      <div className="text-[10px] text-[#9a624c] uppercase tracking-wider font-bold">
+                        Lý do hủy đơn
+                      </div>
+                    </div>
+                    <div className="relative z-10 pl-10 text-sm text-[#1b110d] font-medium italic leading-relaxed">
+                      "{order.cancel_reason || "Không có lý do chi tiết"}"
+                    </div>
+                  </div>
                 </div>
 
                 {/* Cột phải (Danh sách sản phẩm) */}

@@ -71,11 +71,13 @@ const summarizeOrderItems = (
   return `${firstName} x${firstItem.quantity} +${orderDetails.length - 1} mục khác`;
 };
 
-const getOrderStatus = (status: string, cancel_reason?: string | null) => {
+const getOrderStatus = (status: string) => {
   if (status === "CANCELLED") {
-    if (cancel_reason === "Refunded") {
-      return "REFUNDED";
-    }
+    return "CANCELLED"
+  }
+
+  if (status === "REFUNDED") {
+    return "REFUNDED"
   }
 
   return status as "PAID" | "CANCELLED" | "PENDING";
@@ -95,7 +97,7 @@ const mapOrderToHistoryTransaction = (
     id: `POS-${String(order.order_id).padStart(4, "0")}`,
     numericId: order.order_id,
     pet: summarizeOrderItems(order.order_details),
-    status: getOrderStatus(order?.status, order?.cancel_reason),
+    status: getOrderStatus(order?.status),
     time,
     total: formatVND(order.total_amount),
   };
@@ -431,7 +433,8 @@ const PosHistoryPage = () => {
                     <option value="">Tất cả</option>
                     <option value="PAID">Đã thanh toán</option>
                     <option value="PENDING">Chờ thanh toán</option>
-                    <option value="CANCELLED">Đã hủy và hoàn tiền</option>
+                    <option value="CANCELLED">Đã hủy</option>
+                    <option value="REFUNDED">Đã hoàn tiền</option>
                   </select>
 
                   <button

@@ -286,9 +286,9 @@ export const getOrders = async (
   filters?: {
     status?: string;
     pet_id?: number;
-    customer_id?: number;
     date_to?: string;
     date_from?: string;
+    customer_id?: number;
   },
 ): Promise<OrdersListResponseDto> => {
   const params: Record<string, any> = { page, limit };
@@ -337,8 +337,10 @@ export const getOrders = async (
   return response.data;
 };
 
-export const cancelOrder = async (orderId: number | string) =>
-  axiosClient.patch(`/orders/${Number(orderId)}/cancel`);
+export const cancelOrder = async (
+  orderId: number | string,
+  cancel_reason: string,
+) => axiosClient.patch(`/orders/${Number(orderId)}/cancel`, { cancel_reason });
 
 export const refundOrder = async (orderId: number | string) =>
   axiosClient.post(`/orders/${Number(orderId)}/refund`);
