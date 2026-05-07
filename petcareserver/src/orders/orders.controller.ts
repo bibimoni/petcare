@@ -65,6 +65,7 @@ export class OrdersController {
       createOrderDto,
       user.store_id,
       user.user_id,
+      user.full_name,
       {
         currency: createOrderDto.currency,
         success_url: createOrderDto.success_url,
@@ -127,7 +128,12 @@ export class OrdersController {
     @Body('order_id', ParseIntPipe) orderId: number,
     @CurrentUser() user: any,
   ) {
-    return this.ordersService.confirmOrder(orderId, user.store_id);
+    return this.ordersService.confirmOrder(
+      orderId,
+      user.store_id,
+      user.user_id,
+      user.full_name,
+    );
   }
 
   @Get()
