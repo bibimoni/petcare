@@ -38,8 +38,8 @@ export const PendingOrderModal = ({
 }: PendingOrderModalProps) => {
   const [order, setOrder] = useState<Order | null>(null);
   const [payment, setPayment] = useState<OrderPaymentDto | null>(null);
-  const [cancelReason, setCancelReason] = useState<string>("");
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false); // Dùng chung cho cả nút Thanh toán và Hủy
   const queryClient = useQueryClient();
@@ -81,8 +81,9 @@ export const PendingOrderModal = ({
   const handleCancelOrder = async () => {
     setIsProcessing(true);
     try {
-      await cancelOrder(orderId ?? order?.order_id ?? 0, cancelReason);
+      await cancelOrder(orderId ?? order?.order_id ?? 0, "");
       toast.success("Đã hủy đơn hàng!");
+
       onStatusChange();
       onClose();
       queryClient.invalidateQueries({
@@ -188,7 +189,7 @@ export const PendingOrderModal = ({
                     </div>
                   </div>
 
-                  <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                  {order.order_details[0].pet && (<div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
                     <div className="absolute top-0 right-0 w-20 h-20 bg-[#f7b297]/5 rounded-bl-full -mr-4 -mt-4 group-hover:bg-[#f7b297]/10 transition-colors"></div>
                     <div className="flex items-start justify-between relative z-10 mb-3">
                       <div className="flex items-center gap-3">
@@ -217,23 +218,7 @@ export const PendingOrderModal = ({
                         <span>{order.order_details[0].pet?.notes}</span>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Lý do hủy */}
-                  <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/5 rounded-bl-full -mr-4 -mt-4 group-hover:bg-red-500/10 transition-colors"></div>
-                    <div className="mb-2 relative z-10">
-                      <label className="text-[10px] text-[#9a624c] uppercase tracking-wider font-bold">
-                        Lý do hủy đơn
-                      </label>
-                    </div>
-                    <textarea
-                      value={cancelReason}
-                      onChange={(e) => setCancelReason(e.target.value)}
-                      placeholder="Nhập lý do hủy đơn hàng này..."
-                      className="w-full bg-[#fcf9f8] border border-[#f3ebe7] rounded-xl p-3 text-sm focus:ring-2 focus:ring-red-100 focus:border-red-200 outline-none transition-all resize-none h-24 relative z-10"
-                    />
-                  </div>
+                  </div>)}
                 </div>
 
                 {/* Cột phải (Danh sách sản phẩm) */}

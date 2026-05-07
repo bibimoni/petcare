@@ -57,8 +57,6 @@ export default function CustomerProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<CustomerListItem>>({});
   const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [searchPhone, setSearchPhone] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<LocalOrder | null>(null);
 
@@ -84,8 +82,8 @@ export default function CustomerProfilePage() {
       const foundCustomer = isPhone
         ? allCustomers.find((c) => c.phone === identifier)
         : allCustomers.find(
-            (c) => String(c.customer_id || c.id) === String(identifier),
-          );
+          (c) => String(c.customer_id || c.id) === String(identifier),
+        );
 
       if (!foundCustomer) {
         setCustomer(null);
@@ -186,23 +184,6 @@ export default function CustomerProfilePage() {
     };
     fetchData();
   }, [id, phoneFromUrl, isAuthenticated]);
-
-  const handleSearch = async () => {
-    if (!searchPhone.trim()) {
-      toast.error("Vui lòng nhập số điện thoại");
-      return;
-    }
-
-    setIsSearching(true);
-    await fetchCustomerData(searchPhone, true);
-    setIsSearching(false);
-
-    if (customer) {
-      navigate(`/customers/${customer.customer_id || customer.id}`, {
-        replace: true,
-      });
-    }
-  };
 
   const handleSaveProfile = async () => {
     try {
@@ -662,8 +643,8 @@ export default function CustomerProfilePage() {
                   noteText="Tổng chi tiêu"
                   period="year"
                   selectedYear={new Date().getFullYear()}
-                  onYearChange={() => {}}
-                  onPeriodChange={() => {}}
+                  onYearChange={() => { }}
+                  onPeriodChange={() => { }}
                 />
               </div>
 

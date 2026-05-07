@@ -5,7 +5,9 @@ import {
   X as Close,
   ShoppingBag,
   ReceiptIcon,
+  RotateCcw,
 } from "lucide-react";
+
 import { useState, useEffect } from "react";
 
 import type { Order } from "./type";
@@ -190,6 +192,22 @@ export const RefundedOrderModal = ({
                       <div className="flex items-center gap-2 text-sm text-[#9a624c]">
                         <span>{order.order_details[0].pet?.notes}</span>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Lý do hoàn tiền */}
+                  <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/5 rounded-bl-full -mr-4 -mt-4 group-hover:bg-orange-500/10 transition-colors"></div>
+                    <div className="flex items-center gap-2 mb-2 relative z-10">
+                      <div className="size-8 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center border border-orange-100">
+                        <RotateCcw size={16} />
+                      </div>
+                      <div className="text-[10px] text-[#9a624c] uppercase tracking-wider font-bold">
+                        Lý do hoàn tiền
+                      </div>
+                    </div>
+                    <div className="relative z-10 pl-10 text-sm text-[#1b110d] font-medium italic leading-relaxed">
+                      "{order.cancel_reason || "Không có lý do chi tiết"}"
                     </div>
                   </div>
                 </div>

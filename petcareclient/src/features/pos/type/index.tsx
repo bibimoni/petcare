@@ -64,6 +64,8 @@ export interface Order {
   created_at: string;
   total_amount: number;
   cancel_reason?: string;
+  refund_reason?: string;
+
   customer: CustomerDetail;
   order_details: OrderDetail[];
   cancelled_by_user_id?: number;
