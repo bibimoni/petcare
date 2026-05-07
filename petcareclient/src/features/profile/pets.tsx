@@ -473,9 +473,7 @@ export default function PetProfile({ petId }: { petId: number }) {
                           {service.service_name}
                         </p>
                         <p className="text-sm text-[#ad7f6a]">
-                          {service.type === 'SERVICE'
-                            ? "Dịch vụ"
-                            : "Sản phẩm"}
+                          {service.type === "SERVICE" ? "Dịch vụ" : "Sản phẩm"}
                         </p>
                       </div>
                       <div className="text-right">

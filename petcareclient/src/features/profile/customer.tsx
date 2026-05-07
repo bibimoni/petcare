@@ -1,17 +1,20 @@
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Phone, MapPin, Calendar, PawPrint } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Sidebar } from "@/components/Sidebar";
-import { Phone, MapPin, Calendar, PawPrint } from "lucide-react";
-import { CustomerApi, type CustomerListItem } from "@/features/customer/api/customer-api";
-import { PetService } from "@/lib/pets";
+import {
+  CustomerApi,
+  type CustomerListItem,
+} from "@/features/customer/api/customer-api";
+import { RevenueChart } from "@/features/dashboard/components/revenue-chart";
 import { getOrders, type OrderListItemDto } from "@/features/pos/api/pos.api";
 import { CancelledOrderModal } from "@/features/pos/cancelled-order-modal";
 import { OrderDetailModal } from "@/features/pos/completed-order-modal";
 import { PendingOrderModal } from "@/features/pos/pending-order-modal";
 import { RefundedOrderModal } from "@/features/pos/refunded-order-modal";
-import { RevenueChart } from "@/features/dashboard/components/revenue-chart";
+import { PetService } from "@/lib/pets";
 
 interface LocalPet {
   age?: number;
@@ -69,15 +72,20 @@ export default function CustomerProfilePage() {
     setIsAuthenticated(true);
   }, [navigate]);
 
-  const fetchCustomerData = async (identifier: string | number, isPhone = false) => {
+  const fetchCustomerData = async (
+    identifier: string | number,
+    isPhone = false,
+  ) => {
     try {
       setLoading(true);
 
       // Lấy danh sách tất cả khách hàng và tìm người khớp số điện thoại hoặc ID
       const allCustomers = await CustomerApi.getCustomers();
       const foundCustomer = isPhone
-        ? allCustomers.find(c => c.phone === identifier)
-        : allCustomers.find(c => String(c.customer_id || c.id) === String(identifier));
+        ? allCustomers.find((c) => c.phone === identifier)
+        : allCustomers.find(
+            (c) => String(c.customer_id || c.id) === String(identifier),
+          );
 
       if (!foundCustomer) {
         setCustomer(null);
@@ -94,13 +102,19 @@ export default function CustomerProfilePage() {
         // Lấy danh sách thú cưng
         try {
           const petsRes = await PetService.getByCustomer(customerId);
-          const petsArray = Array.isArray(petsRes) ? petsRes : (petsRes?.data && Array.isArray(petsRes.data) ? petsRes.data : []);
+          const petsArray = Array.isArray(petsRes)
+            ? petsRes
+            : petsRes?.data && Array.isArray(petsRes.data)
+              ? petsRes.data
+              : [];
 
           const mappedPets: LocalPet[] = petsArray.map((item: any) => ({
             pet_id: item.pet_id || item.id,
             pet_name: item.name || item.pet_name,
             breed: item.breed || "",
-            species: item.species || (item.breed?.toLowerCase().includes("chó") ? "DOG" : "CAT"),
+            species:
+              item.species ||
+              (item.breed?.toLowerCase().includes("chó") ? "DOG" : "CAT"),
             age: item.age,
             weight: item.weight,
             avatar_url: item.avatar_url || item.image_url,
@@ -113,23 +127,28 @@ export default function CustomerProfilePage() {
 
         // Lấy lịch sử giao dịch
         try {
-          const ordersRes = await getOrders(1, 1000, { customer_id: customerId });
-          const mappedOrders: LocalOrder[] = (ordersRes.data || []).map((item: OrderListItemDto) => ({
-            order_id: item.order_id,
-            created_at: item.created_at,
-            total_amount: Number(item.total_amount),
-            status: item.status,
-            order_details: (item.order_details || []).map((detail: any) => ({
-              id: detail.id,
-              name: detail.item_type === "SERVICE"
-                ? (detail.service?.combo_name ?? "Dịch vụ")
-                : (detail.product?.name ?? "Sản phẩm"),
-              quantity: detail.quantity,
-              unit_price: Number(detail.unit_price),
-              subtotal: Number(detail.subtotal),
-              pet_name: detail.pet?.name,
-            })),
-          }));
+          const ordersRes = await getOrders(1, 1000, {
+            customer_id: customerId,
+          });
+          const mappedOrders: LocalOrder[] = (ordersRes.data || []).map(
+            (item: OrderListItemDto) => ({
+              order_id: item.order_id,
+              created_at: item.created_at,
+              total_amount: Number(item.total_amount),
+              status: item.status,
+              order_details: (item.order_details || []).map((detail: any) => ({
+                id: detail.id,
+                name:
+                  detail.item_type === "SERVICE"
+                    ? (detail.service?.combo_name ?? "Dịch vụ")
+                    : (detail.product?.name ?? "Sản phẩm"),
+                quantity: detail.quantity,
+                unit_price: Number(detail.unit_price),
+                subtotal: Number(detail.subtotal),
+                pet_name: detail.pet?.name,
+              })),
+            }),
+          );
           setOrders(mappedOrders);
         } catch (orderError: any) {
           console.error("Error fetching orders:", orderError);
@@ -179,7 +198,9 @@ export default function CustomerProfilePage() {
     setIsSearching(false);
 
     if (customer) {
-      navigate(`/customers/${customer.customer_id || customer.id}`, { replace: true });
+      navigate(`/customers/${customer.customer_id || customer.id}`, {
+        replace: true,
+      });
     }
   };
 
@@ -269,7 +290,9 @@ export default function CustomerProfilePage() {
 
   const totalSpent = useMemo(() => {
     return orders
-      .filter(order => order.status === "PAID" || order.status === "COMPLETED")
+      .filter(
+        (order) => order.status === "PAID" || order.status === "COMPLETED",
+      )
       .reduce((sum, order) => sum + order.total_amount, 0);
   }, [orders]);
 
@@ -284,7 +307,7 @@ export default function CustomerProfilePage() {
       months.push(monthLabel);
 
       const monthTotal = orders
-        .filter(order => {
+        .filter((order) => {
           const orderDate = new Date(order.created_at);
           return (
             orderDate.getMonth() === d.getMonth() &&
@@ -532,29 +555,47 @@ export default function CustomerProfilePage() {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Họ và tên</label>
+                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">
+                          Họ và tên
+                        </label>
                         <input
                           type="text"
                           value={editData.full_name || ""}
-                          onChange={(e) => setEditData({ ...editData, full_name: e.target.value })}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              full_name: e.target.value,
+                            })
+                          }
                           className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Địa chỉ</label>
+                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">
+                          Địa chỉ
+                        </label>
                         <input
                           type="text"
                           value={editData.address || ""}
-                          onChange={(e) => setEditData({ ...editData, address: e.target.value })}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              address: e.target.value,
+                            })
+                          }
                           className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Email</label>
+                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">
+                          Email
+                        </label>
                         <input
                           type="email"
                           value={editData.email || ""}
-                          onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                          onChange={(e) =>
+                            setEditData({ ...editData, email: e.target.value })
+                          }
                           className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500"
                         />
                       </div>
@@ -569,16 +610,27 @@ export default function CustomerProfilePage() {
                     <>
                       <div className="flex items-center gap-4 mb-8">
                         {customer.avatar_url ? (
-                          <img src={customer.avatar_url} alt={customer.full_name} className="w-20 h-20 rounded-2xl object-cover shadow-md" />
+                          <img
+                            src={customer.avatar_url}
+                            alt={customer.full_name}
+                            className="w-20 h-20 rounded-2xl object-cover shadow-md"
+                          />
                         ) : (
                           <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center text-3xl font-bold text-gray-300">
                             {customer.full_name?.charAt(0).toUpperCase()}
                           </div>
                         )}
                         <div>
-                          <h2 className="text-2xl font-black text-gray-800 tracking-tight">{customer.full_name}</h2>
+                          <h2 className="text-2xl font-black text-gray-800 tracking-tight">
+                            {customer.full_name}
+                          </h2>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-gray-400 text-xs font-medium">#KH{String(customer.customer_id || customer.id).padStart(3, '0')}</span>
+                            <span className="text-gray-400 text-xs font-medium">
+                              #KH
+                              {String(
+                                customer.customer_id || customer.id,
+                              ).padStart(3, "0")}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -589,8 +641,12 @@ export default function CustomerProfilePage() {
                             <Phone size={18} />
                           </div>
                           <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Số điện thoại</p>
-                            <p className="text-sm font-bold text-gray-800">{customer.phone || "-"}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                              Số điện thoại
+                            </p>
+                            <p className="text-sm font-bold text-gray-800">
+                              {customer.phone || "-"}
+                            </p>
                           </div>
                         </div>
 
@@ -599,8 +655,12 @@ export default function CustomerProfilePage() {
                             <MapPin size={18} />
                           </div>
                           <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Địa chỉ</p>
-                            <p className="text-sm font-bold text-gray-800 line-clamp-2 leading-relaxed">{customer.address || "-"}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                              Địa chỉ
+                            </p>
+                            <p className="text-sm font-bold text-gray-800 line-clamp-2 leading-relaxed">
+                              {customer.address || "-"}
+                            </p>
                           </div>
                         </div>
 
@@ -609,8 +669,12 @@ export default function CustomerProfilePage() {
                             <Calendar size={18} />
                           </div>
                           <div>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ngày tham gia</p>
-                            <p className="text-sm font-bold text-gray-800">{formatDate(customer.created_at)}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                              Ngày tham gia
+                            </p>
+                            <p className="text-sm font-bold text-gray-800">
+                              {formatDate(customer.created_at)}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -623,7 +687,8 @@ export default function CustomerProfilePage() {
               <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
                 <div className="flex justify-between items-center p-8 border-b border-gray-50">
                   <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
-                    <span className="text-xl">🐾</span> Thú cưng của {customer.full_name?.split(' ').pop()} ({pets.length})
+                    <span className="text-xl">🐾</span> Thú cưng của{" "}
+                    {customer.full_name?.split(" ").pop()} ({pets.length})
                   </h3>
                 </div>
                 <div className="p-8">
@@ -637,7 +702,11 @@ export default function CustomerProfilePage() {
                         >
                           <div className="relative aspect-square rounded-3xl overflow-hidden mb-3 shadow-md group-hover:shadow-xl transition-all duration-300">
                             {pet.avatar_url ? (
-                              <img src={pet.avatar_url} alt={pet.pet_name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                              <img
+                                src={pet.avatar_url}
+                                alt={pet.pet_name}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                              />
                             ) : (
                               <div className="w-full h-full bg-gradient-to-br from-orange-100 to-yellow-50 flex items-center justify-center text-5xl group-hover:scale-110 transition-transform duration-500">
                                 {pet.species === "DOG" ? "🐕" : "🐈"}
@@ -646,8 +715,12 @@ export default function CustomerProfilePage() {
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                           </div>
                           <div className="text-center">
-                            <h4 className="font-bold text-gray-800 group-hover:text-orange-600 transition-colors">{pet.pet_name}</h4>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{pet.breed || "Không rõ giống"}</p>
+                            <h4 className="font-bold text-gray-800 group-hover:text-orange-600 transition-colors">
+                              {pet.pet_name}
+                            </h4>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                              {pet.breed || "Không rõ giống"}
+                            </p>
                           </div>
                         </div>
                       ))}
@@ -657,7 +730,9 @@ export default function CustomerProfilePage() {
                       <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <PawPrint className="text-gray-200" />
                       </div>
-                      <p className="text-sm text-gray-400 font-medium">Chưa có thú cưng nào</p>
+                      <p className="text-sm text-gray-400 font-medium">
+                        Chưa có thú cưng nào
+                      </p>
                     </div>
                   )}
                 </div>
@@ -674,15 +749,17 @@ export default function CustomerProfilePage() {
                   noteText="Tổng chi tiêu"
                   period="year"
                   selectedYear={new Date().getFullYear()}
-                  onYearChange={() => { }}
-                  onPeriodChange={() => { }}
+                  onYearChange={() => {}}
+                  onPeriodChange={() => {}}
                 />
               </div>
 
               {/* Order History Section */}
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
                 <div className="flex justify-between items-center p-6 border-b">
-                  <h3 className="text-xl font-bold text-gray-800">Lịch sử giao dịch</h3>
+                  <h3 className="text-xl font-bold text-gray-800">
+                    Lịch sử giao dịch
+                  </h3>
                   <select
                     value={activeFilter}
                     onChange={(e) => setActiveFilter(e.target.value)}
@@ -715,27 +792,48 @@ export default function CustomerProfilePage() {
                             onClick={() => setSelectedOrder(order)}
                           >
                             <td className="px-6 py-4">
-                              <p className="text-sm font-bold text-gray-800">{formatDate(order.created_at)}</p>
-                              <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
+                              <p className="text-sm font-bold text-gray-800">
+                                {formatDate(order.created_at)}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {new Date(order.created_at).toLocaleTimeString(
+                                  "vi-VN",
+                                  { hour: "2-digit", minute: "2-digit" },
+                                )}
+                              </p>
                             </td>
                             <td className="px-6 py-4">
                               <div className="space-y-1">
-                                {order.order_details.slice(0, 2).map((detail) => (
-                                  <div key={detail.id} className="text-sm">
-                                    <span className="font-bold text-gray-700">{detail.name}</span>
-                                    {detail.pet_name && <span className="text-xs text-gray-400 ml-1">Cho {detail.pet_name}</span>}
-                                  </div>
-                                ))}
+                                {order.order_details
+                                  .slice(0, 2)
+                                  .map((detail) => (
+                                    <div key={detail.id} className="text-sm">
+                                      <span className="font-bold text-gray-700">
+                                        {detail.name}
+                                      </span>
+                                      {detail.pet_name && (
+                                        <span className="text-xs text-gray-400 ml-1">
+                                          Cho {detail.pet_name}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ))}
                                 {order.order_details.length > 2 && (
-                                  <p className="text-xs text-orange-500">+ {order.order_details.length - 2} mục khác</p>
+                                  <p className="text-xs text-orange-500">
+                                    + {order.order_details.length - 2} mục khác
+                                  </p>
                                 )}
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="text-sm font-black text-gray-800">{formatCurrency(order.total_amount)}</span>
+                              <span className="text-sm font-black text-gray-800">
+                                {formatCurrency(order.total_amount)}
+                              </span>
                             </td>
                             <td className="px-6 py-4 text-center">
-                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(order.status).color}`}>
+                              <span
+                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(order.status).color}`}
+                              >
                                 {getStatusColor(order.status).text}
                               </span>
                             </td>
@@ -745,7 +843,9 @@ export default function CustomerProfilePage() {
                         <tr>
                           <td colSpan={4} className="px-6 py-8 text-center">
                             <div className="text-gray-400">
-                              <p className="font-medium text-gray-600 mb-2">Không có dữ liệu</p>
+                              <p className="font-medium text-gray-600 mb-2">
+                                Không có dữ liệu
+                              </p>
                               <p className="text-sm">Chưa có giao dịch nào</p>
                             </div>
                           </td>
@@ -772,7 +872,9 @@ export default function CustomerProfilePage() {
 
         {/* Modals */}
         <OrderDetailModal
-          isOpen={!!selectedOrder && getOrderStatus(selectedOrder.status) === "PAID"}
+          isOpen={
+            !!selectedOrder && getOrderStatus(selectedOrder.status) === "PAID"
+          }
           orderId={selectedOrder?.order_id || null}
           onClose={() => setSelectedOrder(null)}
           onStatusChange={() => {
