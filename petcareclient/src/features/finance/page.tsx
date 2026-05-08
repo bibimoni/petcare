@@ -9,6 +9,7 @@ import { fetchFinanceData } from "./api/finance.api";
 import { FinanceSummaryCards } from "./components/finance-summary-cards";
 import { ProfitDetailsTable } from "./components/profit-details-table";
 import { RevenueStructureChart } from "./components/revenue-structure-chart";
+import { OrderDetailModal } from "@/features/pos/completed-order-modal";
 
 const FinancePage = () => {
   const [fromDate, setFromDate] = useState<string>(() => {
@@ -27,6 +28,10 @@ const FinancePage = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+
+  // Modal state
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch main financial data
   const { data: financeData, isLoading: isFinanceLoading } = useQuery({
@@ -54,6 +59,11 @@ const FinancePage = () => {
     queryKey: ["finance-revenue-chart", chartPeriod, selectedYear],
     queryFn: () => getDashboardRevenue(chartPeriod, selectedYear),
   });
+
+  const handleItemClick = (orderId: number) => {
+    setSelectedOrderId(orderId);
+    setIsModalOpen(true);
+  };
 
   const handleExport = () => {
     if (!financeData) return;
@@ -199,6 +209,7 @@ const FinancePage = () => {
                 totalItems={totalItems}
                 onPageChange={setCurrentPage}
                 pageSize={pageSize}
+                onItemClick={handleItemClick}
               />
             </>
           ) : (
@@ -213,6 +224,17 @@ const FinancePage = () => {
           )}
         </div>
       </main>
+
+      <OrderDetailModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        orderId={selectedOrderId}
+        onStatusChange={() => {
+          queryClient.invalidateQueries({
+            queryKey: ["finance-data", fromDate, toDate],
+          });
+        }}
+      />
     </div>
   );
 };
