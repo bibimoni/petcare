@@ -1,24 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
+  Trash2,
   Loader2,
   Package,
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
-  Trash2,
 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { AlertDialog } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { getInventoryAlertsData } from "@/features/inventory/api/products.api";
-import { AlertDialog } from "@/components/ui/alert-dialog";
 import api from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
-
 
 interface ProductAlert {
   sku?: string;
@@ -52,7 +51,6 @@ export default function LowStockPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const ITEMS_PER_PAGE = 5;
-
 
   const items = useMemo(() => {
     const alerts = alertsQuery.data?.alerts ?? [];
@@ -129,9 +127,7 @@ export default function LowStockPage() {
   const handleBulkDelete = async () => {
     setIsDeleting(true);
     try {
-      await Promise.all(
-        selectedIds.map((id) => api.delete(`/products/${id}`)),
-      );
+      await Promise.all(selectedIds.map((id) => api.delete(`/products/${id}`)));
       toast.success(`Đã xóa ${selectedIds.length} sản phẩm thành công!`);
       setSelectedIds([]);
       await Promise.all([
@@ -143,14 +139,13 @@ export default function LowStockPage() {
       console.error(error);
       toast.error(
         "Lỗi khi xóa hàng loạt: " +
-        (error.response?.data?.message || "Không xác định"),
+          (error.response?.data?.message || "Không xác định"),
       );
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
     }
   };
-
 
   return (
     <div className="flex min-h-screen flex-col bg-background-light text-text-primary">
@@ -250,7 +245,6 @@ export default function LowStockPage() {
                           onChange={toggleSelectAll}
                           className="rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4"
                         />
-
                       </th>
                       <th className="p-4 text-xs font-semibold text-text-secondary uppercase w-20">
                         Ảnh
@@ -273,22 +267,23 @@ export default function LowStockPage() {
                     {currentItems.map((item) => (
                       <tr
                         key={item.product_id}
-                        className={`group transition-colors border-l-4 ${item.level === "severe"
-                          ? "bg-red-50/50 hover:bg-red-50 border-l-red-400"
-                          : "hover:bg-gray-50 border-l-transparent hover:border-l-primary/30"
-                          }`}
+                        className={`group transition-colors border-l-4 ${
+                          item.level === "severe"
+                            ? "bg-red-50/50 hover:bg-red-50 border-l-red-400"
+                            : "hover:bg-gray-50 border-l-transparent hover:border-l-primary/30"
+                        }`}
                       >
                         <td className="p-4 pl-5 text-center">
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(item.product_id)}
                             onChange={() => toggleSelect(item.product_id)}
-                            className={`rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4 transition-opacity ${selectedIds.includes(item.product_id)
-                              ? "opacity-100"
-                              : "opacity-0 group-hover:opacity-100"
-                              }`}
+                            className={`rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4 transition-opacity ${
+                              selectedIds.includes(item.product_id)
+                                ? "opacity-100"
+                                : "opacity-0 group-hover:opacity-100"
+                            }`}
                           />
-
                         </td>
                         <td className="p-4">
                           <div
@@ -372,10 +367,11 @@ export default function LowStockPage() {
                             <button
                               key={pageNumber}
                               onClick={() => setCurrentPage(pageNumber)}
-                              className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${currentPage === pageNumber
-                                ? "bg-primary text-white shadow-md shadow-primary/30"
-                                : "text-text-secondary hover:bg-gray-100"
-                                }`}
+                              className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${
+                                currentPage === pageNumber
+                                  ? "bg-primary text-white shadow-md shadow-primary/30"
+                                  : "text-text-secondary hover:bg-gray-100"
+                              }`}
                             >
                               {pageNumber}
                             </button>
@@ -407,7 +403,6 @@ export default function LowStockPage() {
               </div>
             )}
           </div>
-
         </div>
       </main>
 

@@ -4,12 +4,11 @@ import {
   Phone,
   MapPin,
   Package,
+  RotateCcw,
   X as Close,
   CheckCircle,
   ShoppingBag,
-  RotateCcw,
 } from "lucide-react";
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -45,7 +44,6 @@ export const OrderDetailModal = ({
   const [isRefunding, setIsRefunding] = useState(false);
   const [refundReason, setRefundReason] = useState("");
   const queryClient = useQueryClient();
-
 
   // Tải chi tiết đơn hàng
   useEffect(() => {
@@ -87,7 +85,6 @@ export const OrderDetailModal = ({
     try {
       await refundOrder(orderId ?? order?.order_id ?? 0, refundReason);
       toast.success(
-
         "Hoàn tiền thành công, vui lòng kiểm tra hoá đơn hoàn tiền để xem thêm chi tiết",
       );
       onStatusChange();
@@ -209,36 +206,38 @@ export const OrderDetailModal = ({
                     </div>
                   </div>
 
-                  {order.order_details[0].pet && (<div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-[#f7b297]/5 rounded-bl-full -mr-4 -mt-4 group-hover:bg-[#f7b297]/10 transition-colors"></div>
-                    <div className="flex items-start justify-between relative z-10 mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold border border-orange-200 shrink-0">
-                          {order.order_details[0].pet?.name
-                            .charAt(0)
-                            .toUpperCase()}
+                  {order.order_details[0].pet && (
+                    <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-[#f7b297]/5 rounded-bl-full -mr-4 -mt-4 group-hover:bg-[#f7b297]/10 transition-colors"></div>
+                      <div className="flex items-start justify-between relative z-10 mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="size-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold border border-orange-200 shrink-0">
+                            {order.order_details[0].pet?.name
+                              .charAt(0)
+                              .toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-bold text-[#1b110d]">
+                              {order.order_details[0].pet?.name}
+                            </div>
+                            <div className="text-[10px] text-[#9a624c] uppercase tracking-wider font-semibold">
+                              Thú cưng
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-bold text-[#1b110d]">
-                            {order.order_details[0].pet?.name}
-                          </div>
-                          <div className="text-[10px] text-[#9a624c] uppercase tracking-wider font-semibold">
-                            Thú cưng
-                          </div>
+                      </div>
+                      <div className="space-y-2 relative z-10 pl-13">
+                        <div className="flex items-center gap-2 text-sm text-[#9a624c]">
+                          <span>
+                            Giống: {order.order_details[0].pet?.breed || "--"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-[#9a624c]">
+                          <span>{order.order_details[0].pet?.notes}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-2 relative z-10 pl-13">
-                      <div className="flex items-center gap-2 text-sm text-[#9a624c]">
-                        <span>
-                          Giống: {order.order_details[0].pet?.breed || "--"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-[#9a624c]">
-                        <span>{order.order_details[0].pet?.notes}</span>
-                      </div>
-                    </div>
-                  </div>)}
+                  )}
 
                   {/* Lý do hoàn tiền */}
                   <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">

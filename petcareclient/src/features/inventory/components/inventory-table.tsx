@@ -14,10 +14,9 @@ import {
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 
+import { AlertDialog } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog } from "@/components/ui/alert-dialog";
-
 import {
   Table,
   TableRow,
@@ -79,7 +78,6 @@ export function InventoryTable({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-
 
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
@@ -175,7 +173,7 @@ export function InventoryTable({
     } catch (error: any) {
       toast.error(
         "Lỗi xóa sản phẩm: " +
-        (error.response?.data?.message || "Không xác định"),
+          (error.response?.data?.message || "Không xác định"),
       );
     } finally {
       setIsUpdating(false);
@@ -259,12 +257,13 @@ export function InventoryTable({
                   return (
                     <TableRow
                       key={product.product_id}
-                      className={`group hover:bg-gray-50 transition-colors ${status === "Sắp hết"
-                        ? "bg-[#fffde7]/60 border-l-4 border-l-yellow-400"
-                        : status === "Hết hàng"
-                          ? "bg-red-50/50 border-l-4 border-l-red-400"
-                          : ""
-                        }`}
+                      className={`group hover:bg-gray-50 transition-colors ${
+                        status === "Sắp hết"
+                          ? "bg-[#fffde7]/60 border-l-4 border-l-yellow-400"
+                          : status === "Hết hàng"
+                            ? "bg-red-50/50 border-l-4 border-l-red-400"
+                            : ""
+                      }`}
                     >
                       <TableCell className="p-4">
                         <Avatar className="size-10 rounded-lg border border-gray-200">
@@ -315,8 +314,8 @@ export function InventoryTable({
                       <TableCell className="p-4 text-sm">
                         {product.expiry_date
                           ? new Date(product.expiry_date).toLocaleDateString(
-                            "vi-VN",
-                          )
+                              "vi-VN",
+                            )
                           : "-"}
                       </TableCell>
                       {isAdmin && (
@@ -379,10 +378,11 @@ export function InventoryTable({
                         <button
                           key={pageNumber}
                           onClick={() => setCurrentPage(pageNumber)}
-                          className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${currentPage === pageNumber
-                            ? "bg-primary text-white shadow-md shadow-primary/30"
-                            : "text-text-secondary hover:bg-gray-100"
-                            }`}
+                          className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${
+                            currentPage === pageNumber
+                              ? "bg-primary text-white shadow-md shadow-primary/30"
+                              : "text-text-secondary hover:bg-gray-100"
+                          }`}
                         >
                           {pageNumber}
                         </button>
