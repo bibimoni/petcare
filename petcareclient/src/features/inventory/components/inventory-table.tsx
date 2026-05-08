@@ -14,6 +14,7 @@ import {
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 
+import { AlertDialog } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -74,6 +75,7 @@ export function InventoryTable({
 
   // --- STATES PHỤ CHO MODAL EDIT ---
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -156,9 +158,9 @@ export function InventoryTable({
 
   //  HÀM XÓA SẢN PHẨM
   const handleDeleteProduct = async () => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này vĩnh viễn?"))
-      return;
+    if (!editingProduct) return;
     setIsUpdating(true);
+
     try {
       await api.delete(`/products/${editingProduct.product_id}`);
       toast.success("Đã xóa sản phẩm!");
@@ -599,7 +601,7 @@ export function InventoryTable({
               <div className="flex justify-between items-center pt-6 border-t border-[#f3ebe7]">
                 <button
                   type="button"
-                  onClick={handleDeleteProduct}
+                  onClick={() => setShowDeleteConfirm(true)}
                   disabled={isUpdating}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-red-600 font-bold hover:bg-red-50 transition-colors active:scale-95 disabled:opacity-50"
                 >
@@ -629,6 +631,18 @@ export function InventoryTable({
           </div>
         </div>
       )}
+
+      {/* Alert Dialog Xóa sản phẩm */}
+      <AlertDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Xóa sản phẩm"
+        description="Bạn có chắc chắn muốn xóa sản phẩm này vĩnh viễn? Hành động này không thể hoàn tác."
+        actionLabel="Xóa sản phẩm"
+        cancelLabel="Đóng"
+        onConfirm={handleDeleteProduct}
+        variant="destructive"
+      />
     </div>
   );
 }
