@@ -3,7 +3,6 @@ import {
   X,
   Plus,
   Check,
-  Trash2,
   Package,
   Loader2,
   ChevronDown,
@@ -86,11 +85,6 @@ export function AddProductModal() {
   if (!isAdmin) {
     return null;
   }
-
-  const removeBatch = (id: string) => {
-    setBatches(batches.filter((batch) => batch.id !== id));
-  };
-
   const updateBatch = (id: string, field: keyof Batch, value: string) => {
     setBatches(
       batches.map((batch) =>
@@ -364,17 +358,6 @@ export function AddProductModal() {
                       }
                       className="w-full px-4 py-2.5 rounded-xl border border-[#d4c5c0] focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm placeholder:text-[#d4c5c0] transition-all bg-white"
                     />
-                  </div>
-                  <div className="col-span-1 flex justify-center pb-2">
-                    <button
-                      type="button"
-                      onClick={() => removeBatch(batch.id)}
-                      disabled={batches.length === 1}
-                      className="text-red-400 hover:text-red-600 disabled:opacity-30 disabled:hover:text-red-400 transition-colors"
-                      title="Xóa lô hàng"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
                   </div>
                 </div>
               ))}

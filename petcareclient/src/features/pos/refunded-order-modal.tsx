@@ -2,12 +2,11 @@ import {
   Phone,
   MapPin,
   Package,
+  RotateCcw,
   X as Close,
   ShoppingBag,
   ReceiptIcon,
-  RotateCcw,
 } from "lucide-react";
-
 import { useState, useEffect } from "react";
 
 import type { Order } from "./type";

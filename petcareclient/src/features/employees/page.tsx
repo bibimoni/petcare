@@ -34,6 +34,8 @@ const EmployeesPage = () => {
     queryKey: ["staff", storeId],
     queryFn: () => getStaffList(storeId),
     enabled: !!profile?.store_id,
+    refetchInterval: 5000, // Poll every 5 seconds to catch new employees
+    staleTime: 5000,
   });
 
   const { mutate: handleDeleteStaff, isPending: isDeleting } = useMutation({
@@ -203,11 +205,10 @@ const EmployeesPage = () => {
                         </td>
                         <td className="px-6 py-4">
                           <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
-                              member.role.name === "ADMIN"
-                                ? "bg-[#e6f2ff] text-[#0066cc]"
-                                : "bg-[#f3e6ff] text-[#8800cc]"
-                            }`}
+                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${member.role.name === "ADMIN"
+                              ? "bg-[#e6f2ff] text-[#0066cc]"
+                              : "bg-[#f3e6ff] text-[#8800cc]"
+                              }`}
                           >
                             {member.role.name}
                           </span>
@@ -275,11 +276,10 @@ const EmployeesPage = () => {
                     type="button"
                     key={i}
                     onClick={() => setCurrentPage(i + 1)}
-                    className={`h-8 w-8 cursor-pointer rounded-full text-sm font-bold transition ${
-                      currentPage === i + 1
-                        ? "bg-[#f27a4d] text-white"
-                        : "text-[#9f7d67] border border-[#f0e3dc] hover:bg-[#f8f1ec]"
-                    }`}
+                    className={`h-8 w-8 cursor-pointer rounded-full text-sm font-bold transition ${currentPage === i + 1
+                      ? "bg-[#f27a4d] text-white"
+                      : "text-[#9f7d67] border border-[#f0e3dc] hover:bg-[#f8f1ec]"
+                      }`}
                   >
                     {i + 1}
                   </button>
