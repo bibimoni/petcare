@@ -1,10 +1,5 @@
-import {
-  AlertTriangle,
-  ShoppingBag,
-  PawPrint,
-  User,
-  Bell
-} from "lucide-react";
+import { User, Bell, PawPrint, ShoppingBag, AlertTriangle } from "lucide-react";
+
 import { type ActivityItem } from "../api/dashboard-api";
 
 interface ActivityItemComponentProps {

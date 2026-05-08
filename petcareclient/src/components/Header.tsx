@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   Ban,
   Dog,
@@ -15,7 +16,6 @@ import {
   AlertTriangle,
   LayoutDashboard,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { useRef, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -233,8 +233,7 @@ export const Header = () => {
                             );
                           }
                           setIsNotificationOpen(false);
-                          if (notif.product_id)
-                            navigate(`/inventory/${notif.product_id}`);
+                          if (notif.product_id) navigate(`/inventory`);
                           else navigate("/notifications");
                         }}
                       >
@@ -305,7 +304,7 @@ export const Header = () => {
               {user?.full_name || "Quản trị viên"}
             </p>
             <p className="text-[9px] uppercase tracking-widest text-[#9a624c] font-black">
-              {(!user || !user.role?.name)
+              {!user || !user.role?.name
                 ? "Người dùng"
                 : user.role.name.toUpperCase() === "ADMIN"
                   ? "Chủ cửa hàng"

@@ -1,7 +1,7 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Phone, MapPin, Calendar, PawPrint } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Footer } from "@/components/Footer";
@@ -11,6 +11,7 @@ import {
   CustomerApi,
   type CustomerListItem,
 } from "@/features/customer/api/customer-api";
+import { type ProfitPeriod } from "@/features/dashboard/api/dashboard-api";
 import { RevenueChart } from "@/features/dashboard/components/revenue-chart";
 import { getOrders, type OrderListItemDto } from "@/features/pos/api/pos.api";
 import { CancelledOrderModal } from "@/features/pos/cancelled-order-modal";
@@ -59,6 +60,10 @@ export default function CustomerProfilePage() {
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [selectedOrder, setSelectedOrder] = useState<LocalOrder | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [revenuePeriod, setRevenuePeriod] = useState<ProfitPeriod>("this_week");
+  const [selectedYear, setSelectedYear] = useState<number>(
+    new Date().getFullYear(),
+  );
 
   // Auth check
   useEffect(() => {
@@ -256,35 +261,146 @@ export default function CustomerProfilePage() {
   }, [orders]);
 
   const chartData = useMemo(() => {
-    const months = [];
-    const values = [];
     const now = new Date();
+    let days: string[] = [];
+    let values: number[] = [];
 
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthLabel = `T${d.getMonth() + 1}`;
-      months.push(monthLabel);
+    const currentDay = now.getDay();
+    const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
 
-      const monthTotal = orders
-        .filter((order) => {
-          const orderDate = new Date(order.created_at);
-          return (
-            orderDate.getMonth() === d.getMonth() &&
-            orderDate.getFullYear() === d.getFullYear() &&
-            (order.status === "PAID" || order.status === "COMPLETED")
-          );
-        })
-        .reduce((sum, order) => sum + order.total_amount, 0);
+    const filteredPaidOrders = orders.filter(
+      (order) => order.status === "PAID" || order.status === "COMPLETED",
+    );
 
-      values.push(monthTotal);
+    if (revenuePeriod === "year") {
+      days = [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "T5",
+        "T6",
+        "T7",
+        "T8",
+        "T9",
+        "T10",
+        "T11",
+        "T12",
+      ];
+      values = new Array(12).fill(0);
+
+      filteredPaidOrders.forEach((order) => {
+        const d = new Date(order.created_at);
+        if (d.getFullYear() === selectedYear) {
+          values[d.getMonth()] += order.total_amount;
+        }
+      });
+    } else if (revenuePeriod === "last_month") {
+      const startOfLastMonth = new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        1,
+      );
+      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+      const getWeekOfMonth = (d: Date) => {
+        const firstDay = new Date(d.getFullYear(), d.getMonth(), 1).getDay();
+        return Math.ceil(
+          (d.getDate() + (firstDay === 0 ? 6 : firstDay - 1)) / 7,
+        );
+      };
+
+      const totalWeeks = getWeekOfMonth(endOfLastMonth);
+      values = new Array(totalWeeks).fill(0);
+
+      const weekRanges = Array.from({ length: totalWeeks }, () => ({
+        start: "",
+        end: "",
+      }));
+
+      for (let day = 1; day <= endOfLastMonth.getDate(); day++) {
+        const d = new Date(
+          endOfLastMonth.getFullYear(),
+          endOfLastMonth.getMonth(),
+          day,
+        );
+        const weekIndex = getWeekOfMonth(d) - 1;
+        const dateString = `${d.getDate()}/${d.getMonth() + 1}`;
+        if (!weekRanges[weekIndex].start)
+          weekRanges[weekIndex].start = dateString;
+        weekRanges[weekIndex].end = dateString;
+      }
+
+      days = weekRanges.map((w, i) => `Tuần ${i + 1} (${w.start} - ${w.end})`);
+
+      filteredPaidOrders.forEach((order) => {
+        const d = new Date(order.created_at);
+        if (
+          d.getMonth() === startOfLastMonth.getMonth() &&
+          d.getFullYear() === startOfLastMonth.getFullYear()
+        ) {
+          const weekIndex = getWeekOfMonth(d) - 1;
+          if (weekIndex >= 0 && weekIndex < totalWeeks) {
+            values[weekIndex] += order.total_amount;
+          }
+        }
+      });
+    } else {
+      let currentIterDate = new Date();
+      if (revenuePeriod === "this_week") {
+        currentIterDate = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() - distanceToMonday,
+        );
+      } else if (revenuePeriod === "last_week") {
+        currentIterDate = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() - distanceToMonday - 7,
+        );
+      }
+
+      const dayNames = [
+        "Thứ 2",
+        "Thứ 3",
+        "Thứ 4",
+        "Thứ 5",
+        "Thứ 6",
+        "Thứ 7",
+        "Chủ Nhật",
+      ];
+      days = [];
+      values = new Array(7).fill(0);
+
+      const iterDates: string[] = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(currentIterDate);
+        const dateStr = d.toISOString().split("T")[0];
+        iterDates.push(dateStr);
+        days.push(`${dayNames[i]} (${d.getDate()}/${d.getMonth() + 1})`);
+        currentIterDate.setDate(currentIterDate.getDate() + 1);
+      }
+
+      filteredPaidOrders.forEach((order) => {
+        const orderDateStr = new Date(order.created_at)
+          .toISOString()
+          .split("T")[0];
+        const dayIndex = iterDates.indexOf(orderDateStr);
+        if (dayIndex !== -1) {
+          values[dayIndex] += order.total_amount;
+        }
+      });
     }
 
+    const total = values.reduce((sum, val) => sum + val, 0);
+
     return {
-      days: months,
-      values: values,
-      totalWeekly: formatCurrency(totalSpent),
+      days,
+      values,
+      totalWeekly: formatCurrency(total),
     };
-  }, [orders, totalSpent]);
+  }, [orders, revenuePeriod, selectedYear, formatCurrency]);
 
   if (!isAuthenticated) {
     return null;
@@ -620,10 +736,10 @@ export default function CustomerProfilePage() {
                   data={chartData}
                   titleText="Biểu đồ chi tiêu"
                   noteText="Tổng chi tiêu"
-                  period="year"
-                  selectedYear={new Date().getFullYear()}
-                  onYearChange={() => { }}
-                  onPeriodChange={() => { }}
+                  period={revenuePeriod}
+                  selectedYear={selectedYear}
+                  onYearChange={setSelectedYear}
+                  onPeriodChange={setRevenuePeriod}
                 />
               </div>
 

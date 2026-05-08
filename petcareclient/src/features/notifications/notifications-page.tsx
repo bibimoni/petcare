@@ -65,8 +65,17 @@ export default function NotificationsPage() {
 
   // 3. Logic Đánh dấu tất cả đã đọc
   const handleMarkAllAsRead = async () => {
+    const unreadIds = notifications
+      .filter((n) => n.status === NotificationStatus.UNREAD)
+      .map((n) => n.notification_id);
+
+    if (unreadIds.length === 0) {
+      toast.info("Không có thông báo mới");
+      return;
+    }
+
     try {
-      await notificationsApi.markAllAsRead();
+      await notificationsApi.markAllAsRead(unreadIds);
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, status: NotificationStatus.READ })),
       );

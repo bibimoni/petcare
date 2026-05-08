@@ -1,16 +1,16 @@
-import {
-  ArrowLeft,
-  Sparkles,
-  Package,
-  ChevronLeft,
-  ChevronRight,
-  Bath,
-  Scissors,
-  Stethoscope,
-  Home,
-  PawPrint
-} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Bath,
+  Home,
+  Package,
+  Sparkles,
+  Scissors,
+  PawPrint,
+  ArrowLeft,
+  ChevronLeft,
+  Stethoscope,
+  ChevronRight,
+} from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -314,10 +314,11 @@ const AllProductsPage = () => {
 
                   return (
                     <button
-                      className={`rounded-2xl border cursor-pointer px-4 py-2 text-sm font-semibold transition ${isActive
-                        ? "border-[#2d1f16] bg-[#1f140f] text-white"
-                        : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
-                        }`}
+                      className={`rounded-2xl border cursor-pointer px-4 py-2 text-sm font-semibold transition ${
+                        isActive
+                          ? "border-[#2d1f16] bg-[#1f140f] text-white"
+                          : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
+                      }`}
                       key={tab.id}
                       onClick={() => setSelectedServiceCategory(tab.id)}
                       type="button"
@@ -366,7 +367,8 @@ const AllProductsPage = () => {
                         key={`service-page-${pageIndex + 1}`}
                       >
                         {serviceItems.map((service, itemIndex) => {
-                          const IconComponent = SERVICE_ICON_MAP[service.icon] || PawPrint;
+                          const IconComponent =
+                            SERVICE_ICON_MAP[service.icon] || PawPrint;
                           return (
                             <article
                               className="rounded-3xl border border-[#f0e3dc] bg-white p-4 shadow-[0_6px_16px_rgba(108,71,42,0.08)]"
@@ -418,7 +420,7 @@ const AllProductsPage = () => {
                                 </div>
                               </div>
                             </article>
-                          )
+                          );
                         })}
                       </div>
                     ))}
@@ -468,10 +470,11 @@ const AllProductsPage = () => {
 
                   return (
                     <button
-                      className={`rounded-2xl cursor-pointer border px-4 py-2 text-sm font-semibold transition ${isActive
-                        ? "border-[#2d1f16] bg-[#1f140f] text-white"
-                        : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
-                        }`}
+                      className={`rounded-2xl cursor-pointer border px-4 py-2 text-sm font-semibold transition ${
+                        isActive
+                          ? "border-[#2d1f16] bg-[#1f140f] text-white"
+                          : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
+                      }`}
                       key={tab.id}
                       onClick={() => setSelectedProductCategory(tab.id)}
                       type="button"
@@ -608,13 +611,13 @@ const AllProductsPage = () => {
           service={
             selectedService
               ? {
-                name: selectedService.name,
-                description: selectedService.description,
-                minWeight: selectedService.minWeight,
-                price: selectedService.rawPrice,
-                categoryName: selectedServiceCategoryName,
-                maxWeight: selectedService.maxWeight,
-              }
+                  name: selectedService.name,
+                  description: selectedService.description,
+                  minWeight: selectedService.minWeight,
+                  price: selectedService.rawPrice,
+                  categoryName: selectedServiceCategoryName,
+                  maxWeight: selectedService.maxWeight,
+                }
               : null
           }
         />

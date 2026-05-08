@@ -1,5 +1,5 @@
+import { Eye, Lock, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { Lock, Eye, EyeOff } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 

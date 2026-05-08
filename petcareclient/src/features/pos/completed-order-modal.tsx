@@ -246,8 +246,9 @@ export const OrderDetailModal = ({
                       <div className="size-8 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center border border-orange-100">
                         <RotateCcw size={16} />
                       </div>
-                      <div className="text-[10px] text-[#9a624c] uppercase tracking-wider font-bold">
-                        Lý do hoàn tiền
+                      <div className="text-[16px] text-[#9a624c] uppercase tracking-wider font-bold">
+                        Lý do hoàn tiền{" "}
+                        <span className="text-[#dc6e5f]">*</span>
                       </div>
                     </div>
                     <textarea

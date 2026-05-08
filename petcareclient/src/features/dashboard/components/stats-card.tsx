@@ -1,13 +1,14 @@
-import { TrendingUp, TrendingDown } from "lucide-react";
 import type { ReactNode } from "react";
+
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface StatsCardProps {
   label: string;
   suffix?: string;
+  icon: ReactNode;
   iconColor?: string;
   iconBgColor?: string;
   value: string | number;
-  icon: ReactNode;
   decorativeElement?: "circle" | "none";
   trend?: {
     label: string;
@@ -56,10 +57,11 @@ export const StatsCard = ({
       {trend && (
         <div className="mt-4 flex items-center gap-1 text-sm relative z-10">
           <span
-            className={`flex items-center gap-1 font-bold ${trend.direction === "up"
+            className={`flex items-center gap-1 font-bold ${
+              trend.direction === "up"
                 ? "text-green-600 dark:text-green-400"
                 : "text-amber-600"
-              }`}
+            }`}
           >
             {trend.direction === "up" ? (
               <TrendingUp className="w-4 h-4" />

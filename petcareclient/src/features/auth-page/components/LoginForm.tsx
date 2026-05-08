@@ -1,5 +1,5 @@
+import { Eye, Mail, Lock, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 

@@ -52,8 +52,12 @@ export const notificationsApi = {
     return response.data;
   },
 
-  markAllAsRead: async (): Promise<any> => {
-    const response = await api.patch("/notifications/mark-read-batch");
+  markAllAsRead: async (notificationIds: number[]): Promise<any> => {
+    const response = await api.patch(
+      "/notifications/mark-read-batch",
+      { notificationIds },
+      { headers: { "X-No-Snake-Case": "true" } },
+    );
     return response.data;
   },
 };

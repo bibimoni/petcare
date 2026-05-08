@@ -1,16 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState, useEffect } from "react";
-import { 
-  Store, 
-  ChevronLeft, 
-  ChevronRight, 
-  History, 
-  Bath, 
-  Scissors, 
-  Stethoscope, 
-  Home, 
-  PawPrint 
+import {
+  Bath,
+  Home,
+  Store,
+  History,
+  Scissors,
+  PawPrint,
+  ChevronLeft,
+  Stethoscope,
+  ChevronRight,
 } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Footer } from "@/components/Footer";
@@ -161,8 +161,6 @@ const PosPage = () => {
     queryFn: () => getOrders(1, 4),
   });
 
-
-
   const greetingName = useMemo(() => {
     const fullName = profile?.full_name?.trim();
     if (fullName) {
@@ -171,8 +169,6 @@ const PosPage = () => {
 
     return "Bạn";
   }, [profile?.full_name]);
-
-
 
   const filteredServices = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -410,8 +406,11 @@ const PosPage = () => {
                                         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${service.iconTone}`}
                                       >
                                         {(() => {
-                                          const IconComponent = ICON_MAP[service.icon] || PawPrint;
-                                          return <IconComponent className="w-5 h-5" />;
+                                          const IconComponent =
+                                            ICON_MAP[service.icon] || PawPrint;
+                                          return (
+                                            <IconComponent className="w-5 h-5" />
+                                          );
                                         })()}
                                       </div>
 

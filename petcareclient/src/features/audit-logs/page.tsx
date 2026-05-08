@@ -211,10 +211,11 @@ export default function AuditLogsPage() {
                   <button
                     key={tab.id}
                     onClick={() => handleTabChange(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+                      activeTab === tab.id
                         ? "bg-orange-500 text-white shadow-md shadow-orange-200"
                         : "text-gray-500 hover:bg-gray-50"
-                      }`}
+                    }`}
                   >
                     <tab.icon size={16} />
                     {tab.label}
@@ -285,10 +286,11 @@ export default function AuditLogsPage() {
                           key={item}
                           type="button"
                           onClick={() => setCurrentPage(item as number)}
-                          className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${item === currentPage
+                          className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
+                            item === currentPage
                               ? "bg-orange-500 text-white shadow-sm"
                               : "text-[#523c30] hover:bg-[#f3ebe7]"
-                            }`}
+                          }`}
                         >
                           {item}
                         </button>

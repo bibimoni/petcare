@@ -1,19 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
 import {
-  ArrowLeft,
   Filter,
-  PawPrint,
   Search,
+  PawPrint,
   Download,
+  ArrowLeft,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { Sidebar } from "@/components/Sidebar";
-import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
+import { Sidebar } from "@/components/Sidebar";
 import { getOrders, type OrderListItemDto } from "@/features/pos/api";
 import { useSearch } from "@/lib/search-context";
 
@@ -23,17 +23,17 @@ import { PendingOrderModal } from "./pending-order-modal";
 import { RefundedOrderModal } from "./refunded-order-modal";
 
 type HistoryTransaction = {
-  cancel_reason?: string;
-  customerInitials: string;
-  customerName: string;
-  customerPhone: string;
-  date: string;
   id: string;
-  numericId: number;
   pet: string;
-  status: "PAID" | "CANCELLED" | "PENDING" | "REFUNDED";
+  date: string;
   time: string;
   total: string;
+  numericId: number;
+  customerName: string;
+  customerPhone: string;
+  cancel_reason?: string;
+  customerInitials: string;
+  status: "PAID" | "CANCELLED" | "PENDING" | "REFUNDED";
 };
 
 const formatVND = (value: string | number) =>
@@ -84,11 +84,11 @@ const summarizeOrderItems = (
 
 const getOrderStatus = (status: string) => {
   if (status === "CANCELLED") {
-    return "CANCELLED"
+    return "CANCELLED";
   }
 
   if (status === "REFUNDED") {
-    return "REFUNDED"
+    return "REFUNDED";
   }
 
   return status as "PAID" | "CANCELLED" | "PENDING";
@@ -635,7 +635,11 @@ const PosHistoryPage = () => {
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             const page = parseInt(jumpPage, 10);
-                            if (!isNaN(page) && page >= 1 && page <= totalPages) {
+                            if (
+                              !isNaN(page) &&
+                              page >= 1 &&
+                              page <= totalPages
+                            ) {
                               setCurrentPage(page);
                               setJumpPage("");
                             }

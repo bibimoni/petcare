@@ -1,4 +1,10 @@
-import { PawPrint, Scissors, CircleDollarSign, AlertTriangle } from "lucide-react";
+import {
+  PawPrint,
+  Scissors,
+  AlertTriangle,
+  CircleDollarSign,
+} from "lucide-react";
+
 import { type StatsData } from "../api/dashboard-api";
 import { StatsCard } from "./stats-card";
 

@@ -1,6 +1,6 @@
+import { PawPrint } from "lucide-react";
 import { useLocation } from "react-router";
 import { Link } from "react-router-dom";
-import { PawPrint } from "lucide-react";
 
 import { Logo } from "@/components/Logo";
 

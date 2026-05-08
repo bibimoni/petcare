@@ -1,4 +1,4 @@
-import { Eye, Info, XCircle, Edit3, PlusCircle } from "lucide-react";
+import { Eye, Info, Edit3, XCircle, PlusCircle } from "lucide-react";
 
 import { getRefInfo, type HistoryEntry } from "../api/audit-logs.api";
 

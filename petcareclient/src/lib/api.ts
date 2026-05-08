@@ -68,12 +68,18 @@ axiosClient.interceptors.request.use(
       config.headers.set("Authorization", `Bearer ${accessToken}`);
     }
 
-    if (config.data && !(config.data instanceof FormData)) {
+    const skipSnakeCase = config.headers.get("X-No-Snake-Case");
+
+    if (config.data && !(config.data instanceof FormData) && !skipSnakeCase) {
       config.data = toSnakeCase(config.data);
     }
 
-    if (config.params) {
+    if (config.params && !skipSnakeCase) {
       config.params = toSnakeCase(config.params);
+    }
+
+    if (skipSnakeCase) {
+      config.headers.delete("X-No-Snake-Case");
     }
 
     return config;

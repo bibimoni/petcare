@@ -1,21 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
-import { 
-  Pin, 
-  PinOff, 
-  CircleUser, 
-  LayoutDashboard, 
-  Users, 
-  PawPrint, 
-  Store, 
-  Package, 
-  UserCog, 
-  Scissors, 
-  BarChart3, 
-  History, 
-  Building2, 
-  Bell, 
-  Settings, 
-  LogOut 
+import {
+  Pin,
+  Bell,
+  Users,
+  Store,
+  PinOff,
+  LogOut,
+  Package,
+  UserCog,
+  History,
+  PawPrint,
+  Scissors,
+  Settings,
+  BarChart3,
+  Building2,
+  CircleUser,
+  LayoutDashboard,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
