@@ -79,4 +79,8 @@ export const CustomerApi = {
     const response = await axiosClient.delete(`/customers/${id}`);
     return response.data;
   },
+  getCustomer: async (id: string | number) => {
+    const response = await axiosClient.get(`/customers/${id}`);
+    return response.data;
+  },
 };

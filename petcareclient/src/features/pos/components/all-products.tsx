@@ -70,7 +70,7 @@ const AllProductsPage = () => {
   const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false);
   const ITEMS_PER_PAGE = isCreateOrderOpen ? 4 : 5;
 
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery } = useSearch();
 
   const [selectedServiceCategory, setSelectedServiceCategory] =
     useState<string>("all");

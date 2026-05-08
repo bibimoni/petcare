@@ -131,8 +131,8 @@ const ICON_MAP: Record<string, any> = {
 const PosPage = () => {
   const navigate = useNavigate();
   const ITEMS_PER_PAGE = 5;
-  const { searchQuery, setSearchQuery } = useSearch();
-  const [currentTime, setCurrentTime] = useState(() => new Date());
+  const { searchQuery } = useSearch();
+
   const [selectedCatalogTab, setSelectedCatalogTab] = useState<
     "service" | "product"
   >("service");
@@ -161,15 +161,7 @@ const PosPage = () => {
     queryFn: () => getOrders(1, 4),
   });
 
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60_000);
 
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, []);
 
   const greetingName = useMemo(() => {
     const fullName = profile?.full_name?.trim();
@@ -180,28 +172,7 @@ const PosPage = () => {
     return "Bạn";
   }, [profile?.full_name]);
 
-  const currentShift = useMemo(() => {
-    const hour = currentTime.getHours();
 
-    if (hour >= 8 && hour < 12) {
-      return {
-        label: "Ca sáng",
-        timeRange: "08:00 - 12:00",
-      };
-    }
-
-    if (hour >= 13 && hour < 17) {
-      return {
-        label: "Ca chiều",
-        timeRange: "13:00 - 17:00",
-      };
-    }
-
-    return {
-      label: "Ngoài ca",
-      timeRange: "08:00 - 12:00 | 13:00 - 17:00",
-    };
-  }, [currentTime]);
 
   const filteredServices = useMemo(() => {
     if (!searchQuery.trim()) {

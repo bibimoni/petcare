@@ -8,7 +8,6 @@ import { queryClient } from "@/lib/query-client";
 import { useSearch } from "@/lib/search-context";
 
 import { getPetsForList, type PetListItem } from "./api/pets.api";
-import Breadcrumb from "./components/break-crump";
 import PetFilters from "./components/pet-filter";
 import PetHeader from "./components/pet-header";
 import PetList from "./components/pet-list";

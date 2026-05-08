@@ -1,14 +1,14 @@
 /* eslint-disable */
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
-import { 
-  ArrowLeft, 
-  Filter, 
-  PawPrint, 
-  Search, 
-  Download, 
-  ChevronLeft, 
-  ChevronRight 
+import {
+  ArrowLeft,
+  Filter,
+  PawPrint,
+  Search,
+  Download,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -129,7 +129,7 @@ const PosHistoryPage = () => {
   const { searchQuery, setSearchQuery } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
   const [jumpPage, setJumpPage] = useState("");
-  const [currentTime, setCurrentTime] = useState(() => new Date());
+
   const [selectedTx, setSelectedTx] = useState<HistoryTransaction | null>(null);
   const pageSize = 10;
 
@@ -186,39 +186,6 @@ const PosHistoryPage = () => {
       }),
     enabled: totalMatchingOrders > 0,
   });
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60_000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, []);
-
-  const currentShift = useMemo(() => {
-    const hour = currentTime.getHours();
-
-    if (hour >= 8 && hour < 12) {
-      return {
-        label: "Ca sáng",
-        timeRange: "08:00 - 12:00",
-      };
-    }
-
-    if (hour >= 13 && hour < 17) {
-      return {
-        label: "Ca chiều",
-        timeRange: "13:00 - 17:00",
-      };
-    }
-
-    return {
-      label: "Ngoài ca",
-      timeRange: "08:00 - 12:00 | 13:00 - 17:00",
-    };
-  }, [currentTime]);
 
   const transactions = useMemo(() => {
     const orders = ordersResponse?.data ?? [];

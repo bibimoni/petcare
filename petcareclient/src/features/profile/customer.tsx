@@ -1,6 +1,7 @@
 import { Phone, MapPin, Calendar, PawPrint } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Footer } from "@/components/Footer";
@@ -47,21 +48,19 @@ interface LocalOrder {
 
 export default function CustomerProfilePage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const phoneFromUrl = searchParams.get("phone");
 
-  const [customer, setCustomer] = useState<CustomerListItem | null>(null);
-  const [pets, setPets] = useState<LocalPet[]>([]);
-  const [orders, setOrders] = useState<LocalOrder[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<CustomerListItem>>({});
   const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<LocalOrder | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Auth check
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
@@ -72,151 +71,128 @@ export default function CustomerProfilePage() {
     setIsAuthenticated(true);
   }, [navigate]);
 
-  const fetchCustomerData = async (
-    identifier: string | number,
-    isPhone = false,
-  ) => {
-    try {
-      setLoading(true);
-
-      // Lấy danh sách tất cả khách hàng và tìm người khớp số điện thoại hoặc ID
-      const allCustomers = await CustomerApi.getCustomers();
-      const foundCustomer = isPhone
-        ? allCustomers.find((c) => c.phone === identifier)
-        : allCustomers.find(
-            (c) => String(c.customer_id || c.id) === String(identifier),
-          );
-
-      if (!foundCustomer) {
-        setCustomer(null);
-        setLoading(false);
-        return;
-      }
-
-      setCustomer(foundCustomer);
-      setEditData(foundCustomer);
-
-      const customerId = Number(foundCustomer.customer_id || foundCustomer.id);
-
-      if (customerId) {
-        // Lấy danh sách thú cưng
-        try {
-          const petsRes = await PetService.getByCustomer(customerId);
-          const petsArray = Array.isArray(petsRes)
-            ? petsRes
-            : petsRes?.data && Array.isArray(petsRes.data)
-              ? petsRes.data
-              : [];
-
-          const mappedPets: LocalPet[] = petsArray.map((item: any) => ({
-            pet_id: item.pet_id || item.id,
-            pet_name: item.name || item.pet_name,
-            breed: item.breed || "",
-            species:
-              item.species ||
-              (item.breed?.toLowerCase().includes("chó") ? "DOG" : "CAT"),
-            age: item.age,
-            weight: item.weight,
-            avatar_url: item.avatar_url || item.image_url,
-          }));
-          setPets(mappedPets);
-        } catch (petError) {
-          console.error("Error fetching pets:", petError);
-          setPets([]);
-        }
-
-        // Lấy lịch sử giao dịch
-        try {
-          const ordersRes = await getOrders(1, 1000, {
-            customer_id: customerId,
-          });
-          const mappedOrders: LocalOrder[] = (ordersRes.data || []).map(
-            (item: OrderListItemDto) => ({
-              order_id: item.order_id,
-              created_at: item.created_at,
-              total_amount: Number(item.total_amount),
-              status: item.status,
-              order_details: (item.order_details || []).map((detail: any) => ({
-                id: detail.id,
-                name:
-                  detail.item_type === "SERVICE"
-                    ? (detail.service?.combo_name ?? "Dịch vụ")
-                    : (detail.product?.name ?? "Sản phẩm"),
-                quantity: detail.quantity,
-                unit_price: Number(detail.unit_price),
-                subtotal: Number(detail.subtotal),
-                pet_name: detail.pet?.name,
-              })),
-            }),
-          );
-          setOrders(mappedOrders);
-        } catch (orderError: any) {
-          console.error("Error fetching orders:", orderError);
-          setOrders([]);
-        }
-      }
-
-      setLoading(false);
-    } catch (error: any) {
-      console.error("Error fetching customer data:", error);
-      if (error.response?.status === 404) {
-        toast.error("Không tìm thấy thông tin khách hàng");
-      } else if (error.response?.status === 401) {
-        toast.error("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại");
-        localStorage.removeItem("accessToken");
-        navigate("/login");
-      } else {
-        toast.error(error.response?.data?.message || "Lỗi khi tải dữ liệu");
-      }
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const fetchData = async () => {
+  // Customer Query
+  const customerQuery = useQuery({
+    queryKey: ["customer", id || phoneFromUrl],
+    queryFn: async () => {
       if (id) {
-        await fetchCustomerData(id, false);
-      } else if (phoneFromUrl) {
-        await fetchCustomerData(phoneFromUrl, true);
-      } else {
-        setLoading(false);
+        return CustomerApi.getCustomer(id);
       }
-    };
-    fetchData();
-  }, [id, phoneFromUrl, isAuthenticated]);
-
-  const handleSaveProfile = async () => {
-    try {
-      const customerId = customer?.customer_id || customer?.id;
-      if (!customerId) {
-        toast.error("ID khách hàng không tìm thấy");
-        return;
+      if (phoneFromUrl) {
+        const allCustomers = await CustomerApi.getCustomers();
+        return allCustomers.find((c) => c.phone === phoneFromUrl) || null;
       }
+      return null;
+    },
+    enabled: !!(id || phoneFromUrl),
+  });
 
-      const payload = {
-        id: String(customerId),
-        fullName: editData.full_name || editData.fullName,
-        email: editData.email,
-        address: editData.address,
-        notes: editData.notes,
-      };
+  const customer = customerQuery.data as CustomerListItem | null;
+  const customerId = customer?.customer_id || customer?.id;
 
-      await CustomerApi.editCustomer(payload);
+  // Sync editData when customer data is loaded
+  useEffect(() => {
+    if (customer) {
+      setEditData(customer);
+    }
+  }, [customer]);
 
-      // Refresh data
-      const currentId = customer?.customer_id || customer?.id;
-      if (currentId) {
-        await fetchCustomerData(currentId, false);
-      }
+  // Pets Query
+  const petsQuery = useQuery({
+    queryKey: ["customer-pets", customerId],
+    queryFn: async () => {
+      if (!customerId) return [];
+      const petsRes = await PetService.getByCustomer(Number(customerId));
+      const petsArray = Array.isArray(petsRes)
+        ? petsRes
+        : petsRes?.data && Array.isArray(petsRes.data)
+          ? petsRes.data
+          : [];
 
+      return petsArray.map((item: any) => ({
+        pet_id: item.pet_id || item.id,
+        pet_name: item.name || item.pet_name,
+        breed: item.breed || "",
+        species:
+          item.species ||
+          (item.breed?.toLowerCase().includes("chó") ? "DOG" : "CAT"),
+        age: item.age,
+        weight: item.weight,
+        avatar_url: item.avatar_url || item.image_url,
+      }));
+    },
+    enabled: !!customerId,
+  });
+
+  const pets = (petsQuery.data || []) as LocalPet[];
+
+  // Orders Query
+  const ordersQuery = useQuery({
+    queryKey: ["customer-orders", customerId],
+    queryFn: async () => {
+      if (!customerId) return [];
+      const ordersRes = await getOrders(1, 1000, {
+        customer_id: Number(customerId),
+      });
+      return (ordersRes.data || []).map((item: OrderListItemDto) => ({
+        order_id: item.order_id,
+        created_at: item.created_at,
+        total_amount: Number(item.total_amount),
+        status: item.status,
+        order_details: (item.order_details || []).map((detail: any) => ({
+          id: detail.id,
+          name:
+            detail.item_type === "SERVICE"
+              ? (detail.service?.combo_name ?? "Dịch vụ")
+              : (detail.product?.name ?? "Sản phẩm"),
+          quantity: detail.quantity,
+          unit_price: Number(detail.unit_price),
+          subtotal: Number(detail.subtotal),
+          pet_name: detail.pet?.name,
+        })),
+      }));
+    },
+    enabled: !!customerId,
+  });
+
+  const orders = (ordersQuery.data || []) as LocalOrder[];
+
+  // Update Mutation
+  const updateMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      return CustomerApi.editCustomer(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["customer", id || phoneFromUrl],
+      });
+      queryClient.invalidateQueries({ queryKey: ["customers-list"] });
       setIsEditing(false);
       toast.success("Cập nhật thông tin thành công");
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       toast.error(error.response?.data?.message || "Lỗi khi cập nhật");
+    },
+  });
+
+  const handleSaveProfile = () => {
+    if (!customerId) {
+      toast.error("ID khách hàng không tìm thấy");
+      return;
     }
+
+    const payload = {
+      id: String(customerId),
+      fullName: editData.full_name || editData.fullName,
+      email: editData.email,
+      address: editData.address,
+      notes: editData.notes,
+    };
+
+    updateMutation.mutate(payload);
   };
+
+  const loading = customerQuery.isPending || updateMutation.isPending;
 
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return "-";
@@ -646,8 +622,8 @@ export default function CustomerProfilePage() {
                   noteText="Tổng chi tiêu"
                   period="year"
                   selectedYear={new Date().getFullYear()}
-                  onYearChange={() => {}}
-                  onPeriodChange={() => {}}
+                  onYearChange={() => { }}
+                  onPeriodChange={() => { }}
                 />
               </div>
 
