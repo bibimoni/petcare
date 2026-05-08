@@ -120,10 +120,10 @@ export const buildSidebarUser = (
     store_id: storeId,
     full_name: String(
       profile?.full_name ??
-      profile?.fullName ??
-      fallback?.full_name ??
-      fallback?.fullName ??
-      "",
+        profile?.fullName ??
+        fallback?.full_name ??
+        fallback?.fullName ??
+        "",
     ),
   };
 };

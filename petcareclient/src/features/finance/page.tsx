@@ -1,15 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { getDashboardRevenue } from "@/features/dashboard/api/dashboard-api";
 import { RevenueChart } from "@/features/dashboard/components/revenue-chart";
+import { OrderDetailModal } from "@/features/pos/completed-order-modal";
+import { queryClient } from "@/lib/query-client";
 
 import { fetchFinanceData } from "./api/finance.api";
 import { FinanceSummaryCards } from "./components/finance-summary-cards";
 import { ProfitDetailsTable } from "./components/profit-details-table";
 import { RevenueStructureChart } from "./components/revenue-structure-chart";
-import { OrderDetailModal } from "@/features/pos/completed-order-modal";
 
 const FinancePage = () => {
   const [fromDate, setFromDate] = useState<string>(() => {
@@ -108,12 +111,13 @@ const FinancePage = () => {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 dark:bg-gray-950 font-sans">
+    <div className="flex h-screen w-full overflow-hidden bg-[#faf7f5] font-sans">
       <Sidebar />
 
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="h-20 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 shrink-0">
+        <Header />
+        {/* Page Filter Toolbar */}
+        <div className="h-20 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 shrink-0">
           <div>
             <h1 className="text-xl font-black text-gray-900 dark:text-white">
               Báo cáo tài chính
@@ -161,10 +165,10 @@ const FinancePage = () => {
               <span>Xuất báo cáo</span>
             </button>
           </div>
-        </header>
+        </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-[#fafafa] dark:bg-gray-950">
+        <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-[#faf7f5] dark:bg-gray-950">
           {isFinanceLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
@@ -222,6 +226,7 @@ const FinancePage = () => {
               </p>
             </div>
           )}
+          <Footer />
         </div>
       </main>
 

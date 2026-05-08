@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
 import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 
 import {
@@ -13,7 +14,6 @@ import {
   getDashboardActivities,
 } from "./api/dashboard-api";
 import { ActivityFeed } from "./components/activity-feed";
-import { Header } from "./components/header";
 import { RevenueChart } from "./components/revenue-chart";
 import { StatsGrid } from "./components/stats-grid";
 
@@ -150,10 +150,8 @@ export const DashboardPage = () => {
                 </div>
               </>
             )}
-
-            {/* Footer */}
-            <Footer />
           </div>
+          <Footer />
         </div>
       </main>
     </div>

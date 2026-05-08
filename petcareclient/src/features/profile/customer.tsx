@@ -3,6 +3,8 @@ import { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import {
   CustomerApi,
@@ -325,10 +327,10 @@ export default function CustomerProfilePage() {
 
   if (!customer) {
     return (
-      <div className="flex w-full overflow-hidden h-screen bg-[#f6f1ee]">
+      <div className="flex w-full overflow-hidden h-screen bg-[#faf7f5]">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-y-auto">
-          <div className="bg-[#fbf6f3] border-b border-[#eddcd3]">
+          <div className="bg-[#faf7f5] border-b border-[#eddcd3]">
             <div className="max-w-7xl mx-auto px-6 py-4">
               <h1 className="text-2xl font-bold text-gray-800">
                 Tra cứu khách hàng
@@ -356,11 +358,12 @@ export default function CustomerProfilePage() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#f6f1ee]">
+    <div className="flex h-screen w-full overflow-hidden bg-[#faf7f5]">
       <Sidebar />
       <main className="flex-1 flex flex-col overflow-y-auto">
-        {/* Header */}
-        <div className="bg-[#fbf6f3] border-b border-[#eddcd3] sticky top-0 z-10">
+        <Header />
+        {/* Page Secondary Header */}
+        <div className="bg-[#faf7f5] border-b border-[#eddcd3] sticky top-0 z-10">
           <div className="max-w-full mx-auto px-6 py-3">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-4">
@@ -435,7 +438,7 @@ export default function CustomerProfilePage() {
           </div>
         </div>
 
-        <div className="max-w-8xl mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto p-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Customer Info & Pets */}
             <div className="lg:col-span-1 space-y-6">
@@ -802,6 +805,7 @@ export default function CustomerProfilePage() {
           orderId={selectedOrder?.order_id || null}
           onClose={() => setSelectedOrder(null)}
         />
+        <Footer />
       </main>
     </div>
   );

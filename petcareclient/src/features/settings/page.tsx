@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { queryClient } from "@/lib/query-client";
@@ -175,13 +176,7 @@ const SettingsPage = () => {
       <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
-        <header className="sticky top-0 z-10 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-8 py-6 backdrop-blur-sm">
-          <h1 className="text-3xl font-black text-[#2f231d]">Cài đặt</h1>
-          <p className="text-[#9f7d67] text-sm mt-1">
-            Quản lý thông tin cá nhân và cửa hàng của bạn
-          </p>
-        </header>
-
+        <Header />
         <div className="flex-1 overflow-y-auto p-8 scroll-smooth">
           <div className="mx-auto max-w-6xl flex flex-col gap-8">
             <div

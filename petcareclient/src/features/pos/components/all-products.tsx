@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
+import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import {
   getPosProducts,
@@ -11,6 +12,7 @@ import {
   getPosProductCategories,
   getPosServiceCategories,
 } from "@/features/pos/api";
+import { useSearch } from "@/lib/search-context";
 import { getSidebarUser } from "@/lib/user";
 
 import type { OrderItem } from "../pos-page";
@@ -48,7 +50,7 @@ const AllProductsPage = () => {
   const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false);
   const ITEMS_PER_PAGE = isCreateOrderOpen ? 4 : 5;
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchQuery, setSearchQuery } = useSearch();
 
   const [selectedServiceCategory, setSelectedServiceCategory] =
     useState<string>("all");
@@ -126,32 +128,32 @@ const AllProductsPage = () => {
   }, [productCategories]);
 
   const filteredServices = useMemo(() => {
-    if (!searchTerm.trim()) {
+    if (!searchQuery.trim()) {
       return services;
     }
 
-    const keyword = searchTerm.toLowerCase();
+    const keyword = searchQuery.toLowerCase();
 
     return services.filter(
       (item) =>
         item.name.toLowerCase().includes(keyword) ||
         item.description.toLowerCase().includes(keyword),
     );
-  }, [searchTerm, services]);
+  }, [searchQuery, services]);
 
   const filteredProducts = useMemo(() => {
-    if (!searchTerm.trim()) {
+    if (!searchQuery.trim()) {
       return products;
     }
 
-    const keyword = searchTerm.toLowerCase();
+    const keyword = searchQuery.toLowerCase();
 
     return products.filter(
       (item) =>
         item.name.toLowerCase().includes(keyword) ||
         item.description.toLowerCase().includes(keyword),
     );
-  }, [searchTerm, products]);
+  }, [searchQuery, products]);
 
   const servicePages = useMemo(
     () => chunkItems(filteredServices, ITEMS_PER_PAGE),
@@ -165,11 +167,11 @@ const AllProductsPage = () => {
 
   useEffect(() => {
     setServicePage(1);
-  }, [searchTerm, selectedServiceCategory]);
+  }, [searchQuery, selectedServiceCategory]);
 
   useEffect(() => {
     setProductPage(1);
-  }, [searchTerm, selectedProductCategory]);
+  }, [searchQuery, selectedProductCategory]);
 
   useEffect(() => {
     const maxPage = Math.max(servicePages.length, 1);
@@ -259,31 +261,18 @@ const AllProductsPage = () => {
       <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
-        <header className="sticky top-0 z-10 flex h-20 items-center justify-between gap-4 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-8 backdrop-blur-sm">
-          <div className="flex items-center gap-5">
-            <div className="text-left">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#cb8f6a]">
-                POS
-              </p>
-              <h1 className="text-lg font-bold text-[#2f231d]">
-                Danh mục bán hàng
-              </h1>
-            </div>
-          </div>
-
-          <div className="hidden w-full max-w-3xl items-center gap-3 md:flex">
-            <div className="relative w-full">
-              <span className="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#be9477]">
-                search
+        <Header />
+        <div className="flex-1 overflow-y-auto p-8">
+          <div className="mb-6 flex items-center justify-between">
+            <button
+              onClick={() => navigate("/pos")}
+              className="flex w-fit cursor-pointer items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#a07f6b] transition hover:text-[#7f5d47]"
+            >
+              <span className="material-symbols-outlined text-[16px]">
+                arrow_back
               </span>
-              <input
-                className="h-11 w-full rounded-full border border-[#ecdcd1] bg-[#fdfaf8] pl-12 pr-4 text-sm text-[#523c30] outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4]"
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Tìm sản phẩm, dịch vụ"
-                type="text"
-                value={searchTerm}
-              />
-            </div>
+              QUAY LẠI
+            </button>
 
             <button
               onClick={() => setIsCreateOrderOpen(true)}
@@ -293,27 +282,6 @@ const AllProductsPage = () => {
               + Tạo hoá đơn
             </button>
           </div>
-
-          <button
-            className="relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-[#ecdcd1] bg-white text-[#7a5f50]"
-            type="button"
-          >
-            <span className="material-symbols-outlined">notifications</span>
-            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-red-500" />
-          </button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-8">
-          {/* Back button */}
-          <button
-            onClick={() => navigate("/pos")}
-            className="mb-6 flex w-fit cursor-pointer items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#a07f6b] transition hover:text-[#7f5d47]"
-          >
-            <span className="material-symbols-outlined text-[16px]">
-              arrow_back
-            </span>
-            QUAY LẠI
-          </button>
 
           <section className="mb-10 border-b border-[#eaded6] pb-8">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

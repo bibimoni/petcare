@@ -13,11 +13,14 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { getInventoryAlertsData } from "@/features/inventory/api/products.api";
 import api from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
+import { useSearch } from "@/lib/search-context";
 
 interface ProductAlert {
   sku?: string;
@@ -45,7 +48,7 @@ export default function LowStockPage() {
   const isLoading = alertsQuery.isPending;
 
   // State quản lý tìm kiếm và phân trang
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchQuery, setSearchQuery } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -87,7 +90,7 @@ export default function LowStockPage() {
 
   // Lọc sản phẩm theo từ khóa tìm kiếm
   const filteredItems = items.filter((item) => {
-    const lowerTerm = searchTerm.toLowerCase();
+    const lowerTerm = searchQuery.toLowerCase();
     return item.name.toLowerCase().includes(lowerTerm);
   });
 
@@ -99,7 +102,7 @@ export default function LowStockPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchQuery]);
 
   // Hàm tra cứu tên danh mục
   const getCategoryName = (categoryId?: number) => {
@@ -139,7 +142,7 @@ export default function LowStockPage() {
       console.error(error);
       toast.error(
         "Lỗi khi xóa hàng loạt: " +
-        (error.response?.data?.message || "Không xác định"),
+          (error.response?.data?.message || "Không xác định"),
       );
     } finally {
       setIsDeleting(false);
@@ -148,9 +151,10 @@ export default function LowStockPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background-light text-text-primary">
-      {/* Header */}
-      <header className="flex items-center justify-between px-8 py-5 bg-background-light shrink-0 z-10 border-b border-[#f3ebe7]">
+    <div className="flex min-h-screen flex-col bg-[#faf7f5] text-text-primary">
+      <Header />
+      {/* Page Sub-Header */}
+      <div className="flex items-center justify-between px-8 py-5 bg-[#faf7f5] shrink-0 z-10 border-b border-[#f3ebe7]">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
@@ -176,12 +180,12 @@ export default function LowStockPage() {
               className="w-full bg-white border-none pl-10 pr-4 py-3 rounded-xl shadow-sm ring-1 ring-[#f3ebe7] focus:ring-2 focus:ring-primary focus:outline-none placeholder:text-gray-400 text-sm transition-all"
               placeholder="Tìm kiếm sản phẩm..."
               type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto px-8 py-8">
@@ -202,17 +206,20 @@ export default function LowStockPage() {
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={isDeleting}
-                className={`flex items-center gap-2 px-4 h-11 rounded-xl font-bold transition-all border shadow-sm animate-in fade-in slide-in-from-left-2 ${isDeleting
-                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                  : "bg-red-50 text-red-600 hover:bg-red-100 border-red-100 cursor-pointer"
-                  }`}
+                className={`flex items-center gap-2 px-4 h-11 rounded-xl font-bold transition-all border shadow-sm animate-in fade-in slide-in-from-left-2 ${
+                  isDeleting
+                    ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                    : "bg-red-50 text-red-600 hover:bg-red-100 border-red-100 cursor-pointer"
+                }`}
               >
                 {isDeleting ? (
                   <Loader2 size={16} className="animate-spin" />
                 ) : (
                   <Trash2 size={16} />
                 )}
-                {isDeleting ? "Đang xử lý..." : `Xóa ${selectedIds.length} đã chọn`}
+                {isDeleting
+                  ? "Đang xử lý..."
+                  : `Xóa ${selectedIds.length} đã chọn`}
               </button>
             )}
           </div>
@@ -228,12 +235,12 @@ export default function LowStockPage() {
               <div className="flex flex-col items-center justify-center h-[400px] text-text-secondary">
                 <Package className="h-12 w-12 text-gray-300 mb-4" />
                 <p className="font-medium text-lg text-text-primary">
-                  {searchTerm
+                  {searchQuery
                     ? "Không tìm thấy sản phẩm phù hợp"
                     : "Kho hàng an toàn"}
                 </p>
                 <p className="text-sm">
-                  {searchTerm
+                  {searchQuery
                     ? "Vui lòng thử lại với từ khóa khác."
                     : "Hiện tại không có sản phẩm nào sắp hết hàng."}
                 </p>
@@ -275,20 +282,22 @@ export default function LowStockPage() {
                     {currentItems.map((item) => (
                       <tr
                         key={item.product_id}
-                        className={`group transition-colors border-l-4 ${item.level === "severe"
+                        className={`group transition-colors border-l-4 ${
+                          item.level === "severe"
                             ? "bg-red-50/50 hover:bg-red-50 border-l-red-400"
                             : "hover:bg-gray-50 border-l-transparent hover:border-l-primary/30"
-                          }`}
+                        }`}
                       >
                         <td className="p-4 pl-5 text-center">
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(item.product_id)}
                             onChange={() => toggleSelect(item.product_id)}
-                            className={`rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4 transition-opacity ${selectedIds.includes(item.product_id)
+                            className={`rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4 transition-opacity ${
+                              selectedIds.includes(item.product_id)
                                 ? "opacity-100"
                                 : "opacity-0 group-hover:opacity-100"
-                              }`}
+                            }`}
                           />
                         </td>
                         <td className="p-4">
@@ -373,10 +382,11 @@ export default function LowStockPage() {
                             <button
                               key={pageNumber}
                               onClick={() => setCurrentPage(pageNumber)}
-                              className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${currentPage === pageNumber
+                              className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${
+                                currentPage === pageNumber
                                   ? "bg-primary text-white shadow-md shadow-primary/30"
                                   : "text-text-secondary hover:bg-gray-100"
-                                }`}
+                              }`}
                             >
                               {pageNumber}
                             </button>
@@ -409,6 +419,7 @@ export default function LowStockPage() {
             )}
           </div>
         </div>
+        <Footer />
       </main>
 
       {/* Alert Dialog Bulk Delete */}

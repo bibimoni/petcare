@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { CountryDropdown } from "@/components/ui/country-dropdown";
 import api from "@/lib/api";
@@ -162,16 +163,17 @@ export default function CreateStorePage() {
       <Sidebar />
 
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="min-h-0 flex-1 bg-surface-light dark:bg-surface-dark px-4 py-5 md:px-6 md:py-6">
-          <div className="mx-auto flex h-full w-full max-w-3xl flex-col">
+        <Header />
+        <div className="min-h-0 flex-1 bg-surface-light dark:bg-surface-dark px-4 py-5 md:px-6 md:py-6 overflow-y-auto">
+          <div className="mx-auto flex w-full max-w-3xl flex-col">
             {/* Header Section */}
             <div className="mb-6 shrink-0 text-center">
               <div className="w-16 h-16 bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
                 <Store className="h-8 w-8" />
               </div>
-              <h1 className="text-xl font-extrabold tracking-tight text-charcoal dark:text-white mb-2">
+              <h2 className="text-xl font-extrabold tracking-tight text-charcoal dark:text-white mb-2">
                 Khởi tạo Cửa hàng của bạn
-              </h1>
+              </h2>
               <p className="text-gray-500 dark:text-gray-400">
                 Thiết lập thông tin cơ bản để bắt đầu quản lý Pet Shop & Spa.
               </p>
@@ -181,7 +183,7 @@ export default function CreateStorePage() {
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <form
                 onSubmit={handleSubmit}
-                className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6 md:p-8"
+                className="flex min-h-0 flex-1 flex-col p-6 md:p-8"
               >
                 <div className="space-y-8">
                   {/* --- Thông tin cơ bản --- */}

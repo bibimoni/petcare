@@ -3,13 +3,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { queryClient } from "@/lib/query-client";
+import { useSearch } from "@/lib/search-context";
 
 import { CustomerApi, type CustomerListItem } from "./api/customer-api";
 import AddCustomerModal from "./components/add-customer-modal";
-import Breadcrumb from "./components/break-crump";
 import CustomerHeader from "./components/customer-header";
 import CustomerPagination from "./components/customer-pagination";
 import CustomerTable from "./components/customer-table";
@@ -18,7 +19,7 @@ import CustomerToolbar from "./components/customer-toolbar";
 import EditCustomerModal from "./components/edit-customer-modal";
 
 export default function CustomersPage() {
-  const [search, setSearch] = useState("");
+  const { searchQuery, setSearchQuery } = useSearch();
   const [tab, setTab] = useState("all");
   const [sort, setSort] = useState("desc");
   const [page, setPage] = useState(1);
@@ -76,8 +77,8 @@ export default function CustomersPage() {
     (c) =>
       String(c.full_name || "")
         .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      String(c.phone || "").includes(search),
+        .includes(searchQuery.toLowerCase()) ||
+      String(c.phone || "").includes(searchQuery),
   );
 
   if (tab === "new") {
@@ -134,65 +135,66 @@ export default function CustomersPage() {
       />
 
       <main className="flex flex-1 flex-col overflow-hidden">
+        <Header />
         <div className="flex-1 overflow-y-auto bg-[#faf7f5] p-8">
-          <Breadcrumb />
-          <CustomerHeader onAddCustomer={() => setIsAddModalOpen(true)} />
+          <div className="mx-auto max-w-7xl flex flex-col gap-8">
+            <CustomerHeader onAddCustomer={() => setIsAddModalOpen(true)} />
 
-          <div className="flex-1 p-6 space-y-6">
-            {loading ? (
-              <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                <div className="mb-6 flex items-center gap-3">
-                  <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-orange-300 border-t-orange-500" />
-                  <p className="text-lg font-semibold text-gray-700">
-                    Đang tải danh sách khách hàng...
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  {[...Array(6)].map((_, index) => (
-                    <div
-                      key={index}
-                      className="h-14 animate-pulse rounded-xl bg-gray-100"
-                    />
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="flex justify-between items-center">
-                  <CustomerTabs tab={tab} setTab={setTab} />
-                  <CustomerToolbar
-                    search={search}
-                    setSearch={setSearch}
-                    sort={sort}
-                    setSort={setSort}
-                  />
-                </div>
-
-                <CustomerTable
-                  customers={paginatedCustomers}
-                  onEditCustomer={handleEditCustomer}
-                  onDeleteCustomer={handleDeleteCustomer}
-                />
-
-                <div className="flex items-center justify-between mt-4">
-                  {filtered.length > 0 && (
-                    <p className="text-sm text-gray-500">
-                      Hiển thị {start + 1} -{" "}
-                      {Math.min(start + limit, filtered.length)} /{" "}
-                      {filtered.length} khách hàng
+            <div className="flex-1 p-6 space-y-6">
+              {loading ? (
+                <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+                  <div className="mb-6 flex items-center gap-3">
+                    <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-orange-300 border-t-orange-500" />
+                    <p className="text-lg font-semibold text-gray-700">
+                      Đang tải danh sách khách hàng...
                     </p>
-                  )}
-                  <CustomerPagination
-                    page={currentPage}
-                    setPage={setPage}
-                    totalPages={totalPage}
-                  />
-                </div>
-              </>
-            )}
-          </div>
+                  </div>
 
+                  <div className="space-y-3">
+                    {[...Array(6)].map((_, index) => (
+                      <div
+                        key={index}
+                        className="h-14 animate-pulse rounded-xl bg-gray-100"
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center">
+                    <CustomerTabs tab={tab} setTab={setTab} />
+                    <CustomerToolbar
+                      search={searchQuery}
+                      setSearch={setSearchQuery}
+                      sort={sort}
+                      setSort={setSort}
+                    />
+                  </div>
+
+                  <CustomerTable
+                    customers={paginatedCustomers}
+                    onEditCustomer={handleEditCustomer}
+                    onDeleteCustomer={handleDeleteCustomer}
+                  />
+
+                  <div className="flex items-center justify-between mt-4">
+                    {filtered.length > 0 && (
+                      <p className="text-sm text-gray-500">
+                        Hiển thị {start + 1} -{" "}
+                        {Math.min(start + limit, filtered.length)} /{" "}
+                        {filtered.length} khách hàng
+                      </p>
+                    )}
+                    <CustomerPagination
+                      page={currentPage}
+                      setPage={setPage}
+                      totalPages={totalPage}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
           <Footer />
         </div>
       </main>
