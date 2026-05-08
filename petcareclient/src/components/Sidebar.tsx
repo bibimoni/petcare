@@ -107,8 +107,9 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
   const userQuery = useQuery({
     queryKey: ["sidebar-user"],
     queryFn: getSidebarUser,
-    staleTime: 15 * 60 * 1000,
+    staleTime: 10 * 1000,
     gcTime: 60 * 60 * 1000,
+    refetchInterval: 2 * 1000, // Poll every 10 seconds for real-time role updates
     initialData: isValidInitialData ? userInfo : undefined,
   });
 

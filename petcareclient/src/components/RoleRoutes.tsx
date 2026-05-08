@@ -17,8 +17,9 @@ export default function RoleRoute({ children, allowedRoles }: Props) {
     queryKey: ["sidebar-user"],
     queryFn: getSidebarUser,
     enabled: !!token,
-    staleTime: 15 * 60 * 1000,
+    staleTime: 10 * 1000,
     gcTime: 60 * 60 * 1000,
+    refetchInterval: 2 * 1000, // Poll every 10 seconds for real-time role updates
   });
 
   if (!token) {
