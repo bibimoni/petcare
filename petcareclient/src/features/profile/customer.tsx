@@ -252,14 +252,6 @@ export default function CustomerProfilePage() {
     return order.status === activeFilter;
   });
 
-  const totalSpent = useMemo(() => {
-    return orders
-      .filter(
-        (order) => order.status === "PAID" || order.status === "COMPLETED",
-      )
-      .reduce((sum, order) => sum + order.total_amount, 0);
-  }, [orders]);
-
   const chartData = useMemo(() => {
     const now = new Date();
     let days: string[] = [];
