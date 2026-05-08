@@ -3,7 +3,6 @@ import {
   X,
   Plus,
   Check,
-  Trash2,
   Package,
   Loader2,
   ChevronDown,
@@ -86,11 +85,6 @@ export function AddProductModal() {
   if (!isAdmin) {
     return null;
   }
-
-  const removeBatch = (id: string) => {
-    setBatches(batches.filter((batch) => batch.id !== id));
-  };
-
   const updateBatch = (id: string, field: keyof Batch, value: string) => {
     setBatches(
       batches.map((batch) =>

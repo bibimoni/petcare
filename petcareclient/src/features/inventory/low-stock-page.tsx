@@ -139,7 +139,7 @@ export default function LowStockPage() {
       console.error(error);
       toast.error(
         "Lỗi khi xóa hàng loạt: " +
-          (error.response?.data?.message || "Không xác định"),
+        (error.response?.data?.message || "Không xác định"),
       );
     } finally {
       setIsDeleting(false);
@@ -201,10 +201,18 @@ export default function LowStockPage() {
             {selectedIds.length > 0 && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center cursor-pointer gap-2 px-4 py-2.5 rounded-xl bg-red-50 text-red-600 font-bold hover:bg-red-100 transition-all border border-red-100 shadow-sm animate-in fade-in slide-in-from-left-2"
+                disabled={isDeleting}
+                className={`flex items-center gap-2 px-4 h-11 rounded-xl font-bold transition-all border shadow-sm animate-in fade-in slide-in-from-left-2 ${isDeleting
+                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                  : "bg-red-50 text-red-600 hover:bg-red-100 border-red-100 cursor-pointer"
+                  }`}
               >
-                <Trash2 size={18} />
-                Xóa {selectedIds.length} đã chọn
+                {isDeleting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Trash2 size={16} />
+                )}
+                {isDeleting ? "Đang xử lý..." : `Xóa ${selectedIds.length} đã chọn`}
               </button>
             )}
           </div>
@@ -267,22 +275,20 @@ export default function LowStockPage() {
                     {currentItems.map((item) => (
                       <tr
                         key={item.product_id}
-                        className={`group transition-colors border-l-4 ${
-                          item.level === "severe"
+                        className={`group transition-colors border-l-4 ${item.level === "severe"
                             ? "bg-red-50/50 hover:bg-red-50 border-l-red-400"
                             : "hover:bg-gray-50 border-l-transparent hover:border-l-primary/30"
-                        }`}
+                          }`}
                       >
                         <td className="p-4 pl-5 text-center">
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(item.product_id)}
                             onChange={() => toggleSelect(item.product_id)}
-                            className={`rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4 transition-opacity ${
-                              selectedIds.includes(item.product_id)
+                            className={`rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4 transition-opacity ${selectedIds.includes(item.product_id)
                                 ? "opacity-100"
                                 : "opacity-0 group-hover:opacity-100"
-                            }`}
+                              }`}
                           />
                         </td>
                         <td className="p-4">
@@ -367,11 +373,10 @@ export default function LowStockPage() {
                             <button
                               key={pageNumber}
                               onClick={() => setCurrentPage(pageNumber)}
-                              className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${
-                                currentPage === pageNumber
+                              className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${currentPage === pageNumber
                                   ? "bg-primary text-white shadow-md shadow-primary/30"
                                   : "text-text-secondary hover:bg-gray-100"
-                              }`}
+                                }`}
                             >
                               {pageNumber}
                             </button>
