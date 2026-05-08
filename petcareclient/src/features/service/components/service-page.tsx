@@ -19,9 +19,12 @@ import {
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import api from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
+import { useSearch } from "@/lib/search-context";
 
 import { getServicePageData } from "../api/service.api";
 
@@ -52,7 +55,7 @@ export default function ServicesPage() {
   const isLoading = pageQuery.isPending;
 
   // States quản lý Bộ lọc & Tìm kiếm
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchQuery, setSearchQuery } = useSearch();
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -99,7 +102,7 @@ export default function ServicesPage() {
   // Reset trang khi lọc
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, categoryFilter, statusFilter]);
+  }, [searchQuery, categoryFilter, statusFilter]);
 
   // 2. LOGIC LỌC
   const filteredServices = useMemo(() => {
@@ -107,7 +110,7 @@ export default function ServicesPage() {
       .filter((service) => {
         const matchSearch = service.combo_name
           .toLowerCase()
-          .includes(searchTerm.toLowerCase());
+          .includes(searchQuery.toLowerCase());
         const matchCat =
           categoryFilter === "all" ||
           service.category_id === Number(categoryFilter);
@@ -119,7 +122,7 @@ export default function ServicesPage() {
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
-  }, [services, searchTerm, categoryFilter, statusFilter]);
+  }, [services, searchQuery, categoryFilter, statusFilter]);
 
   // 3. LOGIC DỊCH VỤ VỪA CẬP NHẬT (Lưu trữ 2 ngày = 48h)
   const recentlyUpdated = useMemo(() => {
@@ -333,14 +336,14 @@ export default function ServicesPage() {
   return (
     <div className="flex h-screen w-full overflow-hidden">
       <Sidebar />
-
-      <main className="flex flex-1 flex-col overflow-hidden bg-[#fcfaf8] text-[#1b110d]">
+      <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5] text-[#1b110d]">
+        <Header />
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto w-full px-6 py-10">
+          <div className="max-w-7xl mx-auto w-full p-8">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
               <div>
-                <h1 className="text-[1.25rem] font-extrabold tracking-tight text-[#1b110d] mb-1">
+                <h1 className="text-3xl font-black text-[#2f231d]">
                   Quản lý Dịch vụ
                 </h1>
                 <p className="text-sm text-[#9a624c]">
@@ -355,8 +358,8 @@ export default function ServicesPage() {
                 <div className="hidden md:flex items-center bg-white border border-[#f3ebe7] rounded-full px-4 py-2.5 w-80 focus-within:ring-2 focus-within:ring-[#f7b297]/50 shadow-sm transition-all">
                   <Search className="text-[#9a624c] h-4 w-4 mr-2" />
                   <input
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="bg-transparent border-none focus:ring-0 text-sm w-full outline-none placeholder:text-[#9a624c]/60 text-[#1b110d]"
                     placeholder="Tìm kiếm dịch vụ..."
                   />
@@ -364,9 +367,9 @@ export default function ServicesPage() {
                 <button
                   type="button"
                   onClick={openAddModal}
-                  className="bg-orange-600/80 hover:bg-orange-600/90 cursor-pointer text-[#ffffff] px-6 py-2.5 rounded-full font-bold flex items-center gap-2 shadow-lg shadow-[#f7b297]/30 active:scale-95 transition-all"
+                  className="flex cursor-pointer items-center gap-2 rounded-full bg-[#f27a4d] px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#e1683b] transition"
                 >
-                  <Plus className="h-5 w-5" /> Thêm dịch vụ mới
+                  <Plus size={16} /> Thêm dịch vụ mới
                 </button>
               </div>
             </div>
@@ -642,6 +645,7 @@ export default function ServicesPage() {
               </div>
             </div>
           </div>
+          <Footer />
         </div>
       </main>
 

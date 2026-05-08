@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import {
   getOrders,
@@ -10,6 +12,7 @@ import {
   getPosCatalogOverview,
   type OrderListItemDto,
 } from "@/features/pos/api";
+import { useSearch } from "@/lib/search-context";
 import { getSidebarUser } from "@/lib/user";
 
 import { CancelledOrderModal } from "./cancelled-order-modal";
@@ -109,7 +112,7 @@ const mapOrderToHistoryTransaction = (
 const PosPage = () => {
   const navigate = useNavigate();
   const ITEMS_PER_PAGE = 5;
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchQuery, setSearchQuery } = useSearch();
   const [currentTime, setCurrentTime] = useState(() => new Date());
   const [selectedCatalogTab, setSelectedCatalogTab] = useState<
     "service" | "product"
@@ -182,28 +185,28 @@ const PosPage = () => {
   }, [currentTime]);
 
   const filteredServices = useMemo(() => {
-    if (!searchTerm.trim()) {
+    if (!searchQuery.trim()) {
       return services;
     }
-    const keyword = searchTerm.toLowerCase();
+    const keyword = searchQuery.toLowerCase();
     return services.filter(
       (item) =>
         item.name.toLowerCase().includes(keyword) ||
         item.description.toLowerCase().includes(keyword),
     );
-  }, [searchTerm, services]);
+  }, [searchQuery, services]);
 
   const filteredProducts = useMemo(() => {
-    if (!searchTerm.trim()) {
+    if (!searchQuery.trim()) {
       return hotProducts;
     }
-    const keyword = searchTerm.toLowerCase();
+    const keyword = searchQuery.toLowerCase();
     return hotProducts.filter(
       (item) =>
         item.name.toLowerCase().includes(keyword) ||
         item.description.toLowerCase().includes(keyword),
     );
-  }, [searchTerm, hotProducts]);
+  }, [searchQuery, hotProducts]);
 
   const servicePages = useMemo(() => {
     if (filteredServices.length === 0) {
@@ -257,7 +260,7 @@ const PosPage = () => {
   useEffect(() => {
     setServicePage(1);
     setProductPage(1);
-  }, [searchTerm]);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (servicePage > Math.max(servicePages.length, 1)) {
@@ -299,48 +302,8 @@ const PosPage = () => {
       <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-6 backdrop-blur-sm">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#cb8f6a]">
-              POS
-            </p>
-            <h1 className="text-base font-bold text-[#2f231d]">
-              Điểm bán hàng
-            </h1>
-          </div>
-
-          <div className="relative w-full max-w-xl">
-            <span className="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#be9477]">
-              search
-            </span>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm sản phẩm, dịch vụ hoặc khách hàng"
-              className="h-10 w-full rounded-full border border-[#ecdcd1] bg-[#fdfaf8] pl-12 pr-4 text-sm text-[#523c30] outline-none transition focus:border-[#dcae8c] focus:ring-2 focus:ring-[#f3d8c4]"
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[#ecdcd1] bg-white text-[#7a5f50] transition hover:bg-[#f9f0ea]"
-            >
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-red-500" />
-            </button>
-
-            <div className="text-right">
-              <p className="text-xs text-[#9a7a67]">{currentShift.label}</p>
-              <p className="text-sm font-semibold text-[#4a362c]">
-                {currentShift.timeRange}
-              </p>
-            </div>
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-6">
+        <Header />
+        <div className="flex-1 overflow-y-auto p-8">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
             <section className="flex flex-col items-center gap-2 py-1 text-center">
               <h2 className="text-[32px] font-black leading-tight text-[#2f231d]">
@@ -685,6 +648,7 @@ const PosPage = () => {
               </div>
             </section>
           </div>
+          <Footer />
         </div>
 
         <ServiceDetailModal

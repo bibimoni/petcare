@@ -1,12 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  X,
-  Plus,
-  Check,
-  Package,
-  Loader2,
-  ChevronDown,
-} from "lucide-react";
+import { X, Plus, Check, Package, Loader2, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 

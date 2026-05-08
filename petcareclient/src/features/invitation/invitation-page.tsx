@@ -1,6 +1,8 @@
 import { RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { LogoIcon } from "@/components/LogoIcon";
 import { Sidebar } from "@/components/Sidebar";
 import {
@@ -153,122 +155,127 @@ export default function InvitationPage() {
         }
       }}
     >
-      <div className="flex min-h-screen bg-[#fdf9f6]">
+      <div className="flex min-h-screen bg-[#faf7f5]">
         <Sidebar />
-        <main className="flex-1 flex flex-col">
-          {/* Header */}
-          <div className="bg-white border-b px-10 py-6 flex items-start justify-between shadow-sm">
-            <div className="flex flex-col gap-1">
-              <h1 className="text-xl font-bold text-orange-600/80">
-                Lời mời quản trị
-              </h1>
-              <p className="text-[#bfa08c] text-sm">
-                Thông báo các yêu cầu tham gia quản lý
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={fetchNotifications}
-              disabled={loading}
-              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-orange-200 bg-white text-orange-600 transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Tải lại thông báo"
-              title="Tải lại thông báo"
-            >
-              <RotateCw
-                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-              />
-            </button>
-          </div>
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <Header />
           {/* Content */}
-          <div className="flex-1 flex flex-col items-center justify-center">
-            {loading ? (
-              <div className="text-[#bfa08c] text-lg">
-                Đang tải thông báo...
+          <div className="flex-1 overflow-y-auto">
+            <div className="bg-white border-b px-8 py-6 flex items-start justify-between shadow-sm">
+              <div className="flex flex-col gap-1">
+                <h1 className="text-xl font-bold text-orange-600/80">
+                  Lời mời quản trị
+                </h1>
+                <p className="text-[#bfa08c] text-sm">
+                  Thông báo các yêu cầu tham gia quản lý
+                </p>
               </div>
-            ) : notifications.length === 0 ? (
-              <div className="text-[#bfa08c] text-lg">Không có lời mời mới</div>
-            ) : (
-              <div className="w-full max-w-xl px-4">
-                <div className="flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={handlePrevious}
-                    className="h-10 w-10 shrink-0 rounded-full border border-orange-200 bg-white text-orange-600 transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={notifications.length <= 1}
-                    aria-label="Thông báo trước"
-                  >
-                    <ChevronLeft className="mx-auto h-5 w-5" />
-                  </button>
-
-                  <div
-                    key={currentNotification.notification_id}
-                    className="bg-white rounded-3xl shadow-xl p-10 w-full flex flex-col items-center cursor-pointer"
-                    onClick={() =>
-                      handleOpenDetail(currentNotification.notification_id)
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        handleOpenDetail(currentNotification.notification_id);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <div className="flex flex-col items-center mb-6">
-                      <LogoIcon />
-                      <h2 className="text-xl font-bold text-[#a86a3d] text-center">
-                        {currentNotification.title || "Lời mời quản trị"}
-                      </h2>
-                      <div className="text-xs text-[#bfa08c] font-medium mb-2 text-center">
-                        {currentNotification.type === "STORE_INVITATION"
-                          ? "CỬA HÀNG THÚ CƯNG"
-                          : currentNotification.type}
-                      </div>
-                    </div>
-                    <div className="bg-[#fdf6f0] rounded-xl p-4 w-full flex flex-col items-center mb-6">
-                      <div className="text-xs text-[#bfa08c] mb-1">
-                        NỘI DUNG
-                      </div>
-                      <div className="text-[#a86a3d] font-semibold text-center">
-                        {currentNotification.message}
-                      </div>
-                      <div className="text-xs text-[#bfa08c] mt-2">
-                        Gửi ngày{" "}
-                        {new Date(
-                          currentNotification.created_at,
-                        ).toLocaleDateString("vi-VN")}
-                      </div>
-                    </div>
-                    <div className="flex gap-4 w-full">
-                      <a
-                        href={buildAcceptInvitationHref(
-                          currentNotification.action_url,
-                          currentNotification.notification_id,
-                        )}
-                        onClick={(event) => event.stopPropagation()}
-                        className="flex-1 bg-orange-600/80 hover:bg-[#f5a96a] text-white font-bold py-3 rounded-xl transition text-center"
-                      >
-                        Chấp nhận
-                      </a>
-                    </div>
-                    <div className="text-xs text-orange-600/80 mt-6 text-center">
-                      THÔNG BÁO {currentIndex + 1}/{notifications.length}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="h-10 w-10 shrink-0 rounded-full border border-orange-200 bg-white text-orange-600 transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={notifications.length <= 1}
-                    aria-label="Thông báo tiếp theo"
-                  >
-                    <ChevronRight className="mx-auto h-5 w-5" />
-                  </button>
+              <button
+                type="button"
+                onClick={fetchNotifications}
+                disabled={loading}
+                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-orange-200 bg-white text-orange-600 transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Tải lại thông báo"
+                title="Tải lại thông báo"
+              >
+                <RotateCw
+                  className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                />
+              </button>
+            </div>
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+              {loading ? (
+                <div className="text-[#bfa08c] text-lg">
+                  Đang tải thông báo...
                 </div>
-              </div>
-            )}
+              ) : notifications.length === 0 ? (
+                <div className="text-[#bfa08c] text-lg">
+                  Không có lời mời mới
+                </div>
+              ) : (
+                <div className="w-full max-w-xl px-4">
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={handlePrevious}
+                      className="h-10 w-10 shrink-0 rounded-full border border-orange-200 bg-white text-orange-600 transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={notifications.length <= 1}
+                      aria-label="Thông báo trước"
+                    >
+                      <ChevronLeft className="mx-auto h-5 w-5" />
+                    </button>
+
+                    <div
+                      key={currentNotification.notification_id}
+                      className="bg-white rounded-3xl shadow-xl p-10 w-full flex flex-col items-center cursor-pointer"
+                      onClick={() =>
+                        handleOpenDetail(currentNotification.notification_id)
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          handleOpenDetail(currentNotification.notification_id);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <div className="flex flex-col items-center mb-6">
+                        <LogoIcon />
+                        <h2 className="text-xl font-bold text-[#a86a3d] text-center">
+                          {currentNotification.title || "Lời mời quản trị"}
+                        </h2>
+                        <div className="text-xs text-[#bfa08c] font-medium mb-2 text-center">
+                          {currentNotification.type === "STORE_INVITATION"
+                            ? "CỬA HÀNG THÚ CƯNG"
+                            : currentNotification.type}
+                        </div>
+                      </div>
+                      <div className="bg-[#fdf6f0] rounded-xl p-4 w-full flex flex-col items-center mb-6">
+                        <div className="text-xs text-[#bfa08c] mb-1">
+                          NỘI DUNG
+                        </div>
+                        <div className="text-[#a86a3d] font-semibold text-center">
+                          {currentNotification.message}
+                        </div>
+                        <div className="text-xs text-[#bfa08c] mt-2">
+                          Gửi ngày{" "}
+                          {new Date(
+                            currentNotification.created_at,
+                          ).toLocaleDateString("vi-VN")}
+                        </div>
+                      </div>
+                      <div className="flex gap-4 w-full">
+                        <a
+                          href={buildAcceptInvitationHref(
+                            currentNotification.action_url,
+                            currentNotification.notification_id,
+                          )}
+                          onClick={(event) => event.stopPropagation()}
+                          className="flex-1 bg-orange-600/80 hover:bg-[#f5a96a] text-white font-bold py-3 rounded-xl transition text-center"
+                        >
+                          Chấp nhận
+                        </a>
+                      </div>
+                      <div className="text-xs text-orange-600/80 mt-6 text-center">
+                        THÔNG BÁO {currentIndex + 1}/{notifications.length}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="h-10 w-10 shrink-0 rounded-full border border-orange-200 bg-white text-orange-600 transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={notifications.length <= 1}
+                      aria-label="Thông báo tiếp theo"
+                    >
+                      <ChevronRight className="mx-auto h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <Footer />
           </div>
         </main>
       </div>

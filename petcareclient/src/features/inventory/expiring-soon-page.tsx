@@ -17,11 +17,14 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { getInventoryAlertsData } from "@/features/inventory/api/products.api";
 import api from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
+import { useSearch } from "@/lib/search-context";
 
 interface ExpiringAlert {
   sku?: string;
@@ -50,7 +53,7 @@ export default function ExpiringSoonPage() {
   const isLoading = alertsQuery.isPending;
 
   // States quản lý tìm kiếm & lọc
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchQuery, setSearchQuery } = useSearch();
   const [timeFilter, setTimeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
@@ -118,7 +121,7 @@ export default function ExpiringSoonPage() {
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       // 1. Lọc theo từ khóa
-      const lowerSearch = searchTerm.toLowerCase();
+      const lowerSearch = searchQuery.toLowerCase();
       const matchSearch = item.name.toLowerCase().includes(lowerSearch);
 
       // 2. Lọc theo thời gian
@@ -134,11 +137,11 @@ export default function ExpiringSoonPage() {
 
       return matchSearch && matchTime && matchCategory;
     });
-  }, [items, searchTerm, timeFilter, categoryFilter]);
+  }, [items, timeFilter, categoryFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, timeFilter, categoryFilter]);
+  }, [searchQuery, timeFilter, categoryFilter]);
 
   // TÍNH TOÁN PHÂN TRANG
   const totalItems = filteredItems.length;
@@ -185,7 +188,7 @@ export default function ExpiringSoonPage() {
       console.error(error);
       toast.error(
         "Lỗi khi xóa hàng loạt: " +
-        (error.response?.data?.message || "Không xác định"),
+          (error.response?.data?.message || "Không xác định"),
       );
     } finally {
       setIsDeleting(false);
@@ -194,9 +197,10 @@ export default function ExpiringSoonPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background-light text-text-primary">
-      {/* Header */}
-      <header className="flex items-center justify-between px-8 py-5 bg-background-light shrink-0 z-10 border-b border-[#f3ebe7]">
+    <div className="flex min-h-screen flex-col bg-[#faf7f5] text-text-primary">
+      <Header />
+      {/* Page Sub-Header */}
+      <div className="flex items-center justify-between px-8 py-5 bg-[#faf7f5] shrink-0 z-10 border-b border-[#f3ebe7]">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
@@ -222,12 +226,12 @@ export default function ExpiringSoonPage() {
               className="w-full bg-white border-none pl-10 pr-4 py-3 rounded-xl shadow-sm ring-1 ring-[#f3ebe7] focus:ring-2 focus:ring-primary focus:outline-none placeholder:text-gray-400 text-sm transition-all"
               placeholder="Tìm kiếm sản phẩm..."
               type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto px-8 py-8">
@@ -280,17 +284,20 @@ export default function ExpiringSoonPage() {
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={isDeleting}
-                  className={`flex items-center gap-2 px-4 h-11 rounded-xl font-bold transition-all border shadow-sm animate-in fade-in slide-in-from-left-2 ${isDeleting
+                  className={`flex items-center gap-2 px-4 h-11 rounded-xl font-bold transition-all border shadow-sm animate-in fade-in slide-in-from-left-2 ${
+                    isDeleting
                       ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
                       : "bg-red-50 text-red-600 hover:bg-red-100 border-red-100 cursor-pointer"
-                    }`}
+                  }`}
                 >
                   {isDeleting ? (
                     <Loader2 size={16} className="animate-spin" />
                   ) : (
                     <Trash2 size={16} />
                   )}
-                  {isDeleting ? "Đang xử lý..." : `Xóa ${selectedIds.length} đã chọn`}
+                  {isDeleting
+                    ? "Đang xử lý..."
+                    : `Xóa ${selectedIds.length} đã chọn`}
                 </button>
               )}
             </div>
@@ -307,16 +314,16 @@ export default function ExpiringSoonPage() {
               <div className="flex flex-col items-center justify-center h-[400px] text-text-secondary">
                 <CalendarX className="h-12 w-12 text-gray-300 mb-4" />
                 <p className="font-medium text-lg text-text-primary">
-                  {searchTerm ||
-                    timeFilter !== "all" ||
-                    categoryFilter !== "all"
+                  {searchQuery ||
+                  timeFilter !== "all" ||
+                  categoryFilter !== "all"
                     ? "Không tìm thấy sản phẩm phù hợp bộ lọc"
                     : "Không có hàng sắp hết hạn"}
                 </p>
                 <p className="text-sm">
-                  {searchTerm ||
-                    timeFilter !== "all" ||
-                    categoryFilter !== "all"
+                  {searchQuery ||
+                  timeFilter !== "all" ||
+                  categoryFilter !== "all"
                     ? "Thử thay đổi từ khóa hoặc xóa bớt bộ lọc."
                     : "Tất cả sản phẩm trong kho đều còn hạn sử dụng an toàn."}
                 </p>
@@ -359,22 +366,24 @@ export default function ExpiringSoonPage() {
                       {currentItems.map((item) => (
                         <tr
                           key={item.product_id}
-                          className={`group transition-colors border-l-4 ${item.level === "severe"
+                          className={`group transition-colors border-l-4 ${
+                            item.level === "severe"
                               ? "bg-red-50/50 hover:bg-red-50 border-l-red-500"
                               : item.level === "warning"
                                 ? "bg-orange-50/50 hover:bg-orange-50 border-l-orange-400"
                                 : "hover:bg-gray-50 border-l-transparent hover:border-l-primary/30"
-                            }`}
+                          }`}
                         >
                           <td className="p-4 pl-5 text-center">
                             <input
                               type="checkbox"
                               checked={selectedIds.includes(item.product_id)}
                               onChange={() => toggleSelect(item.product_id)}
-                              className={`rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4 transition-opacity ${selectedIds.includes(item.product_id)
+                              className={`rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4 transition-opacity ${
+                                selectedIds.includes(item.product_id)
                                   ? "opacity-100"
                                   : "opacity-0 group-hover:opacity-100"
-                                }`}
+                              }`}
                             />
                           </td>
                           <td className="p-4">
@@ -410,12 +419,13 @@ export default function ExpiringSoonPage() {
                           </td>
                           <td className="p-4 pr-6 text-right">
                             <div
-                              className={`flex items-center justify-end gap-2 font-bold ${item.level === "severe"
+                              className={`flex items-center justify-end gap-2 font-bold ${
+                                item.level === "severe"
                                   ? "text-red-600"
                                   : item.level === "warning"
                                     ? "text-orange-600"
                                     : "text-text-primary"
-                                }`}
+                              }`}
                             >
                               {item.level === "severe" ? (
                                 <CalendarX className="h-5 w-5" />
@@ -424,14 +434,15 @@ export default function ExpiringSoonPage() {
                               ) : null}
                               {item.expiryFormatted}
                               <span
-                                className={`ml-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${item.level === "severe"
+                                className={`ml-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  item.level === "severe"
                                     ? "bg-red-100 text-red-700 animate-pulse"
                                     : item.level === "warning"
                                       ? "bg-orange-100 text-orange-700"
                                       : item.level === "notice"
                                         ? "bg-yellow-100 text-yellow-800"
                                         : "bg-blue-50 text-blue-700"
-                                  }`}
+                                }`}
                               >
                                 {item.daysLeft < 0
                                   ? `Quá hạn ${Math.abs(item.daysLeft)} ngày`
@@ -482,10 +493,11 @@ export default function ExpiringSoonPage() {
                               <button
                                 key={pageNumber}
                                 onClick={() => setCurrentPage(pageNumber)}
-                                className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${currentPage === pageNumber
+                                className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${
+                                  currentPage === pageNumber
                                     ? "bg-primary text-white shadow-md shadow-primary/30"
                                     : "text-text-secondary hover:bg-gray-100"
-                                  }`}
+                                }`}
                               >
                                 {pageNumber}
                               </button>
@@ -564,6 +576,7 @@ export default function ExpiringSoonPage() {
             </div>
           </div>
         </div>
+        <Footer />
       </main>
 
       {/* Alert Dialog Bulk Delete */}

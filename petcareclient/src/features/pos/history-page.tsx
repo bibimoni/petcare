@@ -4,7 +4,10 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { getOrders, type OrderListItemDto } from "@/features/pos/api";
+import { useSearch } from "@/lib/search-context";
 
 import { CancelledOrderModal } from "./cancelled-order-modal";
 import { OrderDetailModal } from "./completed-order-modal";
@@ -114,7 +117,7 @@ const PosHistoryPage = () => {
   const [fromDate, setFromDate] = useState<string | null>(null);
   const [toDate, setToDate] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchQuery, setSearchQuery } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
   const [jumpPage, setJumpPage] = useState("");
   const [currentTime, setCurrentTime] = useState(() => new Date());
@@ -135,7 +138,7 @@ const PosHistoryPage = () => {
     setFromDate(null);
     setToDate(null);
     setStatusFilter("");
-    setSearchTerm("");
+    setSearchQuery("");
     setCurrentPage(1);
   };
 
@@ -212,11 +215,11 @@ const PosHistoryPage = () => {
     const orders = ordersResponse?.data ?? [];
     const mapped = orders.map(mapOrderToHistoryTransaction);
 
-    if (!searchTerm.trim()) {
+    if (!searchQuery.trim()) {
       return mapped;
     }
 
-    const keyword = searchTerm.toLowerCase();
+    const keyword = searchQuery.toLowerCase();
 
     return mapped.filter(
       (tx) =>
@@ -225,7 +228,7 @@ const PosHistoryPage = () => {
         tx.customerName.toLowerCase().includes(keyword) ||
         tx.pet.toLowerCase().includes(keyword),
     );
-  }, [ordersResponse?.data, searchTerm]);
+  }, [ordersResponse?.data, searchQuery]);
 
   const getUniqueCustomersCount = (orders: OrderListItemDto[] | undefined) => {
     const set = new Set<number>();
@@ -336,36 +339,9 @@ const PosHistoryPage = () => {
       <Sidebar />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-[#faf7f5]">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-[#f0e6df] bg-[#faf7f5]/90 px-6 backdrop-blur-sm">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#cb8f6a]">
-              POS
-            </p>
-            <h1 className="text-base font-bold text-[#2f231d]">
-              Lịch sử hóa đơn
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[#ecdcd1] bg-white text-[#7a5f50] transition hover:bg-[#f9f0ea]"
-            >
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-red-500" />
-            </button>
-
-            <div className="text-right">
-              <p className="text-xs text-[#9a7a67]">{currentShift.label}</p>
-              <p className="text-sm font-semibold text-[#4a362c]">
-                {currentShift.timeRange}
-              </p>
-            </div>
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="mx-auto flex w-full p-4 flex-col gap-6">
+        <Header />
+        <div className="flex-1 overflow-y-auto p-8">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
             <button
               type="button"
               onClick={() => navigate("/pos")}
@@ -501,9 +477,9 @@ const PosHistoryPage = () => {
                 </span>
                 <input
                   type="text"
-                  value={searchTerm}
+                  value={searchQuery}
                   onChange={(e) => {
-                    setSearchTerm(e.target.value);
+                    setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
                   placeholder="Tìm theo mã hóa đơn hoặc SĐT khách hàng..."
@@ -714,6 +690,7 @@ const PosHistoryPage = () => {
                 )}
               </div>
             </div>
+            <Footer />
           </div>
         </div>
 

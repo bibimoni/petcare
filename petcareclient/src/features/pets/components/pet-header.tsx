@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import AddPetModal from "./add-pet-modal";
@@ -12,7 +13,7 @@ export default function PetHeader({ onCreated }: PetHeaderProps) {
   return (
     <div className="flex justify-between items-center mb-6">
       <div>
-        <h1 className="text-4xl font-bold">Quản lý Thú cưng</h1>
+        <h1 className="text-3xl font-black text-[#2f231d]">Quản lý Thú cưng</h1>
 
         <p className="text-gray-500">
           Theo dõi hồ sơ và tình trạng sức khỏe của các bé thú cưng
@@ -21,9 +22,10 @@ export default function PetHeader({ onCreated }: PetHeaderProps) {
 
       <button
         onClick={() => setOpenModal(true)}
-        className="bg-orange-400 text-white px-6 py-3 rounded-xl"
+        className="flex cursor-pointer items-center gap-2 rounded-full bg-[#f27a4d] px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#e1683b] transition"
       >
-        + Thêm Pet Mới
+        <Plus size={16} />
+        Thêm Pet Mới
       </button>
 
       <AddPetModal

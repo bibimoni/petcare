@@ -1,30 +1,65 @@
-import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
-  Bell,
-  Search,
-  Mail,
-  Settings,
-  Package,
-  AlertTriangle,
-  CalendarX2,
   Ban,
+  Dog,
+  Bell,
+  Plus,
   Clock,
+  Users,
+  Boxes,
+  Search,
+  Package,
+  History,
+  BarChart3,
+  CalendarX2,
+  ShoppingCart,
+  AlertTriangle,
+  LayoutDashboard,
 } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+
+import type { NotificationItem } from "@/features/notifications/api/notifications.api";
+
+import AddCustomerModal from "@/features/customer/components/add-customer-modal";
 import {
   notificationsApi,
-  NotificationStatus,
   NotificationType,
-} from "../../notifications/api/notifications.api";
-import type { NotificationItem } from "../../notifications/api/notifications.api";
-import { toast } from "sonner";
+  NotificationStatus,
+} from "@/features/notifications/api/notifications.api";
+import { useSearch } from "@/lib/search-context";
+
+const DASHBOARD_PAGES = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: <LayoutDashboard size={16} />,
+  },
+  { label: "Nhân viên", href: "/employees", icon: <Users size={16} /> },
+  { label: "Khách hàng", href: "/customers", icon: <Users size={16} /> },
+  { label: "Thú cưng", href: "/pets", icon: <Dog size={16} /> },
+  { label: "POS", href: "/pos", icon: <ShoppingCart size={16} /> },
+  { label: "Kho", href: "/inventory", icon: <Boxes size={16} /> },
+  { label: "Báo cáo", href: "/finance", icon: <BarChart3 size={16} /> },
+  {
+    label: "Nhật ký hệ thống",
+    href: "/audit-logs",
+    icon: <History size={16} />,
+  },
+];
 
 export const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDashboard = location.pathname === "/dashboard";
+  const { searchQuery, setSearchQuery } = useSearch();
 
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const userStr = localStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
@@ -32,7 +67,7 @@ export const Header = () => {
   const fetchNotifications = async () => {
     try {
       const data = await notificationsApi.getNotifications();
-      setNotifications(Array.isArray(data) ? data : data?.data || []);
+      setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Lỗi khi tải thông báo:", error);
     }
@@ -51,6 +86,12 @@ export const Header = () => {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setIsNotificationOpen(false);
+      }
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -75,32 +116,79 @@ export const Header = () => {
     }
   };
 
+  const filteredPages = DASHBOARD_PAGES.filter((page) =>
+    page.label.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md shadow-sm flex justify-between items-center w-full px-6 py-4 border-b border-[#f3ebe7]">
-      {/* Cột trái: Search Bar */}
-      <div className="flex items-center gap-8 flex-1">
-        <div className="relative hidden lg:block w-96">
+      {/* Cột trái: Search Bar & Actions */}
+      <div className="flex items-center gap-6 flex-1 justify-between mr-10">
+        <div className="relative hidden lg:block w-96" ref={searchRef}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9a624c]/60 w-5 h-5" />
           <input
             className="w-full bg-[#fcfaf8] border border-[#f3ebe7] rounded-full py-2.5 pl-10 pr-4 focus:ring-2 focus:ring-[#f7b297]/50 text-sm outline-none text-[#1b110d] placeholder:text-[#9a624c]/60 transition-all"
-            placeholder="Tìm kiếm thông báo, sản phẩm..."
+            placeholder={
+              isDashboard ? "Tìm kiếm trang..." : "Tìm kiếm nội dung trang..."
+            }
             type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setShowSuggestions(true);
+            }}
+            onFocus={() => setShowSuggestions(true)}
           />
+
+          {showSuggestions && searchQuery && isDashboard && (
+            <div className="absolute top-full left-0 w-full mt-2 bg-white rounded-2xl shadow-xl border border-[#f3ebe7] overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="p-2">
+                {filteredPages.length > 0 ? (
+                  filteredPages.map((page) => (
+                    <button
+                      key={page.href}
+                      onClick={() => {
+                        navigate(page.href);
+                        setShowSuggestions(false);
+                        setSearchQuery("");
+                      }}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-[#fcfaf8] rounded-xl transition-all text-sm font-medium text-[#1b110d]"
+                    >
+                      <div className="p-2 rounded-lg bg-orange-50 text-orange-600">
+                        {page.icon}
+                      </div>
+                      {page.label}
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-xs text-[#9a624c] font-medium">
+                    Không tìm thấy trang phù hợp
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
+
+        {isDashboard && (
+          <button
+            onClick={() => setIsAddCustomerOpen(true)}
+            className="flex cursor-pointer items-center gap-2 rounded-full bg-[#f27a4d] px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#e1683b] transition"
+          >
+            <Plus size={18} />
+            <span className="hidden md:inline">Thêm khách hàng</span>
+          </button>
+        )}
       </div>
 
       {/* Cột phải: Actions & Profile */}
       <div className="flex items-center gap-4">
         <div className="flex gap-2 items-center">
-          <button className="p-2.5 rounded-full hover:bg-[#fcfaf8] text-[#9a624c] transition-colors">
-            <Mail className="w-5 h-5" />
-          </button>
-
           {/* NÚT CHUÔNG THÔNG BÁO */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-              className="p-2.5 rounded-full hover:bg-[#fcfaf8] text-[#f7b297] font-bold relative transition-colors active:scale-90"
+              className="p-2.5 rounded-full cursor-pointer hover:bg-[#fcfaf8] text-[#f7b297] font-bold relative transition-colors active:scale-90"
             >
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
@@ -190,7 +278,7 @@ export const Header = () => {
                       setIsNotificationOpen(false);
                       navigate("/notifications");
                     }}
-                    className="w-full py-3 text-xs font-black text-[#f7b297] uppercase tracking-widest hover:bg-white rounded-xl transition-all border border-transparent hover:border-[#f3ebe7] text-center"
+                    className="w-full py-3 cursor-pointer text-xs font-black text-[#f7b297] uppercase tracking-widest hover:bg-white rounded-xl transition-all border border-transparent hover:border-[#f3ebe7] text-center"
                   >
                     Xem tất cả thông báo
                   </button>
@@ -198,22 +286,21 @@ export const Header = () => {
               </div>
             )}
           </div>
-
-          <button className="p-2.5 rounded-full hover:bg-[#fcfaf8] text-[#9a624c] transition-colors">
-            <Settings className="w-5 h-5" />
-          </button>
         </div>
 
         <div className="h-8 w-[1px] bg-[#f3ebe7] mx-2 hidden sm:block"></div>
 
         {/* Profile Section */}
-        <div className="flex items-center gap-3 cursor-pointer group">
+        <div
+          className="flex items-center gap-3 cursor-pointer group"
+          onClick={() => navigate("/profile")}
+        >
           <div className="text-right hidden sm:block">
             <p className="text-sm font-black text-[#1b110d] group-hover:text-[#f7b297] transition-colors">
               {user?.full_name || "Quản trị viên"}
             </p>
             <p className="text-[9px] uppercase tracking-widest text-[#9a624c] font-black">
-              {user?.role_id ? "Store Manager" : "Staff"}
+              {user?.role_id ? "Chủ cửa hàng" : "Nhân viên"}
             </p>
           </div>
           <div className="w-10 h-10 bg-gradient-to-br from-[#f7b297] to-[#e09a80] text-white rounded-full flex items-center justify-center font-black text-lg border-2 border-white shadow-md transition-transform group-active:scale-90">
@@ -221,6 +308,12 @@ export const Header = () => {
           </div>
         </div>
       </div>
+
+      <AddCustomerModal
+        open={isAddCustomerOpen}
+        onOpenChange={setIsAddCustomerOpen}
+        onCreated={() => {}}
+      />
     </header>
   );
 };

@@ -98,8 +98,14 @@ const LIMITED_NAV_ITEMS: NavItem[] = [
 export const Sidebar = ({ userInfo }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isPinned, setIsPinned] = useState(false);
+  const [isPinned, setIsPinned] = useState(() => {
+    return localStorage.getItem("sidebar-pinned") === "true";
+  });
   const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("sidebar-pinned", isPinned.toString());
+  }, [isPinned]);
 
   const isValidInitialData =
     userInfo && !isPromiseLikeUserInfo(userInfo) && userInfo.role !== null;
@@ -166,7 +172,7 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
   const navItemLayoutClass = isExpanded ? "px-4" : "justify-center px-0";
   const footerPaddingClass = isExpanded ? "p-4" : "p-3";
   const toggleButtonClass =
-    "absolute right-0 top-5 z-10 translate-x-1/2 shrink-0 rounded-sm bg-white p-1 text-gray-400 transition-colors hover:bg-gray-50 hover:text-charcoal dark:bg-surface-dark dark:hover:bg-gray-800 dark:hover:text-white";
+    "absolute -right-3 top-7 z-30 h-6 w-6 flex items-center justify-center rounded-full border border-[#f0e6df] bg-white text-[#9a624c] shadow-sm transition-all hover:bg-[#fcfaf8] hover:text-[#f27a4d] hover:scale-110 active:scale-95";
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -181,7 +187,7 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
   if (isLoadingUserInfo) {
     return (
       <aside
-        className={`relative z-20 hidden ${asideWidthClass} flex-col border-r border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-surface-dark lg:flex`}
+        className={`relative z-50 hidden ${asideWidthClass} flex-col border-r border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-surface-dark lg:flex`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -190,6 +196,7 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
           className={toggleButtonClass}
           onClick={toggleSidebarPin}
           type="button"
+          style={{ zIndex: 100 }}
         >
           {isPinned ? (
             <PinOff className="h-4 w-4" />
@@ -212,7 +219,7 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
 
   return (
     <aside
-      className={`relative z-20 hidden ${asideWidthClass} flex-col border-r border-gray-100 bg-white shadow-sm transition-[width] duration-300 dark:border-gray-800 dark:bg-surface-dark lg:flex`}
+      className={`relative z-50 hidden ${asideWidthClass} flex-col border-r border-gray-100 bg-white shadow-sm transition-[width] duration-300 dark:border-gray-800 dark:bg-surface-dark lg:flex`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
