@@ -177,7 +177,7 @@ export class OrdersService {
 
         totalAmount += unitPrice * item.quantity;
       } else {
-        throw new BadRequestException(`Invalid item type: ${item.item_type}`);
+        throw new BadRequestException(`Loại mặt hàng không hợp lệ: ${item.item_type}`);
       }
     }
 
@@ -344,12 +344,12 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException(`Order ${orderId} not found`);
+      throw new NotFoundException(`Không tìm thấy đơn hàng ${orderId}`);
     }
 
     if (order.store_id !== storeId) {
       throw new ForbiddenException(
-        'You do not have permission to view this order',
+        'Bạn không có quyền xem đơn hàng này',
       );
     }
 
@@ -384,12 +384,12 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException(`Order ${orderId} not found`);
+      throw new NotFoundException(`Không tìm thấy đơn hàng ${orderId}`);
     }
 
     if (order.store_id !== storeId) {
       throw new ForbiddenException(
-        'You do not have permission to confirm this order',
+        'Bạn không có quyền xem đơn hàng này',
       );
     }
 
@@ -865,22 +865,22 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException(`Order ${orderId} not found`);
+      throw new NotFoundException(`Không tìm thấy đơn hàng ${orderId}`);
     }
 
     if (order.store_id !== storeId) {
       throw new ForbiddenException(
-        'You do not have permission to cancel this order',
+        'Bạn không có quyền hủy đơn hàng này',
       );
     }
 
     if (order.status === OrderStatus.CANCELLED) {
-      throw new BadRequestException('Order is already cancelled');
+      throw new BadRequestException('Đơn hàng đã được hủy');
     }
 
     if (order.status === OrderStatus.PAID) {
       throw new BadRequestException(
-        'Cannot cancel a paid order. Please request a refund instead.',
+        'Không thể hủy đơn hàng đã thanh toán. Vui lòng yêu cầu hoàn tiền.',
       );
     }
 
@@ -941,7 +941,7 @@ export class OrdersService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error(`Failed to cancel order ${orderId}:`, error);
-      throw new InternalServerErrorException('Failed to cancel order');
+      throw new InternalServerErrorException('Hủy đơn hàng thất bại');
     } finally {
       await queryRunner.release();
     }
@@ -1118,12 +1118,12 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException(`Order ${orderId} not found`);
+      throw new NotFoundException(`Không tìm thấy đơn hàng ${orderId}`);
     }
 
     if (order.store_id !== storeId) {
       throw new ForbiddenException(
-        'You do not have permission to view this order',
+        'Bạn không có quyền xem đơn hàng này',
       );
     }
 
@@ -1136,12 +1136,12 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException(`Order ${orderId} not found`);
+      throw new NotFoundException(`Không tìm thấy đơn hàng ${orderId}`);
     }
 
     if (order.store_id !== storeId) {
       throw new ForbiddenException(
-        'You do not have permission to view this order',
+        'Bạn không có quyền xem đơn hàng này',
       );
     }
 
@@ -1151,7 +1151,7 @@ export class OrdersService {
     });
 
     if (!payment) {
-      throw new NotFoundException('Payment not found for this order');
+      throw new NotFoundException('Không tìm thấy thanh toán cho đơn hàng này');
     }
 
     return payment;
@@ -1174,17 +1174,17 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException(`Order ${orderId} not found`);
+      throw new NotFoundException(`Không tìm thấy đơn hàng ${orderId}`);
     }
 
     if (order.store_id !== storeId) {
       throw new ForbiddenException(
-        'You do not have permission to refund this order',
+        'Bạn không có quyền hoàn tiền đơn hàng này',
       );
     }
 
     if (order.status !== OrderStatus.PAID) {
-      throw new BadRequestException('Only paid orders can be refunded');
+      throw new BadRequestException('Chỉ đơn hàng đã thanh toán mới có thể hoàn tiền');
     }
 
     const payment = await this.paymentsRepository.findOne({
@@ -1192,12 +1192,12 @@ export class OrdersService {
     });
 
     if (!payment) {
-      throw new NotFoundException('No completed payment found for this order');
+      throw new NotFoundException('Không tìm thấy thanh toán hoàn tất cho đơn hàng này');
     }
 
     if (!payment.stripe_charge_id) {
       throw new BadRequestException(
-        'No Stripe charge found for this payment. Manual refund required.',
+        'Không tìm thấy giao dịch Stripe cho thanh toán này. Cần hoàn tiền thủ công.',
       );
     }
 
@@ -1313,7 +1313,7 @@ export class OrdersService {
         err,
       );
       throw new InternalServerErrorException(
-        'Database updated but Stripe refund failed. Please process refund manually.',
+        'Cập nhật cơ sở dữ liệu thành công nhưng hoàn tiền Stripe thất bại. Vui lòng xử lý hoàn tiền thủ công.',
       );
     }
 

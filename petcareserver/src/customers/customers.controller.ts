@@ -172,7 +172,7 @@ export class CustomersController {
   findById(@Param('customerId') customerId: string, @CurrentUser() user: any) {
     const customerIdNum = parseInt(customerId, 10);
     if (isNaN(customerIdNum)) {
-      throw new BadRequestException('ID not valid');
+      throw new BadRequestException('ID không hợp lệ');
     }
     return this.customersService.findById(user.store_id, customerIdNum);
   }
@@ -191,7 +191,7 @@ export class CustomersController {
   })
   findByPhone(@Param('phone') phone: string, @CurrentUser() user: any) {
     if (!phone) {
-      throw new BadRequestException('Phone is required');
+      throw new BadRequestException('Số điện thoại là bắt buộc');
     }
     return this.customersService.findByPhone(user.store_id, phone);
   }

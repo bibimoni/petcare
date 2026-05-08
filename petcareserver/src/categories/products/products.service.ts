@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, Between } from 'typeorm';
 import { Product, ProductStatus } from '../entities/product.entity';
+import { Category } from '../entities/category.entity';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import {
@@ -34,6 +35,9 @@ export class ProductsService {
 
     @InjectRepository(ProductHistory)
     private readonly productHistoryRepository: Repository<ProductHistory>,
+
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
 
     private readonly notificationsService: NotificationsService,
   ) {}
@@ -88,7 +92,7 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException('Không tìm thấy sản phẩm');
     }
     return product;
   }
@@ -105,7 +109,7 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException('Không tìm thấy sản phẩm');
     }
 
     const { cost_price: _cost_price, ...safeProduct } = product;
@@ -142,13 +146,20 @@ export class ProductsService {
       createProductDto.expiry_date &&
       new Date(createProductDto.expiry_date) < new Date()
     ) {
-      throw new BadRequestException('Expiry date cannot be in the past');
+      throw new BadRequestException('Ngày hết hạn không thể trong quá khứ');
     }
 
     if (createProductDto.cost_price >= createProductDto.sell_price) {
       throw new BadRequestException(
-        'Cost price cannot be greater than or equal to sell price',
+        'Giá vốn không thể lớn hơn hoặc bằng giá bán',
       );
+    }
+
+    const category = await this.categoryRepository.findOne({
+      where: { category_id: createProductDto.category_id, store_id: storeId },
+    });
+    if (!category) {
+      throw new NotFoundException('Không tìm thấy danh mục');
     }
 
     const product = this.productRepository.create({
@@ -191,7 +202,7 @@ export class ProductsService {
       updateProductDto.expiry_date &&
       new Date(updateProductDto.expiry_date) < new Date()
     ) {
-      throw new BadRequestException('Expiry date cannot be in the past');
+      throw new BadRequestException('Ngày hết hạn không thể trong quá khứ');
     }
 
     const effectiveCostPrice =
@@ -201,8 +212,17 @@ export class ProductsService {
 
     if (effectiveCostPrice >= effectiveSellPrice) {
       throw new BadRequestException(
-        'Cost price cannot be greater than or equal to sell price',
+        'Giá vốn không thể lớn hơn hoặc bằng giá bán',
       );
+    }
+
+    if (updateProductDto.category_id) {
+      const category = await this.categoryRepository.findOne({
+        where: { category_id: updateProductDto.category_id, store_id: storeId },
+      });
+      if (!category) {
+        throw new NotFoundException('Không tìm thấy danh mục');
+      }
     }
 
     const oldValues = this.extractTrackedFields(product);

@@ -167,8 +167,8 @@ export class NotificationsService {
       store_id: storeId,
       product_id: product.product_id,
       type: NotificationType.LOW_STOCK,
-      title: `Warning: ${product.name} is running low`,
-      message: `The product is running low. Remaining quantity: ${product.stock_quantity}. Click to view details.`,
+      title: `Cảnh báo: ${product.name} sắp hết hàng`,
+      message: `Sản phẩm sắp hết hàng. Số lượng còn lại: ${product.stock_quantity}. Nhấn để xem chi tiết.`,
       product_name: product.name,
     });
     notification.action_url = buildNotificationProductUrl(
@@ -185,8 +185,8 @@ export class NotificationsService {
       store_id: storeId,
       product_id: product.product_id,
       type: NotificationType.OUT_OF_STOCK,
-      title: `Alert: ${product.name} is out of stock`,
-      message: `The product is out of stock. Click to view details.`,
+      title: `Cảnh báo: ${product.name} đã hết hàng`,
+      message: `Sản phẩm đã hết hàng. Nhấn để xem chi tiết.`,
       product_name: product.name,
     });
     notification.action_url = buildNotificationProductUrl(
@@ -203,8 +203,8 @@ export class NotificationsService {
       store_id: storeId,
       product_id: product.product_id,
       type: NotificationType.EXPIRY_WARNING,
-      title: `Warning: ${product.name} is nearing expiry`,
-      message: `The product is approaching its expiry date: ${product.expiry_date.toLocaleDateString()}. Click to view details.`,
+      title: `Cảnh báo: ${product.name} sắp hết hạn`,
+      message: `Sản phẩm sắp đến hạn sử dụng: ${product.expiry_date.toLocaleDateString()}. Nhấn để xem chi tiết.`,
       product_name: product.name,
     });
     notification.action_url = buildNotificationProductUrl(
@@ -221,8 +221,8 @@ export class NotificationsService {
       store_id: storeId,
       product_id: product.product_id,
       type: NotificationType.EXPIRED,
-      title: `Alert: ${product.name} has expired`,
-      message: `The product has expired. Expiry date: ${product.expiry_date.toLocaleDateString()}. Click to view details.`,
+      title: `Cảnh báo: ${product.name} đã hết hạn`,
+      message: `Sản phẩm đã hết hạn. Ngày hết hạn: ${product.expiry_date.toLocaleDateString()}. Nhấn để xem chi tiết.`,
       product_name: product.name,
     });
     notification.action_url = buildNotificationProductUrl(
@@ -262,7 +262,7 @@ export class NotificationsService {
       user_id: dto.userId,
       type: NotificationType.STORE_INVITATION,
       title: `Lời mời tham gia ${dto.storeName}`,
-      message: `Bạn đã được mời tham gia ${dto.storeName} với vai trò ${dto.roleName}. Nhấn để xem chi tiết.`,
+      message: `Bạn được mời tham gia ${dto.storeName} với vai trò ${dto.roleName}`,
       action_url: actionUrl,
     });
 
