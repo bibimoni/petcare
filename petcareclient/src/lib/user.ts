@@ -108,9 +108,9 @@ export const buildSidebarUser = (
   fallback: StoredUser | null = null,
 ): SidebarUser => {
   const storeId = Number(profile?.store_id ?? fallback?.store_id ?? 0);
-  const role =
-    normalizeRole(profile?.role, storeId) ??
-    normalizeRole(fallback?.role, storeId);
+  const role = profile
+    ? normalizeRole(profile.role, storeId)
+    : normalizeRole(fallback?.role, storeId);
 
   return {
     role,
@@ -120,10 +120,10 @@ export const buildSidebarUser = (
     store_id: storeId,
     full_name: String(
       profile?.full_name ??
-        profile?.fullName ??
-        fallback?.full_name ??
-        fallback?.fullName ??
-        "",
+      profile?.fullName ??
+      fallback?.full_name ??
+      fallback?.fullName ??
+      "",
     ),
   };
 };
@@ -132,6 +132,8 @@ export async function getSidebarUser(): Promise<SidebarUser> {
   try {
     const response = await api.get("/users/profile");
     const profile = response.data?.data ?? response.data ?? response;
+
+    setStoredUser(profile);
 
     return buildSidebarUser(profile, getStoredUser());
   } catch {
