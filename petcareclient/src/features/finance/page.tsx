@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { Download, BarChart3 } from "lucide-react";
 
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
@@ -159,9 +160,7 @@ const FinancePage = () => {
               disabled={isFinanceLoading || !financeData}
               className="flex items-center gap-2 bg-orange-400 hover:bg-orange-500 text-white px-6 py-3 rounded-2xl font-bold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className="material-symbols-outlined text-[18px]">
-                download
-              </span>
+              <Download className="w-[18px] h-[18px]" />
               <span>Xuất báo cáo</span>
             </button>
           </div>
@@ -218,9 +217,7 @@ const FinancePage = () => {
             </>
           ) : (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-              <span className="material-symbols-outlined text-6xl mb-4">
-                analytics
-              </span>
+              <BarChart3 className="w-16 h-16 mb-4" />
               <p className="text-lg font-bold">
                 Không có dữ liệu cho khoảng thời gian này
               </p>

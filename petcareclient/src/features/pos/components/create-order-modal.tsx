@@ -1,5 +1,16 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { X, Trash2 } from "lucide-react";
+import {
+  X,
+  Trash2,
+  Search,
+  UserPlus,
+  PawPrint,
+  ChevronDown,
+  Sparkles,
+  Package,
+  Save,
+  ArrowRight
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -159,9 +170,8 @@ export const CreateOrderModal = ({
     <>
       {/* Non-blocking background overlay just for visual transition (optional, removed to allow clicks) */}
       <div
-        className={`fixed right-0 top-0 z-40 h-full w-[400px] flex flex-col border-l border-[#f0e3dc] bg-white shadow-2xl transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed right-0 top-0 z-40 h-full w-[400px] flex flex-col border-l border-[#f0e3dc] bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         <div className="flex items-center justify-between border-b border-[#f0e3dc] px-6 py-4">
           <h2 className="text-xl font-extrabold text-[#2f231d]">Hóa đơn</h2>
@@ -184,9 +194,7 @@ export const CreateOrderModal = ({
             </label>
             <div className="space-y-1">
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#be9477] text-[20px]">
-                  search
-                </span>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#be9477] w-5 h-5" />
                 <input
                   type="text"
                   placeholder="Nhập tên hoặc số điện thoại..."
@@ -203,22 +211,19 @@ export const CreateOrderModal = ({
                   onBlur={() =>
                     setTimeout(() => setIsCustomerDropdownOpen(false), 200)
                   }
-                  className={`w-full rounded-xl border bg-[#fdfaf8] py-2.5 pl-10 pr-10 text-sm outline-none transition focus:ring-2 ${
-                    !isCustomerValid && customerSearchTerm === ""
+                  className={`w-full rounded-xl border bg-[#fdfaf8] py-2.5 pl-10 pr-10 text-sm outline-none transition focus:ring-2 ${!isCustomerValid && customerSearchTerm === ""
                       ? "border-[#ecdcd1] focus:border-[#dcae8c] focus:ring-[#f3d8c4]"
                       : !isCustomerValid
                         ? "border-red-300 focus:border-red-400 focus:ring-red-100"
                         : "border-[#ecdcd1] focus:border-[#dcae8c] focus:ring-[#f3d8c4]"
-                  }`}
+                    }`}
                 />
                 <button
                   type="button"
                   onClick={() => setIsAddCustomerModalOpen(true)}
                   className="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-[#be9477] hover:text-[#2f231d]"
                 >
-                  <span className="material-symbols-outlined text-[20px]">
-                    person_add
-                  </span>
+                  <UserPlus className="w-5 h-5" />
                 </button>
 
                 {isCustomerDropdownOpen && customerSearchTerm && (
@@ -268,19 +273,16 @@ export const CreateOrderModal = ({
             <div className="space-y-1">
               <div className="relative">
                 <div className="pointer-events-none absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#efe5df] text-[#8d6955]">
-                  <span className="material-symbols-outlined text-[18px]">
-                    pets
-                  </span>
+                  <PawPrint className="w-[18px] h-[18px]" />
                 </div>
                 <select
                   value={selectedPetId}
                   onChange={(e) => setSelectedPetId(e.target.value)}
                   disabled={!selectedCustomerId || pets.length === 0}
-                  className={`w-full cursor-pointer appearance-none rounded-xl border bg-[#fdfaf8] py-2.5 pl-12 pr-10 text-sm font-medium outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-                    !isPetValid
+                  className={`w-full cursor-pointer appearance-none rounded-xl border bg-[#fdfaf8] py-2.5 pl-12 pr-10 text-sm font-medium outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${!isPetValid
                       ? "border-red-300 text-red-900 focus:border-red-400 focus:ring-red-100"
                       : "border-[#ecdcd1] text-[#523c30] focus:border-[#dcae8c] focus:ring-[#f3d8c4]"
-                  }`}
+                    }`}
                 >
                   <option value="">
                     {!selectedCustomerId
@@ -297,9 +299,7 @@ export const CreateOrderModal = ({
                     </option>
                   ))}
                 </select>
-                <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#be9477]">
-                  expand_more
-                </span>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#be9477] w-5 h-5" />
               </div>
               {!isPetValid && (
                 <p className="px-1 text-[10px] font-bold text-red-500 uppercase tracking-tight">
@@ -322,9 +322,11 @@ export const CreateOrderModal = ({
                   className="flex gap-4 rounded-xl border border-[#f0e3dc] p-3 shadow-sm"
                 >
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#dcae8c] text-white">
-                    <span className="material-symbols-outlined">
-                      {item.type === "service" ? "spa" : "inventory_2"}
-                    </span>
+                    {item.type === "service" ? (
+                      <Sparkles className="w-6 h-6" />
+                    ) : (
+                      <Package className="w-6 h-6" />
+                    )}
                   </div>
                   <div className="flex flex-1 flex-col justify-between">
                     <div className="flex items-start justify-between">
@@ -402,7 +404,7 @@ export const CreateOrderModal = ({
               disabled={isSavingOrder || !canSubmit}
               className="flex h-14 w-14 cursor-pointer shrink-0 items-center justify-center rounded-xl border-2 border-[#ecdcd1] bg-white text-[#8d6955] hover:bg-[#fdfaf8] transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <span className="material-symbols-outlined">save</span>
+              <Save className="w-6 h-6" />
             </button>
             <button
               type="button"
@@ -411,7 +413,7 @@ export const CreateOrderModal = ({
               className="flex-1 flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#a9e4d1] text-lg font-bold text-[#1f5a4b] hover:bg-[#97dcc6] transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm disabled:shadow-none"
             >
               {isCreatingOrder ? "Đang tạo đơn..." : "Thanh toán"}
-              <span className="material-symbols-outlined">arrow_forward</span>
+              <ArrowRight className="w-5 h-5" />
             </button>
           </div>
         </div>

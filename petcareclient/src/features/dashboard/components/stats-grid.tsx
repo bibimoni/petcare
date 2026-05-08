@@ -1,3 +1,4 @@
+import { PawPrint, Scissors, CircleDollarSign, AlertTriangle } from "lucide-react";
 import { type StatsData } from "../api/dashboard-api";
 import { StatsCard } from "./stats-card";
 
@@ -12,9 +13,9 @@ export const StatsGrid = ({ data }: StatsGridProps) => {
       <StatsCard
         label="Tổng số Pet"
         value={data.total_pets?.count?.toLocaleString() || "0"}
-        icon="pets"
+        icon={<PawPrint className="w-6 h-6" />}
         iconBgColor="bg-orange-600/10 dark:bg-blue-900/30"
-        iconColor="text-orange-600"
+        iconColor="orange-600"
         trend={{
           direction:
             (data.total_pets?.growth_percent ?? 0) >= 0 ? "up" : "down",
@@ -28,9 +29,9 @@ export const StatsGrid = ({ data }: StatsGridProps) => {
         label="Booking hôm nay"
         value={data.today_bookings?.total?.toLocaleString() || "0"}
         suffix="sản phẩm & dịch vụ"
-        icon="content_cut"
+        icon={<Scissors className="w-6 h-6" />}
         iconBgColor="bg-blue-200"
-        iconColor="text-teal-800"
+        iconColor="teal-800"
         trend={{
           direction: "up",
           value: `+${(data.today_bookings?.products || 0) + (data.today_bookings?.services || 0)}`,
@@ -42,9 +43,9 @@ export const StatsGrid = ({ data }: StatsGridProps) => {
       <StatsCard
         label="Doanh thu ngày"
         value={data.today_profit?.revenue?.toLocaleString() || "0"}
-        icon="payments"
+        icon={<CircleDollarSign className="w-6 h-6" />}
         iconBgColor="bg-red-400/20"
-        iconColor="text-primary"
+        iconColor="primary"
         trend={{
           // Cập nhật hướng mũi tên dựa vào giá trị âm/dương
           direction:
@@ -64,9 +65,9 @@ export const StatsGrid = ({ data }: StatsGridProps) => {
           (data.storage_warnings?.out_of_stock || 0)
         }
         suffix="món"
-        icon="warning"
+        icon={<AlertTriangle className="w-6 h-6" />}
         iconBgColor="bg-red-400/40"
-        iconColor="text-amber-600"
+        iconColor="amber-600"
         trend={{
           direction: "down",
           value: "Cần nhập thêm",

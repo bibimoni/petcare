@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -73,9 +74,7 @@ export default function LoginForm() {
           Email
         </label>
         <div className="relative flex items-center">
-          <span className="material-symbols-outlined absolute left-3 text-[#9a624c]">
-            mail
-          </span>
+          <Mail className="absolute left-3 text-[#9a624c] w-5 h-5" />
           <input
             type="email"
             value={email}
@@ -103,9 +102,7 @@ export default function LoginForm() {
           </a>
         </div>
         <div className="relative flex items-center">
-          <span className="material-symbols-outlined absolute left-3 text-[#9a624c]">
-            lock
-          </span>
+          <Lock className="absolute left-3 text-[#9a624c] w-5 h-5" />
           <input
             type={showPassword ? "text" : "password"}
             value={password}
@@ -118,12 +115,11 @@ export default function LoginForm() {
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 text-[#9a624c] hover:text-[#ed5012] transition-colors flex items-center"
           >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: "20px" }}
-            >
-              {showPassword ? "visibility_off" : "visibility"}
-            </span>
+            {showPassword ? (
+              <EyeOff className="w-5 h-5" />
+            ) : (
+              <Eye className="w-5 h-5" />
+            )}
           </button>
         </div>
         {errors.password && (

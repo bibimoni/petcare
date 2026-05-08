@@ -1,3 +1,4 @@
+import { CheckCircle2, ArrowRight } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -94,9 +95,7 @@ const PaymentSuccessPage = () => {
             <section className="overflow-hidden rounded-[2rem] border border-[#f0e3dc] bg-white shadow-[0_20px_60px_rgba(130,92,67,0.12)]">
               <div className="bg-gradient-to-br from-[#1f8c6e] via-[#3ab089] to-[#7ed8b8] px-8 py-10 text-white">
                 <div className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-                  <span className="material-symbols-outlined text-[34px]">
-                    check_circle
-                  </span>
+                  <CheckCircle2 size={34} />
                 </div>
 
                 <h2 className="text-3xl font-black">Thanh toán thành công</h2>
@@ -168,9 +167,7 @@ const PaymentSuccessPage = () => {
                     onClick={handleGoBackNow}
                     className="mt-6 flex cursor-pointer w-full items-center justify-center gap-2 rounded-xl bg-[#f27a4d] px-4 py-3 font-bold text-white transition hover:bg-[#e86c42]"
                   >
-                    <span className="material-symbols-outlined text-[18px]">
-                      arrow_forward
-                    </span>
+                    <ArrowRight size={18} />
                     Đi tới POS ngay
                   </button>
                 </aside>

@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -160,10 +161,8 @@ const SettingsPage = () => {
         <Sidebar />
         <main className="flex flex-1 items-center justify-center bg-[#faf7f5]">
           <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin">
-              <span className="material-symbols-outlined text-4xl text-orange-500">
-                loading
-              </span>
+            <div className="animate-spin text-orange-500">
+              <Loader2 className="h-10 w-10" />
             </div>
           </div>
         </main>
@@ -345,10 +344,8 @@ const SettingsPage = () => {
                 )}
               </div>
             </div>
-
-            {/* Footer */}
-            <Footer />
           </div>
+          <Footer />
         </div>
       </main>
 

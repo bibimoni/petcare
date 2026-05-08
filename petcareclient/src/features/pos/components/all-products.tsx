@@ -1,3 +1,15 @@
+import {
+  ArrowLeft,
+  Sparkles,
+  Package,
+  ChevronLeft,
+  ChevronRight,
+  Bath,
+  Scissors,
+  Stethoscope,
+  Home,
+  PawPrint
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -43,6 +55,14 @@ const getOrderItemPrice = (item: PosService | PosProduct) => {
   }
 
   return Number(item.price.replace(/\D/g, "")) || 0;
+};
+
+const SERVICE_ICON_MAP: Record<string, any> = {
+  shower: Bath,
+  haircut: Scissors,
+  health: Stethoscope,
+  hotel: Home,
+  general: PawPrint,
 };
 
 const AllProductsPage = () => {
@@ -268,9 +288,7 @@ const AllProductsPage = () => {
               onClick={() => navigate("/pos")}
               className="flex w-fit cursor-pointer items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#a07f6b] transition hover:text-[#7f5d47]"
             >
-              <span className="material-symbols-outlined text-[16px]">
-                arrow_back
-              </span>
+              <ArrowLeft className="w-4 h-4" />
               QUAY LẠI
             </button>
 
@@ -286,9 +304,7 @@ const AllProductsPage = () => {
           <section className="mb-10 border-b border-[#eaded6] pb-8">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h3 className="flex items-center gap-2 text-3xl font-extrabold text-[#2f231d]">
-                <span className="material-symbols-outlined text-[#f3ab8d]">
-                  spa
-                </span>
+                <Sparkles className="text-[#f3ab8d] w-8 h-8" />
                 Dịch vụ
               </h3>
 
@@ -298,11 +314,10 @@ const AllProductsPage = () => {
 
                   return (
                     <button
-                      className={`rounded-2xl border cursor-pointer px-4 py-2 text-sm font-semibold transition ${
-                        isActive
-                          ? "border-[#2d1f16] bg-[#1f140f] text-white"
-                          : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
-                      }`}
+                      className={`rounded-2xl border cursor-pointer px-4 py-2 text-sm font-semibold transition ${isActive
+                        ? "border-[#2d1f16] bg-[#1f140f] text-white"
+                        : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
+                        }`}
                       key={tab.id}
                       onClick={() => setSelectedServiceCategory(tab.id)}
                       type="button"
@@ -350,60 +365,61 @@ const AllProductsPage = () => {
                         className={`grid min-w-full gap-4 ${isCreateOrderOpen ? "grid-cols-4" : "grid-cols-5"}`}
                         key={`service-page-${pageIndex + 1}`}
                       >
-                        {serviceItems.map((service, itemIndex) => (
-                          <article
-                            className="rounded-3xl border border-[#f0e3dc] bg-white p-4 shadow-[0_6px_16px_rgba(108,71,42,0.08)]"
-                            key={`${service.id}-${pageIndex}-${itemIndex}`}
-                          >
-                            <div>
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${service.iconTone}`}
-                                >
-                                  <span className="material-symbols-outlined text-[18px]">
-                                    {service.icon}
-                                  </span>
-                                </div>
+                        {serviceItems.map((service, itemIndex) => {
+                          const IconComponent = SERVICE_ICON_MAP[service.icon] || PawPrint;
+                          return (
+                            <article
+                              className="rounded-3xl border border-[#f0e3dc] bg-white p-4 shadow-[0_6px_16px_rgba(108,71,42,0.08)]"
+                              key={`${service.id}-${pageIndex}-${itemIndex}`}
+                            >
+                              <div>
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${service.iconTone}`}
+                                  >
+                                    <IconComponent className="w-5 h-5" />
+                                  </div>
 
-                                <h4 className="min-w-0 flex-1 text-base font-extrabold leading-tight text-[#2f231d]">
-                                  {service.name}
-                                </h4>
+                                  <h4 className="min-w-0 flex-1 text-base font-extrabold leading-tight text-[#2f231d]">
+                                    {service.name}
+                                  </h4>
 
-                                <button
-                                  onClick={() =>
-                                    handleAddItem(service, "service")
-                                  }
-                                  className="flex h-8 w-8 cursor-pointer shrink-0 items-center justify-center rounded-full bg-[#f7f3f1] text-xl text-[#9f7f6b] transition hover:bg-[#efe5df]"
-                                  type="button"
-                                >
-                                  +
-                                </button>
-                              </div>
-
-                              <p className="mt-2 line-clamp-1 text-xs text-[#9f7d67]">
-                                {service.description}
-                              </p>
-
-                              <div className="mt-3 flex items-center justify-between gap-2">
-                                <p className="text-lg font-extrabold text-orange-600/80">
-                                  {service.price}
-                                </p>
-
-                                <div className="flex items-center gap-2">
                                   <button
-                                    className="rounded-full cursor-pointer border border-[#eaded6] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#8d6955] transition hover:bg-[#f8f1ec]"
                                     onClick={() =>
-                                      handleOpenServiceDetail(service)
+                                      handleAddItem(service, "service")
                                     }
+                                    className="flex h-8 w-8 cursor-pointer shrink-0 items-center justify-center rounded-full bg-[#f7f3f1] text-xl text-[#9f7f6b] transition hover:bg-[#efe5df]"
                                     type="button"
                                   >
-                                    Chi tiết
+                                    +
                                   </button>
                                 </div>
+
+                                <p className="mt-2 line-clamp-1 text-xs text-[#9f7d67]">
+                                  {service.description}
+                                </p>
+
+                                <div className="mt-3 flex items-center justify-between gap-2">
+                                  <p className="text-lg font-extrabold text-orange-600/80">
+                                    {service.price}
+                                  </p>
+
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      className="rounded-full cursor-pointer border border-[#eaded6] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#8d6955] transition hover:bg-[#f8f1ec]"
+                                      onClick={() =>
+                                        handleOpenServiceDetail(service)
+                                      }
+                                      type="button"
+                                    >
+                                      Chi tiết
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </article>
-                        ))}
+                            </article>
+                          )
+                        })}
                       </div>
                     ))}
                   </div>
@@ -419,9 +435,7 @@ const AllProductsPage = () => {
                       }
                       type="button"
                     >
-                      <span className="material-symbols-outlined text-[18px]">
-                        chevron_left
-                      </span>
+                      <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-[#eaded6] bg-white text-[#8d6955] transition hover:bg-[#f5ebe5] disabled:cursor-not-allowed disabled:opacity-50"
@@ -433,9 +447,7 @@ const AllProductsPage = () => {
                       }
                       type="button"
                     >
-                      <span className="material-symbols-outlined text-[18px]">
-                        chevron_right
-                      </span>
+                      <ChevronRight className="w-5 h-5" />
                     </button>
                   </div>
                 )}
@@ -446,9 +458,7 @@ const AllProductsPage = () => {
           <section>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h3 className="flex items-center gap-2 text-3xl font-extrabold text-[#2f231d]">
-                <span className="material-symbols-outlined text-[#f3ab8d]">
-                  inventory_2
-                </span>
+                <Package className="text-[#f3ab8d] w-8 h-8" />
                 Sản phẩm
               </h3>
 
@@ -458,11 +468,10 @@ const AllProductsPage = () => {
 
                   return (
                     <button
-                      className={`rounded-2xl cursor-pointer border px-4 py-2 text-sm font-semibold transition ${
-                        isActive
-                          ? "border-[#2d1f16] bg-[#1f140f] text-white"
-                          : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
-                      }`}
+                      className={`rounded-2xl cursor-pointer border px-4 py-2 text-sm font-semibold transition ${isActive
+                        ? "border-[#2d1f16] bg-[#1f140f] text-white"
+                        : "border-[#e8ddd6] bg-white text-[#3b2d25] hover:bg-[#f4eeea]"
+                        }`}
                       key={tab.id}
                       onClick={() => setSelectedProductCategory(tab.id)}
                       type="button"
@@ -567,9 +576,7 @@ const AllProductsPage = () => {
                       }
                       type="button"
                     >
-                      <span className="material-symbols-outlined text-[18px]">
-                        chevron_left
-                      </span>
+                      <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       className="flex h-9 w-9 items-center justify-center rounded-full border border-[#eaded6] bg-white text-[#8d6955] transition hover:bg-[#f5ebe5] disabled:cursor-not-allowed disabled:opacity-50"
@@ -581,9 +588,7 @@ const AllProductsPage = () => {
                       }
                       type="button"
                     >
-                      <span className="material-symbols-outlined text-[18px]">
-                        chevron_right
-                      </span>
+                      <ChevronRight className="w-5 h-5" />
                     </button>
                   </div>
                 )}
@@ -603,13 +608,13 @@ const AllProductsPage = () => {
           service={
             selectedService
               ? {
-                  name: selectedService.name,
-                  description: selectedService.description,
-                  minWeight: selectedService.minWeight,
-                  price: selectedService.rawPrice,
-                  categoryName: selectedServiceCategoryName,
-                  maxWeight: selectedService.maxWeight,
-                }
+                name: selectedService.name,
+                description: selectedService.description,
+                minWeight: selectedService.minWeight,
+                price: selectedService.rawPrice,
+                categoryName: selectedServiceCategoryName,
+                maxWeight: selectedService.maxWeight,
+              }
               : null
           }
         />

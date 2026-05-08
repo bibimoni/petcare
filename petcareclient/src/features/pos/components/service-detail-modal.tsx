@@ -1,3 +1,4 @@
+import { Sparkles } from "lucide-react";
 import {
   Dialog,
   DialogTitle,
@@ -61,7 +62,7 @@ export const ServiceDetailModal = ({
                   Danh mục
                 </p>
                 <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[#f6b494] px-4 py-2 text-sm font-bold text-[#6b3d24]">
-                  <span className="material-symbols-outlined text-xl">spa</span>
+                  <Sparkles className="w-5 h-5" />
                   <span>{service?.categoryName ?? "Khác"}</span>
                 </div>
               </div>

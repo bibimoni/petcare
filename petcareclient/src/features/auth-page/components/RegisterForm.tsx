@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { User, Store, Mail, Phone, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -91,9 +92,7 @@ export default function RegisterForm() {
             Họ và tên
           </span>
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none">
-              person
-            </span>
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
             <input
               type="text"
               name="fullName"
@@ -112,9 +111,7 @@ export default function RegisterForm() {
             Địa chỉ
           </span>
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none">
-              storefront
-            </span>
+            <Store className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
             <input
               type="text"
               name="address"
@@ -137,9 +134,7 @@ export default function RegisterForm() {
             Email
           </span>
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none">
-              mail
-            </span>
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
             <input
               type="email"
               name="email"
@@ -158,9 +153,7 @@ export default function RegisterForm() {
             Số điện thoại
           </span>
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none">
-              call
-            </span>
+            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
             <input
               type="tel"
               name="phone"
@@ -183,9 +176,7 @@ export default function RegisterForm() {
             Mật khẩu
           </span>
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none">
-              lock
-            </span>
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
             <input
               type={showPassword ? "text" : "password"}
               name="password"
@@ -199,9 +190,11 @@ export default function RegisterForm() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
-              <span className="material-symbols-outlined text-xl">
-                {showPassword ? "visibility_off" : "visibility"}
-              </span>
+              {showPassword ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
             </button>
           </div>
           {errors.password && (
@@ -213,9 +206,7 @@ export default function RegisterForm() {
             Xác nhận mật khẩu
           </span>
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none">
-              lock_reset
-            </span>
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
             <input
               type={showConfirmPassword ? "text" : "password"}
               name="confirmPassword"
@@ -229,9 +220,11 @@ export default function RegisterForm() {
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
-              <span className="material-symbols-outlined text-xl">
-                {showConfirmPassword ? "visibility_off" : "visibility"}
-              </span>
+              {showConfirmPassword ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
             </button>
           </div>
           {errors.confirmPassword && (
@@ -291,9 +284,7 @@ export default function RegisterForm() {
         <span className="truncate">
           {loading ? "Đang xử lý..." : "Tạo tài khoản"}
         </span>
-        <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform text-xl">
-          arrow_forward
-        </span>
+        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
       </button>
     </form>
   );

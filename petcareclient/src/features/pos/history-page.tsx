@@ -1,6 +1,15 @@
 /* eslint-disable */
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
+import { 
+  ArrowLeft, 
+  Filter, 
+  PawPrint, 
+  Search, 
+  Download, 
+  ChevronLeft, 
+  ChevronRight 
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { Sidebar } from "@/components/Sidebar";
@@ -347,9 +356,7 @@ const PosHistoryPage = () => {
               onClick={() => navigate("/pos")}
               className="flex w-fit cursor-pointer items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#a07f6b] transition hover:text-[#7f5d47]"
             >
-              <span className="material-symbols-outlined text-[16px]">
-                arrow_back
-              </span>
+              <ArrowLeft className="w-4 h-4" />
               QUAY LẠI
             </button>
 
@@ -418,280 +425,267 @@ const PosHistoryPage = () => {
                     onClick={handleClearFilters}
                     className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-orange-600/80 px-4 text-sm font-bold text-white transition hover:bg-orange-600/60"
                   >
-                    <span className="material-symbols-outlined text-[18px]">
-                      filter_alt
-                    </span>
+                    <Filter className="w-[18px] h-[18px]" />
                     Xoá bộ lọc
                   </button>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="mb-8 grid grid-cols-4 gap-4">
-            <div className="rounded-2xl bg-white p-5 shadow-sm relative overflow-hidden">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
-                TỔNG GIÁ TRỊ HOÁ ĐƠN
-              </p>
-              <p className="mt-2 text-2xl font-black text-[#2f231d]">
-                {formatVND(totalRevenue)}
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-white p-5 shadow-sm relative overflow-hidden">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
-                TỔNG SỐ HÓA ĐƠN
-              </p>
-              <p className="mt-2 text-2xl font-black text-[#2f231d]">
-                {totalOrders}
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-white p-5 shadow-sm relative overflow-hidden">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
-                LƯỢT THÚ CƯNG
-              </p>
-              <p className="mt-2 text-2xl font-black text-[#2f231d]">
-                {uniquePets}
-              </p>
-              <span className="material-symbols-outlined absolute -right-2 -bottom-2 text-[80px] text-[#f7f3f1] opacity-50">
-                pets
-              </span>
-            </div>
-
-            <div className="rounded-2xl bg-[#e6f4f1] p-5 shadow-sm relative overflow-hidden">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#407a68]">
-                LƯỢT KHÁCH HÀNG
-              </p>
-              <p className="mt-2 text-2xl font-black text-[#1e5c4a]">
-                {uniqueCustomers}
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-white p-2 shadow-sm">
-            <div className="flex items-center justify-between p-4">
-              <div className="relative w-[400px]">
-                <span className="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-[#be9477]">
-                  search
-                </span>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  placeholder="Tìm theo mã hóa đơn hoặc SĐT khách hàng..."
-                  className="h-10 w-full rounded-full bg-[#fdfaf8] pl-11 pr-4 text-sm text-[#523c30] outline-none transition focus:ring-1 focus:ring-[#f3d8c4]"
-                />
+            <div className="mb-8 grid grid-cols-4 gap-4">
+              <div className="rounded-2xl bg-white p-5 shadow-sm relative overflow-hidden">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
+                  TỔNG GIÁ TRỊ HOÁ ĐƠN
+                </p>
+                <p className="mt-2 text-2xl font-black text-[#2f231d]">
+                  {formatVND(totalRevenue)}
+                </p>
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleExportExcel}
-                  className="flex h-10 cursor-pointer items-center gap-2 rounded-full bg-[#fdfaf8] px-5 text-sm font-bold text-[#2f231d] transition hover:bg-[#f5ebe5]"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    download
-                  </span>
-                  Xuất Excel
-                </button>
+              <div className="rounded-2xl bg-white p-5 shadow-sm relative overflow-hidden">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
+                  TỔNG SỐ HÓA ĐƠN
+                </p>
+                <p className="mt-2 text-2xl font-black text-[#2f231d]">
+                  {totalOrders}
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-white p-5 shadow-sm relative overflow-hidden">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
+                  LƯỢT THÚ CƯNG
+                </p>
+                <p className="mt-2 text-2xl font-black text-[#2f231d]">
+                  {uniquePets}
+                </p>
+                <PawPrint className="absolute -right-2 -bottom-2 w-20 h-20 text-[#f7f3f1] opacity-50" />
+              </div>
+
+              <div className="rounded-2xl bg-[#e6f4f1] p-5 shadow-sm relative overflow-hidden">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#407a68]">
+                  LƯỢT KHÁCH HÀNG
+                </p>
+                <p className="mt-2 text-2xl font-black text-[#1e5c4a]">
+                  {uniqueCustomers}
+                </p>
               </div>
             </div>
 
-            <div className="overflow-x-auto px-4 pb-4">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-[#f0e6df] text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
-                    <th className="py-4 pr-4">MÃ HÓA ĐƠN</th>
-                    <th className="p-4">KHÁCH HÀNG</th>
-                    <th className="p-4">MẶT HÀNG / DỊCH VỤ</th>
-                    <th className="p-4">TỔNG TIỀN</th>
-                    <th className="p-4">THỜI GIAN</th>
-                    <th className="p-4">TRẠNG THÁI</th>
-                    <th className="py-4 pl-4 text-right"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td
-                        className="py-10 text-center text-sm text-[#9f7d67]"
-                        colSpan={7}
-                      >
-                        Đang tải dữ liệu...
-                      </td>
+            <div className="rounded-2xl bg-white p-2 shadow-sm">
+              <div className="flex items-center justify-between p-4">
+                <div className="relative w-[400px]">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#be9477]" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    placeholder="Tìm theo mã hóa đơn hoặc SĐT khách hàng..."
+                    className="h-10 w-full rounded-full bg-[#fdfaf8] pl-11 pr-4 text-sm text-[#523c30] outline-none transition focus:ring-1 focus:ring-[#f3d8c4]"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleExportExcel}
+                    className="flex h-10 cursor-pointer items-center gap-2 rounded-full bg-[#fdfaf8] px-5 text-sm font-bold text-[#2f231d] transition hover:bg-[#f5ebe5]"
+                  >
+                    <Download className="w-[18px] h-[18px]" />
+                    Xuất Excel
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto px-4 pb-4">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-[#f0e6df] text-[10px] font-bold uppercase tracking-wider text-[#a07f6b]">
+                      <th className="py-4 pr-4">MÃ HÓA ĐƠN</th>
+                      <th className="p-4">KHÁCH HÀNG</th>
+                      <th className="p-4">MẶT HÀNG / DỊCH VỤ</th>
+                      <th className="p-4">TỔNG TIỀN</th>
+                      <th className="p-4">THỜI GIAN</th>
+                      <th className="p-4">TRẠNG THÁI</th>
+                      <th className="py-4 pl-4 text-right"></th>
                     </tr>
-                  ) : transactions.length === 0 ? (
-                    <tr>
-                      <td
-                        className="py-10 text-center text-sm text-[#9f7d67]"
-                        colSpan={7}
-                      >
-                        Không có dữ liệu phù hợp
-                      </td>
-                    </tr>
-                  ) : (
-                    transactions.map((tx) => (
-                      <tr
-                        key={tx.id}
-                        onClick={() => setSelectedTx(tx)}
-                        className="cursor-pointer border-b border-[#f9f5f3] last:border-0 hover:bg-[#fcfafa] transition-colors"
-                      >
-                        <td className="py-4 pr-4 font-black text-[#2f231d]">
-                          {tx.id}
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f5ebe5] text-xs font-bold text-[#967867]">
-                              {tx.customerInitials}
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-[#2f231d]">
-                                {tx.customerName}
-                              </p>
-                              <p className="text-xs text-[#a07f6b]">
-                                {tx.customerPhone}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-2 text-sm text-[#523c30]">
-                            <span className="material-symbols-outlined text-[16px] text-[#c9a793]">
-                              pets
-                            </span>
-                            {tx.pet}
-                          </div>
-                        </td>
-                        <td className="p-4 font-black text-[#2f231d]">
-                          {tx.total}
-                        </td>
-                        <td className="p-4">
-                          <p className="text-sm text-[#2f231d]">{tx.date}</p>
-                          <p className="text-xs text-[#a07f6b]">{tx.time}</p>
-                        </td>
-                        <td className="p-4">
-                          {tx.status === "PAID" && (
-                            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#e6f7f1] px-2.5 py-1 text-[10px] font-bold text-[#1f8c6e]">
-                              <span className="h-1.5 w-1.5 rounded-full bg-[#1f8c6e]" />
-                              Đã thanh toán
-                            </div>
-                          )}
-                          {tx.status === "PENDING" && (
-                            <div className="inline-flex items-center gap-1.5 rounded-full border border-yellow-100 bg-yellow-50 px-2.5 py-1 text-[10px] font-bold text-yellow-600">
-                              <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
-                              Chờ thanh toán
-                            </div>
-                          )}
-                          {tx.status === "REFUNDED" && (
-                            <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-600">
-                              <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                              Đã hoàn tiền
-                            </div>
-                          )}
-                          {tx.status === "CANCELLED" && (
-                            <div className="inline-flex items-center gap-1.5 rounded-full border border-red-100 bg-red-50 px-2.5 py-1 text-[10px] font-bold text-red-600">
-                              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                              Đã hủy
-                            </div>
-                          )}
+                  </thead>
+                  <tbody>
+                    {isLoading ? (
+                      <tr>
+                        <td
+                          className="py-10 text-center text-sm text-[#9f7d67]"
+                          colSpan={7}
+                        >
+                          Đang tải dữ liệu...
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ) : transactions.length === 0 ? (
+                      <tr>
+                        <td
+                          className="py-10 text-center text-sm text-[#9f7d67]"
+                          colSpan={7}
+                        >
+                          Không có dữ liệu phù hợp
+                        </td>
+                      </tr>
+                    ) : (
+                      transactions.map((tx) => (
+                        <tr
+                          key={tx.id}
+                          onClick={() => setSelectedTx(tx)}
+                          className="cursor-pointer border-b border-[#f9f5f3] last:border-0 hover:bg-[#fcfafa] transition-colors"
+                        >
+                          <td className="py-4 pr-4 font-black text-[#2f231d]">
+                            {tx.id}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f5ebe5] text-xs font-bold text-[#967867]">
+                                {tx.customerInitials}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-[#2f231d]">
+                                  {tx.customerName}
+                                </p>
+                                <p className="text-xs text-[#a07f6b]">
+                                  {tx.customerPhone}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2 text-sm text-[#523c30]">
+                              <PawPrint className="w-4 h-4 text-[#c9a793]" />
+                              {tx.pet}
+                            </div>
+                          </td>
+                          <td className="p-4 font-black text-[#2f231d]">
+                            {tx.total}
+                          </td>
+                          <td className="p-4">
+                            <p className="text-sm text-[#2f231d]">{tx.date}</p>
+                            <p className="text-xs text-[#a07f6b]">{tx.time}</p>
+                          </td>
+                          <td className="p-4">
+                            {tx.status === "PAID" && (
+                              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#e6f7f1] px-2.5 py-1 text-[10px] font-bold text-[#1f8c6e]">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#1f8c6e]" />
+                                Đã thanh toán
+                              </div>
+                            )}
+                            {tx.status === "PENDING" && (
+                              <div className="inline-flex items-center gap-1.5 rounded-full border border-yellow-100 bg-yellow-50 px-2.5 py-1 text-[10px] font-bold text-yellow-600">
+                                <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
+                                Chờ thanh toán
+                              </div>
+                            )}
+                            {tx.status === "REFUNDED" && (
+                              <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-600">
+                                <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                                Đã hoàn tiền
+                              </div>
+                            )}
+                            {tx.status === "CANCELLED" && (
+                              <div className="inline-flex items-center gap-1.5 rounded-full border border-red-100 bg-red-50 px-2.5 py-1 text-[10px] font-bold text-red-600">
+                                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                                Đã hủy
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#f0e6df] p-4">
-              <p className="shrink-0 text-xs text-[#a07f6b]">
-                Hiển thị {totalOrders === 0 ? 0 : startItem} -{" "}
-                {totalOrders === 0 ? 0 : endItem} của {totalOrders} hóa đơn
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#f0e6df] p-4">
+                <p className="shrink-0 text-xs text-[#a07f6b]">
+                  Hiển thị {totalOrders === 0 ? 0 : startItem} -{" "}
+                  {totalOrders === 0 ? 0 : endItem} của {totalOrders} hóa đơn
+                </p>
 
-              <div className="flex flex-wrap items-center justify-end gap-1 text-sm font-bold">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCurrentPage((page) => Math.max(1, page - 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <span className="material-symbols-outlined text-[16px]">
-                    chevron_left
-                  </span>
-                </button>
+                <div className="flex flex-wrap items-center justify-end gap-1 text-sm font-bold">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((page) => Math.max(1, page - 1))
+                    }
+                    disabled={currentPage === 1}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
 
-                {paginationItems.map((item, index) => {
-                  if (item === "...") {
+                  {paginationItems.map((item, index) => {
+                    if (item === "...") {
+                      return (
+                        <span
+                          key={`ellipsis-${index}`}
+                          className="flex h-8 w-8 items-center justify-center text-[#a07f6b]"
+                        >
+                          ...
+                        </span>
+                      );
+                    }
                     return (
-                      <span
-                        key={`ellipsis-${index}`}
-                        className="flex h-8 w-8 items-center justify-center text-[#a07f6b]"
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setCurrentPage(item as number)}
+                        className={`flex h-8 w-8 items-center justify-center rounded-full ${item === currentPage ? "bg-[#f5a882] text-white" : "text-[#523c30] hover:bg-[#f5ebe5]"}`}
                       >
-                        ...
-                      </span>
+                        {item}
+                      </button>
                     );
-                  }
-                  return (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => setCurrentPage(item as number)}
-                      className={`flex h-8 w-8 items-center justify-center rounded-full ${item === currentPage ? "bg-[#f5a882] text-white" : "text-[#523c30] hover:bg-[#f5ebe5]"}`}
-                    >
-                      {item}
-                    </button>
-                  );
-                })}
+                  })}
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCurrentPage((page) => Math.min(totalPages, page + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <span className="material-symbols-outlined text-[16px]">
-                    chevron_right
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((page) => Math.min(totalPages, page + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
 
-                {/* Ô nhập số trang để nhảy nhanh (Chỉ hiện khi có quá nhiều trang) */}
-                {totalPages > 7 && (
-                  <div className="ml-2 flex items-center gap-2 border-l border-[#f0e6df] pl-4">
-                    <span className="text-xs font-normal text-[#a07f6b]">
-                      Đến trang:
-                    </span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={totalPages}
-                      value={jumpPage}
-                      onChange={(e) => setJumpPage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          const page = parseInt(jumpPage, 10);
-                          if (!isNaN(page) && page >= 1 && page <= totalPages) {
-                            setCurrentPage(page);
-                            setJumpPage("");
+                  {/* Ô nhập số trang để nhảy nhanh (Chỉ hiện khi có quá nhiều trang) */}
+                  {totalPages > 7 && (
+                    <div className="ml-2 flex items-center gap-2 border-l border-[#f0e6df] pl-4">
+                      <span className="text-xs font-normal text-[#a07f6b]">
+                        Đến trang:
+                      </span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={totalPages}
+                        value={jumpPage}
+                        onChange={(e) => setJumpPage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const page = parseInt(jumpPage, 10);
+                            if (!isNaN(page) && page >= 1 && page <= totalPages) {
+                              setCurrentPage(page);
+                              setJumpPage("");
+                            }
                           }
-                        }
-                      }}
-                      className="h-8 w-14 rounded-md border border-[#ecdcd1] bg-white px-1 text-center text-sm font-normal text-[#523c30] outline-none transition focus:border-[#f5a882] focus:ring-1 focus:ring-[#f5a882]"
-                      placeholder="..."
-                    />
-                  </div>
-                )}
+                        }}
+                        className="h-8 w-14 rounded-md border border-[#ecdcd1] bg-white px-1 text-center text-sm font-normal text-[#523c30] outline-none transition focus:border-[#f5a882] focus:ring-1 focus:ring-[#f5a882]"
+                        placeholder="..."
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            <Footer />
           </div>
+
+          <Footer />
         </div>
 
         <OrderDetailModal

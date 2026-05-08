@@ -1,4 +1,4 @@
-import { Eye, Info } from "lucide-react";
+import { Eye, Info, XCircle, Edit3, PlusCircle } from "lucide-react";
 
 import { getRefInfo, type HistoryEntry } from "../api/audit-logs.api";
 
@@ -41,10 +41,10 @@ export const AuditLogTable = ({
   }
 
   const getIcon = (action: string) => {
-    if (action.includes("CANCEL")) return "cancel";
-    if (action.includes("UPDATE")) return "edit";
-    if (action.includes("CREATE")) return "add_circle";
-    return "info";
+    if (action.includes("CANCEL")) return XCircle;
+    if (action.includes("UPDATE")) return Edit3;
+    if (action.includes("CREATE")) return PlusCircle;
+    return Info;
   };
 
   const getStatusColor = (action: string) => {
@@ -105,9 +105,10 @@ export const AuditLogTable = ({
                     <div
                       className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusColor(entry.action)}`}
                     >
-                      <span className="material-symbols-outlined text-[14px]">
-                        {getIcon(entry.action)}
-                      </span>
+                      {(() => {
+                        const Icon = getIcon(entry.action);
+                        return <Icon size={14} />;
+                      })()}
                       {entry.action}
                     </div>
                   </td>

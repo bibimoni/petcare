@@ -7,6 +7,8 @@ import {
   History,
   PlusCircle,
   ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -209,11 +211,10 @@ export default function AuditLogsPage() {
                   <button
                     key={tab.id}
                     onClick={() => handleTabChange(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
-                      activeTab === tab.id
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id
                         ? "bg-orange-500 text-white shadow-md shadow-orange-200"
                         : "text-gray-500 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     <tab.icon size={16} />
                     {tab.label}
@@ -265,9 +266,7 @@ export default function AuditLogsPage() {
                       disabled={currentPage === 1}
                       className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f3ebe7] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[18px]">
-                        chevron_left
-                      </span>
+                      <ChevronLeft size={18} />
                     </button>
 
                     {paginationItems.map((item, index) => {
@@ -286,11 +285,10 @@ export default function AuditLogsPage() {
                           key={item}
                           type="button"
                           onClick={() => setCurrentPage(item as number)}
-                          className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
-                            item === currentPage
+                          className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${item === currentPage
                               ? "bg-orange-500 text-white shadow-sm"
                               : "text-[#523c30] hover:bg-[#f3ebe7]"
-                          }`}
+                            }`}
                         >
                           {item}
                         </button>
@@ -305,9 +303,7 @@ export default function AuditLogsPage() {
                       disabled={currentPage === totalPages || totalPages === 0}
                       className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f3ebe7] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[18px]">
-                        chevron_right
-                      </span>
+                      <ChevronRight size={18} />
                     </button>
                   </div>
                 </div>

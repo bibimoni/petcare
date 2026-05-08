@@ -1,5 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
-import { Pin, PinOff, CircleUser } from "lucide-react";
+import { 
+  Pin, 
+  PinOff, 
+  CircleUser, 
+  LayoutDashboard, 
+  Users, 
+  PawPrint, 
+  Store, 
+  Package, 
+  UserCog, 
+  Scissors, 
+  BarChart3, 
+  History, 
+  Building2, 
+  Bell, 
+  Settings, 
+  LogOut 
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -94,6 +111,20 @@ const LIMITED_NAV_ITEMS: NavItem[] = [
     href: "/invitations",
   },
 ];
+
+const ICON_MAP: Record<string, any> = {
+  dashboard: LayoutDashboard,
+  employees: UserCog,
+  customers: Users,
+  pets: PawPrint,
+  services: Scissors,
+  pos: Store,
+  inventory: Package,
+  reports: BarChart3,
+  "audit-logs": History,
+  "create-store": Building2,
+  invitations: Bell,
+};
 
 export const Sidebar = ({ userInfo }: SidebarProps) => {
   const navigate = useNavigate();
@@ -249,6 +280,8 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
             (item.href !== "/" &&
               location.pathname.startsWith(`${item.href}/`));
 
+          const IconComponent = ICON_MAP[item.id] || LayoutDashboard;
+
           return (
             <button
               key={item.id}
@@ -261,11 +294,7 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-charcoal dark:hover:text-gray-200"
               }`}
             >
-              <span
-                className={`material-symbols-outlined ${isActive ? "filled" : ""}`}
-              >
-                {item.icon}
-              </span>
+              <IconComponent className="w-5 h-5" />
               {!isCollapsed && <span>{item.label}</span>}
             </button>
           );
@@ -281,7 +310,7 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
           type="button"
           title={isCollapsed ? "Cài đặt" : undefined}
         >
-          <span className="material-symbols-outlined">settings</span>
+          <Settings className="w-5 h-5" />
           {!isCollapsed && <span>Cài đặt</span>}
         </button>
 
@@ -309,9 +338,7 @@ export const Sidebar = ({ userInfo }: SidebarProps) => {
                 title="Đăng xuất"
                 type="button"
               >
-                <span className="material-symbols-outlined text-[20px]">
-                  logout
-                </span>
+                <LogOut className="w-5 h-5" />
               </button>
             </>
           )}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { type ProfitDetailItem } from "../api/finance.api";
 
@@ -122,16 +123,15 @@ export const ProfitDetailsTable = ({
                 </td>
                 <td className="px-4 py-4 text-center">
                   <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold ${
-                      item.status === "PAID" || item.status === "COMPLETED"
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold ${item.status === "PAID" || item.status === "COMPLETED"
                         ? "bg-[#e6f7f1] text-[#1f8c6e] dark:bg-emerald-500/10 dark:text-emerald-400"
                         : "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400"
-                    }`}
+                      }`}
                   >
                     {(item.status === "PAID" ||
                       item.status === "COMPLETED") && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#1f8c6e]" />
-                    )}
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#1f8c6e]" />
+                      )}
                     {item.status === "PAID" || item.status === "COMPLETED"
                       ? "Hoàn thành"
                       : "Chờ XL"}
@@ -156,9 +156,7 @@ export const ProfitDetailsTable = ({
             disabled={currentPage === 1}
             className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5] dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <span className="material-symbols-outlined text-[18px]">
-              chevron_left
-            </span>
+            <ChevronLeft className="w-[18px] h-[18px]" />
           </button>
 
           {paginationItems.map((item, index) => {
@@ -177,11 +175,10 @@ export const ProfitDetailsTable = ({
                 key={item}
                 type="button"
                 onClick={() => onPageChange(item as number)}
-                className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
-                  item === currentPage
+                className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${item === currentPage
                     ? "bg-[#f5a882] text-white shadow-sm"
                     : "text-[#523c30] hover:bg-[#f5ebe5] dark:hover:bg-gray-700"
-                }`}
+                  }`}
               >
                 {item}
               </button>
@@ -194,9 +191,7 @@ export const ProfitDetailsTable = ({
             disabled={currentPage === totalPages}
             className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5] dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <span className="material-symbols-outlined text-[18px]">
-              chevron_right
-            </span>
+            <ChevronRight className="w-[18px] h-[18px]" />
           </button>
 
           {totalPages > 7 && (

@@ -1,5 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
+import { 
+  Store, 
+  ChevronLeft, 
+  ChevronRight, 
+  History, 
+  Bath, 
+  Scissors, 
+  Stethoscope, 
+  Home, 
+  PawPrint 
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { Footer } from "@/components/Footer";
@@ -107,6 +118,14 @@ const mapOrderToHistoryTransaction = (
     time,
     total: formatVND(order.total_amount),
   };
+};
+
+const ICON_MAP: Record<string, any> = {
+  shower: Bath,
+  content_cut: Scissors,
+  medical_services: Stethoscope,
+  home: Home,
+  pets: PawPrint,
 };
 
 const PosPage = () => {
@@ -333,9 +352,7 @@ const PosPage = () => {
             <section className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="flex items-center gap-2 text-2xl font-extrabold text-[#2f231d]">
-                  <span className="material-symbols-outlined text-[#f3ab8d]">
-                    storefront
-                  </span>
+                  <Store className="text-[#f3ab8d] w-6 h-6" />
                   Danh mục sản phẩm & dịch vụ
                 </h3>
 
@@ -421,9 +438,10 @@ const PosPage = () => {
                                       <div
                                         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${service.iconTone}`}
                                       >
-                                        <span className="material-symbols-outlined text-[20px]">
-                                          {service.icon}
-                                        </span>
+                                        {(() => {
+                                          const IconComponent = ICON_MAP[service.icon] || PawPrint;
+                                          return <IconComponent className="w-5 h-5" />;
+                                        })()}
                                       </div>
 
                                       <h4 className="min-w-0 flex-1 text-base font-black leading-tight text-[#2f231d]">
@@ -531,9 +549,7 @@ const PosPage = () => {
                         }}
                         type="button"
                       >
-                        <span className="material-symbols-outlined text-[18px]">
-                          chevron_left
-                        </span>
+                        <ChevronLeft className="w-[18px] h-[18px]" />
                       </button>
                       <button
                         className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-[#eaded6] bg-white text-[#8d6955] transition hover:bg-[#f5ebe5] disabled:cursor-not-allowed disabled:opacity-50"
@@ -552,9 +568,7 @@ const PosPage = () => {
                         }}
                         type="button"
                       >
-                        <span className="material-symbols-outlined text-[18px]">
-                          chevron_right
-                        </span>
+                        <ChevronRight className="w-[18px] h-[18px]" />
                       </button>
                     </div>
                   )}
@@ -565,9 +579,7 @@ const PosPage = () => {
             <section className="overflow-hidden rounded-3xl border border-[#eaded6] bg-white shadow-[0_8px_20px_rgba(108,71,42,0.08)]">
               <div className="flex items-center justify-between border-b border-[#f0e3dc] px-5 py-3">
                 <h3 className="flex items-center gap-2 text-xl font-extrabold text-[#2f231d]">
-                  <span className="material-symbols-outlined text-[#967867]">
-                    history
-                  </span>
+                  <History className="text-[#967867] w-5 h-5" />
                   Giao dịch gần đây
                 </h3>
                 <button

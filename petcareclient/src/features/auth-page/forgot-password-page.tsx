@@ -6,7 +6,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="bg-[#f8f6f6] dark:bg-[#221510] min-h-screen flex flex-col items-center justify-center p-4">
       {/* Centered card */}
-      <div className="w-full max-w-[500px] bg-white dark:bg-[#2a1d18] rounded-2xl shadow-xl p-8 md:p-12 mx-auto">
+      <div className="w-full max-w-xl bg-white dark:bg-[#2a1d18] rounded-2xl shadow-xl p-8 md:p-12 mx-auto">
         {/* Logo Section */}
         <div className="flex items-center justify-center gap-3 mb-8">
           <Logo />

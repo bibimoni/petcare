@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Lock, Eye, EyeOff } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -99,9 +100,7 @@ export default function ResetPasswordForm() {
           Mật khẩu mới
         </label>
         <div className="relative flex items-center">
-          <span className="material-symbols-outlined absolute left-3 text-[#9a624c]">
-            lock
-          </span>
+          <Lock className="absolute left-3 text-[#9a624c] w-5 h-5" />
           <input
             type={showPassword ? "text" : "password"}
             value={newPassword}
@@ -114,12 +113,11 @@ export default function ResetPasswordForm() {
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 text-[#9a624c] hover:text-[#ed5012] transition-colors flex items-center"
           >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: "20px" }}
-            >
-              {showPassword ? "visibility_off" : "visibility"}
-            </span>
+            {showPassword ? (
+              <EyeOff className="w-5 h-5" />
+            ) : (
+              <Eye className="w-5 h-5" />
+            )}
           </button>
         </div>
         {errors.newPassword && (
@@ -133,9 +131,7 @@ export default function ResetPasswordForm() {
           Xác nhận mật khẩu
         </label>
         <div className="relative flex items-center">
-          <span className="material-symbols-outlined absolute left-3 text-[#9a624c]">
-            lock_reset
-          </span>
+          <Lock className="absolute left-3 text-[#9a624c] w-5 h-5" />
           <input
             type={showConfirmPassword ? "text" : "password"}
             value={confirmPassword}
@@ -148,12 +144,11 @@ export default function ResetPasswordForm() {
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             className="absolute right-3 text-[#9a624c] hover:text-[#ed5012] transition-colors flex items-center"
           >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: "20px" }}
-            >
-              {showConfirmPassword ? "visibility_off" : "visibility"}
-            </span>
+            {showConfirmPassword ? (
+              <EyeOff className="w-5 h-5" />
+            ) : (
+              <Eye className="w-5 h-5" />
+            )}
           </button>
         </div>
         {errors.confirmPassword && (

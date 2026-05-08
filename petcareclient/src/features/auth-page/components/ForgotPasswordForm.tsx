@@ -1,3 +1,4 @@
+import { Mail } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -57,9 +58,7 @@ export default function ForgotPasswordForm() {
           Email
         </label>
         <div className="relative flex items-center">
-          <span className="material-symbols-outlined absolute left-3 text-[#9a624c]">
-            mail
-          </span>
+          <Mail className="absolute left-3 text-[#9a624c] h-5 w-5" />
           <input
             type="email"
             value={email}

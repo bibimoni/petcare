@@ -1,5 +1,6 @@
 import { useLocation } from "react-router";
 import { Link } from "react-router-dom";
+import { PawPrint } from "lucide-react";
 
 import { Logo } from "@/components/Logo";
 
@@ -13,7 +14,7 @@ export default function AuthPage() {
 
   return (
     <div className="bg-[#f8f6f6] dark:bg-[#221510] min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-[1200px] h-full min-h-[600px] flex flex-col md:flex-row bg-white dark:bg-[#2a1d18] rounded-2xl shadow-xl overflow-hidden">
+      <div className="w-full max-w-7xl h-full min-h-[600px] flex flex-col md:flex-row bg-white dark:bg-[#2a1d18] rounded-2xl shadow-xl overflow-hidden">
         {/* Left Panel: Login/Register Form */}
         <div className="w-full md:w-1/2 flex flex-col justify-center px-8 md:px-16 py-12 relative">
           {/* Logo Section */}
@@ -79,9 +80,7 @@ export default function AuthPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
           <div className="absolute bottom-12 left-12 right-12 text-white">
             <div className="flex items-center gap-2 mb-3">
-              <span className="material-symbols-outlined text-[#ed5012]">
-                pets
-              </span>
+              <PawPrint className="text-[#ed5012] w-6 h-6" />
               <p className="font-bold text-lg tracking-wider uppercase">
                 Chăm sóc toàn diện
               </p>
