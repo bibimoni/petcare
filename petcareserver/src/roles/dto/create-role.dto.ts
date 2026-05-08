@@ -14,10 +14,10 @@ export class CreateRoleDto {
     example: 'Cashier',
     description: 'Name of the role',
   })
-  @IsString({ message: 'Role name must be a string' })
-  @IsNotEmpty({ message: 'Role name is required' })
-  @MinLength(2, { message: 'Role name must be at least 2 characters long' })
-  @MaxLength(50, { message: 'Role name must not exceed 50 characters' })
+  @IsString({ message: 'Tên vai trò phải là chuỗi' })
+  @IsNotEmpty({ message: 'Tên vai trò là bắt buộc' })
+  @MinLength(2, { message: 'Tên vai trò phải có ít nhất 2 ký tự' })
+  @MaxLength(50, { message: 'Tên vai trò không được vượt quá 50 ký tự' })
   name: string;
 
   @ApiProperty({
@@ -25,9 +25,9 @@ export class CreateRoleDto {
     description: 'Description of the role permissions',
     required: false,
   })
-  @IsString({ message: 'Description must be a string' })
+  @IsString({ message: 'Mô tả phải là chuỗi' })
   @IsOptional()
-  @MaxLength(500, { message: 'Description must not exceed 500 characters' })
+  @MaxLength(500, { message: 'Mô tả không được vượt quá 500 ký tự' })
   description?: string;
 
   @ApiProperty({
@@ -35,8 +35,8 @@ export class CreateRoleDto {
     description: 'Array of permission IDs to assign to this role',
     type: [Number],
   })
-  @IsArray({ message: 'Permissions must be an array' })
-  @IsNumber({}, { each: true, message: 'Each permission must be a number' })
-  @IsNotEmpty({ message: 'At least one permission must be assigned' })
+  @IsArray({ message: 'Quyền phải là một mảng' })
+  @IsNumber({}, { each: true, message: 'Mỗi quyền phải là số' })
+  @IsNotEmpty({ message: 'Phải gán ít nhất một quyền' })
   permission_ids: number[];
 }

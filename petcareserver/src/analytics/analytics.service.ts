@@ -7,6 +7,7 @@ import { OrderDetail } from '../orders/entities/order-detail.entity';
 import { Product } from '../categories/entities/product.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { Notification, NotificationType } from '../notifications/entities/notification.entity';
+import { User } from '../users/entities/user.entity';
 import {
   ActivityReferenceType,
   ActivityType,
@@ -96,6 +97,8 @@ export class AnalyticsService {
     private customerRepository: Repository<Customer>,
     @InjectRepository(Notification)
     private notificationRepository: Repository<Notification>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
   async getDashboard(
@@ -299,18 +302,18 @@ export class AnalyticsService {
       let title: string;
       if (order.status === OrderStatus.CANCELLED) {
         type = ActivityType.ORDER_CANCELLED;
-        title = `Order #${order.order_id} cancelled`;
+        title = `Đơn hàng #${order.order_id} đã hủy`;
       } else if (order.status === OrderStatus.PAID) {
         type = ActivityType.ORDER_PAID;
-        title = `Order #${order.order_id} paid`;
+        title = `Đơn hàng #${order.order_id} đã thanh toán`;
       } else {
         type = ActivityType.ORDER_CREATED;
-        title = `Order #${order.order_id} created`;
+        title = `Tạo đơn hàng #${order.order_id}`;
       }
       activities.push({
         type,
         title,
-        description: `Amount: ${Number(order.total_amount).toLocaleString()}`,
+        description: `Tổng tiền: ${Number(order.total_amount).toLocaleString()}`,
         reference_id: order.order_id,
         reference_type: ActivityReferenceType.ORDER,
         created_at: order.created_at,
@@ -330,8 +333,8 @@ export class AnalyticsService {
     for (const pet of recentPets) {
       activities.push({
         type: ActivityType.PET_ADDED,
-        title: `Pet "${pet.name}" added`,
-        description: `Breed: ${pet.breed || 'Unknown'}`,
+        title: `Thêm thú cưng "${pet.name}"`,
+        description: `Giống: ${pet.breed || 'Không rõ'}`,
         reference_id: pet.pet_id,
         reference_type: ActivityReferenceType.PET,
         created_at: pet.created_at,
@@ -351,8 +354,8 @@ export class AnalyticsService {
     for (const customer of recentCustomers) {
       activities.push({
         type: ActivityType.CUSTOMER_ADDED,
-        title: `Customer "${customer.full_name}" added`,
-        description: `Phone: ${customer.phone}`,
+        title: `Thêm khách hàng "${customer.full_name}"`,
+        description: `SĐT: ${customer.phone}`,
         reference_id: customer.customer_id,
         reference_type: ActivityReferenceType.CUSTOMER,
         created_at: customer.created_at,
@@ -361,6 +364,7 @@ export class AnalyticsService {
 
     const notifQuery = this.notificationRepository
       .createQueryBuilder('notification')
+      .leftJoinAndSelect('notification.user', 'user')
       .orderBy('notification.created_at', 'DESC')
       .limit(limit);
 
@@ -373,6 +377,7 @@ export class AnalyticsService {
       let type: ActivityItem['type'];
       let referenceType: ActivityItem['reference_type'] =
         ActivityReferenceType.PRODUCT;
+      let description = notif.message;
 
       switch (notif.type) {
         case NotificationType.LOW_STOCK:
@@ -388,6 +393,7 @@ export class AnalyticsService {
         case NotificationType.STORE_INVITATION:
           type = ActivityType.STORE_INVITATION;
           referenceType = ActivityReferenceType.NOTIFICATION;
+          description = `Lời mời đã được gửi tới ${notif.user?.full_name ?? 'người dùng'}`;
           break;
         default:
           continue;
@@ -396,7 +402,7 @@ export class AnalyticsService {
       activities.push({
         type,
         title: notif.title,
-        description: notif.message,
+        description,
         reference_id: notif.product_id ?? notif.notification_id,
         reference_type: referenceType,
         created_at: notif.created_at,

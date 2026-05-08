@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Service, ServiceStatus } from '../entities/service.entity';
+import { Category } from '../entities/category.entity';
 import { CreateServiceDto } from '../dto/create-service.dto';
 import { UpdateServiceDto } from '../dto/update-service.dto';
 import {
@@ -31,6 +32,9 @@ export class ServicesService {
 
     @InjectRepository(ServiceHistory)
     private readonly serviceHistoryRepository: Repository<ServiceHistory>,
+
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
   ) {}
 
   async findAll(
@@ -73,7 +77,7 @@ export class ServicesService {
       },
     });
     if (!service) {
-      throw new NotFoundException('Service not found');
+      throw new NotFoundException('Không tìm thấy dịch vụ');
     }
     return service;
   }
@@ -87,10 +91,18 @@ export class ServicesService {
     if (createServiceDto.min_weight && createServiceDto.max_weight) {
       if (createServiceDto.min_weight > createServiceDto.max_weight) {
         throw new BadRequestException(
-          'Minimum weight cannot be greater than maximum weight',
+          'Cân nặng tối thiểu không thể lớn hơn cân nặng tối đa',
         );
       }
     }
+
+    const category = await this.categoryRepository.findOne({
+      where: { category_id: createServiceDto.category_id, store_id: storeID },
+    });
+    if (!category) {
+      throw new NotFoundException('Không tìm thấy danh mục');
+    }
+
     const service = this.serviceRepository.create({
       ...createServiceDto,
       store_id: storeID,
@@ -121,8 +133,17 @@ export class ServicesService {
     if (updateServiceDto.min_weight && updateServiceDto.max_weight) {
       if (updateServiceDto.min_weight > updateServiceDto.max_weight) {
         throw new BadRequestException(
-          'Minimum weight cannot be greater than maximum weight',
+          'Cân nặng tối thiểu không thể lớn hơn cân nặng tối đa',
         );
+      }
+    }
+
+    if (updateServiceDto.category_id) {
+      const category = await this.categoryRepository.findOne({
+        where: { category_id: updateServiceDto.category_id, store_id: storeId },
+      });
+      if (!category) {
+        throw new NotFoundException('Không tìm thấy danh mục');
       }
     }
 

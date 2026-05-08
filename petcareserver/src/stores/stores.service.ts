@@ -261,7 +261,7 @@ export class StoresService {
                 user_id: existingUser.user_id,
                 type: NotificationType.STORE_INVITATION,
                 title: `Lời mời tham gia ${store.name}`,
-                message: `Bạn đã được mời tham gia ${store.name} với vai trò ${role.name}. Nhấn để xem chi tiết.`,
+                message: `Bạn được mời tham gia ${store.name} với vai trò ${role.name}`,
                 action_url: actionUrl,
               },
             );

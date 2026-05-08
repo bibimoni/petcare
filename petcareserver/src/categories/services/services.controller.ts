@@ -112,7 +112,7 @@ export class ServicesController {
   ) {
     const categoryIdNum = parseInt(categoryId, 10);
     if (isNaN(categoryIdNum)) {
-      throw new BadRequestException('Invalid category ID');
+      throw new BadRequestException('ID danh mục không hợp lệ');
     }
     return this.servicesService.getAll(user.store_id, categoryIdNum);
   }
@@ -130,7 +130,7 @@ export class ServicesController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid service ID',
+    description: 'ID dịch vụ không hợp lệ',
   })
   @ApiResponse({
     status: 404,
@@ -142,7 +142,7 @@ export class ServicesController {
   ) {
     const serviceIdNum = parseInt(serviceId, 10);
     if (isNaN(serviceIdNum)) {
-      throw new BadRequestException('Invalid service ID');
+      throw new BadRequestException('ID dịch vụ không hợp lệ');
     }
     return this.servicesService.findByService(user.store_id, serviceIdNum);
   }
@@ -174,7 +174,7 @@ export class ServicesController {
   ) {
     const serviceIdNum = parseInt(serviceId, 10);
     if (isNaN(serviceIdNum)) {
-      throw new BadRequestException('Invalid service ID');
+      throw new BadRequestException('ID dịch vụ không hợp lệ');
     }
     return this.servicesService.updateService(
       user.store_id,
@@ -198,7 +198,7 @@ export class ServicesController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid service ID',
+    description: 'ID dịch vụ không hợp lệ',
   })
   @ApiResponse({
     status: 404,
@@ -210,7 +210,7 @@ export class ServicesController {
   ) {
     const serviceIdNum = parseInt(serviceId, 10);
     if (isNaN(serviceIdNum)) {
-      throw new BadRequestException('Invalid service ID');
+      throw new BadRequestException('ID dịch vụ không hợp lệ');
     }
     return this.servicesService.deleteService(
       user.store_id,

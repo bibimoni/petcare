@@ -141,7 +141,7 @@ export class ProductsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid category ID',
+    description: 'ID danh mục không hợp lệ',
   })
   async geteachProductSum(
     @Param('categoryId') categoryId: string,
@@ -149,7 +149,7 @@ export class ProductsController {
   ) {
     const categoryIdNum = parseInt(categoryId, 10);
     if (isNaN(categoryIdNum)) {
-      throw new BadRequestException('Invalid category ID');
+      throw new BadRequestException('ID danh mục không hợp lệ');
     }
     return this.productsService.geteachProductSum(user.store_id, categoryIdNum);
   }
@@ -198,7 +198,7 @@ export class ProductsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid category ID',
+    description: 'ID danh mục không hợp lệ',
   })
   async getProductsByCategory(
     @Param('categoryId') categoryId: string,
@@ -206,7 +206,7 @@ export class ProductsController {
   ) {
     const categoryIdNum = parseInt(categoryId, 10);
     if (isNaN(categoryIdNum)) {
-      throw new BadRequestException('Invalid category ID');
+      throw new BadRequestException('ID danh mục không hợp lệ');
     }
     return this.productsService.getProductsByCategory(
       user.store_id,
@@ -226,7 +226,7 @@ export class ProductsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid product ID',
+    description: 'ID sản phẩm không hợp lệ',
   })
   @ApiResponse({
     status: 404,
@@ -238,7 +238,7 @@ export class ProductsController {
   ) {
     const productIdNum = parseInt(productId, 10);
     if (isNaN(productIdNum)) {
-      throw new BadRequestException('Invalid product ID');
+      throw new BadRequestException('ID sản phẩm không hợp lệ');
     }
     if (user.permissions.includes(STORE_PERMISSIONS.PRODUCT_MANAGE)) {
       return this.productsService.findByProduct(user.store_id, productIdNum);
@@ -274,7 +274,7 @@ export class ProductsController {
   ) {
     const productIdNum = parseInt(productId, 10);
     if (isNaN(productIdNum)) {
-      throw new BadRequestException('Invalid product ID');
+      throw new BadRequestException('ID sản phẩm không hợp lệ');
     }
     return this.productsService.updateProduct(
       user.store_id,
@@ -307,7 +307,7 @@ export class ProductsController {
   ) {
     const productIdNum = parseInt(productId, 10);
     if (isNaN(productIdNum)) {
-      throw new BadRequestException('Invalid product ID');
+      throw new BadRequestException('ID sản phẩm không hợp lệ');
     }
     return this.productsService.deleteProduct(
       user.store_id,

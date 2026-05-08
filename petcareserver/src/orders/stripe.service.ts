@@ -13,7 +13,7 @@ export class StripeService {
   constructor(private configService: ConfigService) {
     const stripeKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (!stripeKey) {
-      throw new Error('STRIPE_SECRET_KEY is not configured');
+      throw new Error('STRIPE_SECRET_KEY chưa được cấu hình');
     }
     this.stripe = new Stripe(stripeKey, {
       apiVersion: '2026-04-22.dahlia',
@@ -39,7 +39,7 @@ export class StripeService {
     );
     if (!webhookSecret) {
       throw new InternalServerErrorException(
-        'STRIPE_WEBHOOK_SECRET is not configured',
+        'STRIPE_WEBHOOK_SECRET chưa được cấu hình',
       );
     }
     try {
@@ -50,7 +50,7 @@ export class StripeService {
       );
     } catch (error) {
       throw new BadRequestException(
-        `Webhook signature verification failed: ${(error as Error).message}`,
+        `Xác thực chữ ký webhook thất bại: ${(error as Error).message}`,
       );
     }
   }
@@ -78,7 +78,7 @@ export class StripeService {
 
       if (!paymentIntent.client_secret) {
         throw new InternalServerErrorException(
-          'Stripe did not return a client_secret',
+          'Stripe không trả về client_secret',
         );
       }
 
@@ -90,7 +90,7 @@ export class StripeService {
       };
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
-        throw new BadRequestException(`Stripe error: ${error.message}`);
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
       }
       throw error;
     }
@@ -119,8 +119,8 @@ export class StripeService {
             price_data: {
               currency: currency.toLowerCase(),
               product_data: {
-                name: `Order #${orderId}`,
-                description: `Payment for order #${orderId}`,
+                name: `Đơn hàng #${orderId}`,
+                description: `Thanh toán đơn hàng #${orderId}`,
               },
               unit_amount: this.toStripeAmount(amount, currency),
             },
@@ -136,7 +136,7 @@ export class StripeService {
 
       if (!session.url) {
         throw new InternalServerErrorException(
-          'Stripe did not return a checkout URL',
+          'Stripe không trả về URL thanh toán',
         );
       }
 
@@ -153,7 +153,7 @@ export class StripeService {
       };
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
-        throw new BadRequestException(`Stripe error: ${error.message}`);
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
       }
       throw error;
     }
@@ -164,10 +164,10 @@ export class StripeService {
       return await this.stripe.paymentIntents.retrieve(paymentIntentId);
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
-        throw new BadRequestException(`Stripe error: ${error.message}`);
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
       }
       throw new InternalServerErrorException(
-        'Failed to retrieve payment intent',
+        'Lấy thông tin payment intent thất bại',
       );
     }
   }
@@ -177,10 +177,10 @@ export class StripeService {
       return await this.stripe.checkout.sessions.retrieve(sessionId);
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
-        throw new BadRequestException(`Stripe error: ${error.message}`);
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
       }
       throw new InternalServerErrorException(
-        'Failed to retrieve checkout session',
+        'Lấy thông tin checkout session thất bại',
       );
     }
   }
@@ -225,12 +225,12 @@ export class StripeService {
       }
 
       if (paymentIntent.status === 'requires_payment_method') {
-        throw new BadRequestException('Payment method is required');
+        throw new BadRequestException('Yêu cầu phương thức thanh toán');
       }
 
       if (paymentIntent.status === 'requires_action') {
         throw new BadRequestException(
-          'Further action is required to complete payment',
+          'Cần thực hiện thêm bước để hoàn tất thanh toán',
         );
       }
 
@@ -241,7 +241,7 @@ export class StripeService {
       };
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
-        throw new BadRequestException(`Stripe error: ${error.message}`);
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
       }
       throw error;
     }
@@ -259,9 +259,9 @@ export class StripeService {
       await this.stripe.paymentIntents.cancel(paymentIntentId);
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
-        throw new BadRequestException(`Stripe error: ${error.message}`);
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
       }
-      throw new InternalServerErrorException('Failed to cancel payment intent');
+      throw new InternalServerErrorException('Hủy payment intent thất bại');
     }
   }
 
@@ -279,9 +279,9 @@ export class StripeService {
       });
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
-        throw new BadRequestException(`Stripe error: ${error.message}`);
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
       }
-      throw new InternalServerErrorException('Failed to refund charge');
+      throw new InternalServerErrorException('Hoàn tiền thất bại');
     }
   }
 
@@ -290,10 +290,10 @@ export class StripeService {
       return await this.stripe.charges.retrieve(chargeId);
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
-        throw new BadRequestException(`Stripe error: ${error.message}`);
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
       }
       throw new InternalServerErrorException(
-        'Failed to retrieve charge details',
+        'Lấy thông tin giao dịch thất bại',
       );
     }
   }

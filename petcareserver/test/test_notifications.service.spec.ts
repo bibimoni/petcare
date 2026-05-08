@@ -89,7 +89,7 @@ describe('NotificationsService', () => {
         user_id: userId,
         type: NotificationType.STORE_INVITATION,
         title: `Lời mời tham gia ${storeName}`,
-        message: `Bạn đã được mời tham gia ${storeName} với vai trò ${roleName}. Nhấn để xem chi tiết.`,
+        message: `Bạn được mời tham gia ${storeName} với vai trò ${roleName}`,
         action_url: `${frontendUrl}/accept-invitation?token=${invitationToken}`,
       });
       expect(notificationRepository.save).toHaveBeenCalled();
@@ -124,7 +124,7 @@ describe('NotificationsService', () => {
         user_id: userId,
         type: NotificationType.STORE_INVITATION,
         title: `Lời mời tham gia ${storeName}`,
-        message: `Bạn đã được mời tham gia ${storeName} với vai trò ${roleName}. Nhấn để xem chi tiết.`,
+        message: `Bạn được mời tham gia ${storeName} với vai trò ${roleName}`,
         action_url: undefined,
       });
       expect(result.action_url).toBeUndefined();

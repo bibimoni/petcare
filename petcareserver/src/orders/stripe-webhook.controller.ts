@@ -40,13 +40,13 @@ export class StripeWebhookController {
     @Headers('stripe-signature') signature: string,
   ) {
     if (!signature) {
-      throw new BadRequestException('Missing stripe-signature header');
+      throw new BadRequestException('Thiếu header stripe-signature');
     }
 
     const rawBody = req.rawBody;
     if (!rawBody) {
       throw new BadRequestException(
-        'Missing raw body — ensure rawBody:true is set in NestFactory',
+        'Thiếu raw body — hãy đảm bảo rawBody:true được bật trong NestFactory',
       );
     }
 

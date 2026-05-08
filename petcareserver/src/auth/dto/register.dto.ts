@@ -13,8 +13,8 @@ export class RegisterDto {
     example: 'john.doe@example.com',
     description: 'User email address',
   })
-  @IsEmail({}, { message: 'Please provide a valid email address' })
-  @IsNotEmpty({ message: 'Email is required' })
+  @IsEmail({}, { message: 'Vui lòng nhập địa chỉ email hợp lệ' })
+  @IsNotEmpty({ message: 'Email là bắt buộc' })
   email: string;
 
   @ApiProperty({
@@ -22,20 +22,20 @@ export class RegisterDto {
     description: 'User password (min 8 characters)',
     minLength: 8,
   })
-  @IsString({ message: 'Password must be a string' })
-  @IsNotEmpty({ message: 'Password is required' })
-  @MinLength(8, { message: 'Password must be at least 8 characters long' })
-  @MaxLength(128, { message: 'Password must not exceed 128 characters' })
+  @IsString({ message: 'Mật khẩu phải là chuỗi' })
+  @IsNotEmpty({ message: 'Mật khẩu là bắt buộc' })
+  @MinLength(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' })
+  @MaxLength(128, { message: 'Mật khẩu không được vượt quá 128 ký tự' })
   password: string;
 
   @ApiProperty({
     example: 'John Doe',
     description: 'User full name',
   })
-  @IsString({ message: 'Full name must be a string' })
-  @IsNotEmpty({ message: 'Full name is required' })
-  @MinLength(2, { message: 'Full name must be at least 2 characters long' })
-  @MaxLength(100, { message: 'Full name must not exceed 100 characters' })
+  @IsString({ message: 'Họ tên phải là chuỗi' })
+  @IsNotEmpty({ message: 'Họ tên là bắt buộc' })
+  @MinLength(2, { message: 'Họ tên phải có ít nhất 2 ký tự' })
+  @MaxLength(100, { message: 'Họ tên không được vượt quá 100 ký tự' })
   full_name: string;
 
   @ApiProperty({
@@ -43,7 +43,7 @@ export class RegisterDto {
     description: 'User phone number',
     required: false,
   })
-  @IsString({ message: 'Phone number must be a string' })
+  @IsString({ message: 'Số điện thoại phải là chuỗi' })
   @IsOptional()
   phone?: string;
 
@@ -52,7 +52,7 @@ export class RegisterDto {
     description: 'User address',
     required: false,
   })
-  @IsString({ message: 'Address must be a string' })
+  @IsString({ message: 'Địa chỉ phải là chuỗi' })
   @IsOptional()
   address?: string;
 }
