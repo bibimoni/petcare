@@ -39,6 +39,7 @@ import ServicesPage from "./features/service/components/service-page";
 import SettingsPage from "./features/settings/page";
 import CreateStorePage from "./features/store/create-store-page";
 import TermAndServicePage from "./features/term-and-service/page";
+import NotificationsPage from "./features/notifications/notifications-page";
 import { queryClient } from "./lib/query-client";
 
 function PetProfileWrapper() {
@@ -135,6 +136,14 @@ createRoot(document.getElementById("root")!).render(
             element={
               <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <ExpiringSoonPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <NotificationsPage />
               </RoleRoute>
             }
           />
