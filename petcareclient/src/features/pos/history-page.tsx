@@ -1,6 +1,5 @@
-/* eslint-disable */
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowLeft,
   Filter,
