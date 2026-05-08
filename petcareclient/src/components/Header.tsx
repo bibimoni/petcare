@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   LayoutDashboard,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useRef, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -27,6 +28,7 @@ import {
   NotificationStatus,
 } from "@/features/notifications/api/notifications.api";
 import { useSearch } from "@/lib/search-context";
+import { getSidebarUser } from "@/lib/user";
 
 const DASHBOARD_PAGES = [
   {
@@ -61,8 +63,11 @@ export const Header = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const userStr = localStorage.getItem("user");
-  const user = userStr ? JSON.parse(userStr) : null;
+  const { data: user } = useQuery({
+    queryKey: ["sidebar-user"],
+    queryFn: getSidebarUser,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const fetchNotifications = async () => {
     try {
@@ -300,7 +305,11 @@ export const Header = () => {
               {user?.full_name || "Quản trị viên"}
             </p>
             <p className="text-[9px] uppercase tracking-widest text-[#9a624c] font-black">
-              {user?.role_id ? "Chủ cửa hàng" : "Nhân viên"}
+              {(!user || !user.role?.name)
+                ? "Người dùng"
+                : user.role.name.toUpperCase() === "ADMIN"
+                  ? "Chủ cửa hàng"
+                  : "Nhân viên"}
             </p>
           </div>
           <div className="w-10 h-10 bg-gradient-to-br from-[#f7b297] to-[#e09a80] text-white rounded-full flex items-center justify-center font-black text-lg border-2 border-white shadow-md transition-transform group-active:scale-90">
