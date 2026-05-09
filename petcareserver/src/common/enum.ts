@@ -72,6 +72,18 @@ export enum ActivityType {
   STORE_INVITATION = 'STORE_INVITATION',
 }
 
+export const ActivityTypeLabel: Record<ActivityType, string> = {
+  [ActivityType.ORDER_CREATED]: 'Đơn hàng đã tạo',
+  [ActivityType.ORDER_CANCELLED]: 'Đơn hàng đã hủy',
+  [ActivityType.ORDER_PAID]: 'Đơn hàng đã thanh toán',
+  [ActivityType.PET_ADDED]: 'Thêm thú cưng',
+  [ActivityType.CUSTOMER_ADDED]: 'Thêm khách hàng',
+  [ActivityType.LOW_STOCK]: 'Sắp hết hàng',
+  [ActivityType.OUT_OF_STOCK]: 'Hết hàng',
+  [ActivityType.PRODUCT_EXPIRED]: 'Sản phẩm hết hạn',
+  [ActivityType.STORE_INVITATION]: 'Lời mời cửa hàng',
+};
+
 export enum ActivityReferenceType {
   ORDER = 'order',
   PET = 'pet',
