@@ -163,7 +163,7 @@ export const RefundedOrderModal = ({
                     </div>
                   </div>
 
-                  <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                  {order.order_details[0].pet && (<div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
                     <div className="absolute top-0 right-0 w-20 h-20 bg-[#f7b297]/5 rounded-bl-full -mr-4 -mt-4 group-hover:bg-[#f7b297]/10 transition-colors"></div>
                     <div className="flex items-start justify-between relative z-10 mb-3">
                       <div className="flex items-center gap-3">
@@ -192,7 +192,7 @@ export const RefundedOrderModal = ({
                         <span>{order.order_details[0].pet?.notes}</span>
                       </div>
                     </div>
-                  </div>
+                  </div>)}
 
                   {/* Lý do hoàn tiền */}
                   <div className="bg-white p-5 rounded-2xl border border-[#f3ebe7] shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
