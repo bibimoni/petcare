@@ -173,7 +173,7 @@ export function InventoryTable({
     } catch (error: any) {
       toast.error(
         "Lỗi xóa sản phẩm: " +
-          (error.response?.data?.message || "Không xác định"),
+        (error.response?.data?.message || "Không xác định"),
       );
     } finally {
       setIsUpdating(false);
@@ -243,9 +243,11 @@ export function InventoryTable({
                   <TableHead className="p-4 text-xs font-semibold text-text-secondary uppercase text-right">
                     Giá bán
                   </TableHead>
-                  <TableHead className="p-4 text-xs font-semibold text-text-secondary uppercase text-center">
-                    Thao tác
-                  </TableHead>
+                  {isAdmin && (
+                    <TableHead className="p-4 text-xs font-semibold text-text-secondary uppercase text-center">
+                      Thao tác
+                    </TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody className="text-sm">
@@ -257,13 +259,12 @@ export function InventoryTable({
                   return (
                     <TableRow
                       key={product.product_id}
-                      className={`group hover:bg-gray-50 transition-colors ${
-                        status === "Sắp hết"
-                          ? "bg-[#fffde7]/60 border-l-4 border-l-yellow-400"
-                          : status === "Hết hàng"
-                            ? "bg-red-50/50 border-l-4 border-l-red-400"
-                            : ""
-                      }`}
+                      className={`group hover:bg-gray-50 transition-colors ${status === "Sắp hết"
+                        ? "bg-[#fffde7]/60 border-l-4 border-l-yellow-400"
+                        : status === "Hết hàng"
+                          ? "bg-red-50/50 border-l-4 border-l-red-400"
+                          : ""
+                        }`}
                     >
                       <TableCell className="p-4">
                         <Avatar className="size-10 rounded-lg border border-gray-200">
@@ -314,8 +315,8 @@ export function InventoryTable({
                       <TableCell className="p-4 text-sm">
                         {product.expiry_date
                           ? new Date(product.expiry_date).toLocaleDateString(
-                              "vi-VN",
-                            )
+                            "vi-VN",
+                          )
                           : "-"}
                       </TableCell>
                       {isAdmin && (
@@ -326,16 +327,16 @@ export function InventoryTable({
                       <TableCell className="p-4 text-right font-bold text-text-primary">
                         {Number(product.sell_price || 0).toLocaleString()}đ
                       </TableCell>
-                      <TableCell className="p-4 text-center">
-                        {isAdmin && (
+                      {isAdmin && (
+                        <TableCell className="p-4 text-center">
                           <button
                             onClick={() => openEditModal(product)}
                             className="text-gray-400 hover:text-primary transition-colors p-1.5 rounded-full hover:bg-primary/10"
                           >
                             <Edit3 size={18} />
                           </button>
-                        )}
-                      </TableCell>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
@@ -378,11 +379,10 @@ export function InventoryTable({
                         <button
                           key={pageNumber}
                           onClick={() => setCurrentPage(pageNumber)}
-                          className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${
-                            currentPage === pageNumber
-                              ? "bg-primary text-white shadow-md shadow-primary/30"
-                              : "text-text-secondary hover:bg-gray-100"
-                          }`}
+                          className={`w-9 h-9 rounded-lg font-bold text-sm transition-all ${currentPage === pageNumber
+                            ? "bg-primary text-white shadow-md shadow-primary/30"
+                            : "text-text-secondary hover:bg-gray-100"
+                            }`}
                         >
                           {pageNumber}
                         </button>
