@@ -62,7 +62,7 @@ export interface DashboardResponse {
 }
 
 export interface ActivityItem {
-  type: ActivityType;
+  type: string;
   title: string;
   description: string;
   reference_id: number;

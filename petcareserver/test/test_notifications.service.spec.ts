@@ -30,6 +30,8 @@ describe('NotificationsService', () => {
     action_url: 'http://localhost:3000/accept-invitation?token=test-token',
     created_at: new Date(),
     updated_at: new Date(),
+    type_label: 'Lời mời cửa hàng',
+    setTypeLabel: jest.fn(),
   };
 
   beforeEach(async () => {
