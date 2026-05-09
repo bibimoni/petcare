@@ -11,6 +11,7 @@ import { User } from '../users/entities/user.entity';
 import {
   ActivityReferenceType,
   ActivityType,
+  ActivityTypeLabel,
   CategoryType,
   OrderStatus,
 } from '../common/enum';
@@ -298,7 +299,7 @@ export class AnalyticsService {
 
     const recentOrders = await orderQuery.getMany();
     for (const order of recentOrders) {
-      let type: ActivityItem['type'];
+      let type: ActivityType;
       let title: string;
       if (order.status === OrderStatus.CANCELLED) {
         type = ActivityType.ORDER_CANCELLED;
@@ -311,7 +312,7 @@ export class AnalyticsService {
         title = `Tạo đơn hàng #${order.order_id}`;
       }
       activities.push({
-        type,
+        type: ActivityTypeLabel[type],
         title,
         description: `Tổng tiền: ${Number(order.total_amount).toLocaleString()}`,
         reference_id: order.order_id,
@@ -332,7 +333,7 @@ export class AnalyticsService {
     const recentPets = await petQuery.getMany();
     for (const pet of recentPets) {
       activities.push({
-        type: ActivityType.PET_ADDED,
+        type: ActivityTypeLabel[ActivityType.PET_ADDED],
         title: `Thêm thú cưng "${pet.name}"`,
         description: `Giống: ${pet.breed || 'Không rõ'}`,
         reference_id: pet.pet_id,
@@ -353,7 +354,7 @@ export class AnalyticsService {
     const recentCustomers = await customerQuery.getMany();
     for (const customer of recentCustomers) {
       activities.push({
-        type: ActivityType.CUSTOMER_ADDED,
+        type: ActivityTypeLabel[ActivityType.CUSTOMER_ADDED],
         title: `Thêm khách hàng "${customer.full_name}"`,
         description: `SĐT: ${customer.phone}`,
         reference_id: customer.customer_id,
@@ -374,7 +375,7 @@ export class AnalyticsService {
 
     const recentNotifications = await notifQuery.getMany();
     for (const notif of recentNotifications) {
-      let type: ActivityItem['type'];
+      let type: ActivityType;
       let referenceType: ActivityItem['reference_type'] =
         ActivityReferenceType.PRODUCT;
       let description = notif.message;
@@ -400,7 +401,7 @@ export class AnalyticsService {
       }
 
       activities.push({
-        type,
+        type: ActivityTypeLabel[type],
         title: notif.title,
         description,
         reference_id: notif.product_id ?? notif.notification_id,

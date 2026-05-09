@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  AfterLoad,
 } from 'typeorm';
 import { Store } from '../../stores/entities/store.entity';
 import { Product } from '../../categories/entities/product.entity';
@@ -95,4 +96,11 @@ export class Notification {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  type_label: string;
+
+  @AfterLoad()
+  setTypeLabel() {
+    this.type_label = NotificationTypeLabel[this.type] ?? this.type;
+  }
 }
