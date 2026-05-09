@@ -696,7 +696,7 @@ describe('OrdersService - Audit Logging', () => {
           store_id: 10,
           action: OrderHistoryAction.REFUNDED,
           new_values: expect.objectContaining({
-            cancel_reason: 'Refunded via Stripe',
+            cancel_reason: 'Hoàn tiền qua Stripe',
           }),
         }),
       );

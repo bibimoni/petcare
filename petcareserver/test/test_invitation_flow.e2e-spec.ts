@@ -317,7 +317,7 @@ describe('Invitation Flow (e2e)', () => {
       const notification = await notificationRepository.findOne({
         where: {
           user_id: user2Id,
-          type: 'STORE_INVITATION' as any,
+          type: 'Lời mời cửa hàng' as any,
         },
       });
 
@@ -334,7 +334,7 @@ describe('Invitation Flow (e2e)', () => {
 
       expect(response.body.length).toBeGreaterThan(0);
       expect(response.body[0].user_id).toBe(user2Id);
-      expect(response.body[0].type).toBe('STORE_INVITATION');
+      expect(response.body[0].type).toBe('Lời mời cửa hàng');
       expect(response.body[0].title).toContain(storeData.name);
     });
 

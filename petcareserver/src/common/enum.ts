@@ -61,15 +61,15 @@ export enum InStoreFilter {
 }
 
 export enum ActivityType {
-  ORDER_CREATED = 'ORDER_CREATED',
-  ORDER_CANCELLED = 'ORDER_CANCELLED',
-  ORDER_PAID = 'ORDER_PAID',
-  PET_ADDED = 'PET_ADDED',
-  CUSTOMER_ADDED = 'CUSTOMER_ADDED',
-  LOW_STOCK = 'LOW_STOCK',
-  OUT_OF_STOCK = 'OUT_OF_STOCK',
-  PRODUCT_EXPIRED = 'PRODUCT_EXPIRED',
-  STORE_INVITATION = 'STORE_INVITATION',
+  ORDER_CREATED = 'Đơn hàng đã tạo',
+  ORDER_CANCELLED = 'Đơn hàng đã hủy',
+  ORDER_PAID = 'Đơn hàng đã thanh toán',
+  PET_ADDED = 'Thêm thú cưng',
+  CUSTOMER_ADDED = 'Thêm khách hàng',
+  LOW_STOCK = 'Sắp hết hàng',
+  OUT_OF_STOCK = 'Hết hàng',
+  PRODUCT_EXPIRED = 'Sản phẩm hết hạn',
+  STORE_INVITATION = 'Lời mời cửa hàng',
 }
 
 export enum ActivityReferenceType {

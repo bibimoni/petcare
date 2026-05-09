@@ -127,13 +127,13 @@ export class OrdersService {
 
         if (!product) {
           throw new NotFoundException(
-            `Product ${item.item_id} not found in this store`,
+            `Không tìm thấy sản phẩm ${item.item_id} trong cửa hàng`,
           );
         }
 
         if (product.stock_quantity < item.quantity) {
           throw new BadRequestException(
-            `Insufficient stock for product "${product.name}". Available: ${product.stock_quantity}`,
+            `Không đủ tồn kho cho sản phẩm "${product.name}". Còn lại: ${product.stock_quantity}`,
           );
         }
 
@@ -159,7 +159,7 @@ export class OrdersService {
 
         if (!service) {
           throw new NotFoundException(
-            `Service ${item.item_id} not found in this store`,
+            `Không tìm thấy dịch vụ ${item.item_id} trong cửa hàng`,
           );
         }
 
@@ -220,7 +220,7 @@ export class OrdersService {
 
           if (updateResult.affected === 0) {
             throw new BadRequestException(
-              `Stock changed concurrently for product ${payload.product_id}. Please retry.`,
+              `Tồn kho thay đổi đồng thời cho sản phẩm ${payload.product_id}. Vui lòng thử lại.`,
             );
           }
         }
@@ -248,7 +248,7 @@ export class OrdersService {
 
     if (!completeOrder) {
       throw new InternalServerErrorException(
-        'Failed to retrieve created order',
+        'Không thể lấy thông tin đơn hàng đã tạo',
       );
     }
 
@@ -597,7 +597,7 @@ export class OrdersService {
         error,
       );
       throw new InternalServerErrorException(
-        'Failed to process payment webhook',
+        'Xử lý webhook thanh toán thất bại',
       );
     } finally {
       await queryRunner.release();
@@ -678,7 +678,7 @@ export class OrdersService {
         error,
       );
       throw new InternalServerErrorException(
-        'Failed to process checkout webhook',
+        'Xử lý webhook thanh toán thất bại',
       );
     } finally {
       await queryRunner.release();
@@ -766,7 +766,7 @@ export class OrdersService {
 
       await queryRunner.manager.update(Order, payment.order_id, {
         status: OrderStatus.CANCELLED,
-        cancel_reason: 'Refunded via Stripe',
+          cancel_reason: 'Hoàn tiền qua Stripe',
       });
 
       webhookOrderDetails = await queryRunner.manager.find(OrderDetail, {
@@ -799,7 +799,7 @@ export class OrdersService {
         error,
       );
       throw new InternalServerErrorException(
-        'Failed to process refund webhook',
+        'Xử lý webhook hoàn tiền thất bại',
       );
     } finally {
       await queryRunner.release();
@@ -819,7 +819,7 @@ export class OrdersService {
         old_values: { status: OrderStatus.PAID },
         new_values: {
           status: OrderStatus.CANCELLED,
-          cancel_reason: 'Refunded via Stripe',
+        cancel_reason: 'Hoàn tiền qua Stripe',
         },
       });
 
@@ -921,7 +921,7 @@ export class OrdersService {
 
       if (pendingPayment) {
         pendingPayment.status = PaymentStatus.FAILED;
-        pendingPayment.error_message = 'Order cancelled by user/staff';
+        pendingPayment.error_message = 'Đơn hàng bị hủy bởi người dùng/nhân viên';
         await queryRunner.manager.save(Payment, pendingPayment);
       }
 
@@ -1250,7 +1250,7 @@ export class OrdersService {
         error,
       );
       throw new InternalServerErrorException(
-        'Failed to process refund in database.',
+        'Xử lý hoàn tiền trong cơ sở dữ liệu thất bại.',
       );
     } finally {
       await queryRunner.release();

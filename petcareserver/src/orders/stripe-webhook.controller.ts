@@ -73,7 +73,7 @@ export class StripeWebhookController {
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object as any;
         const errorMessage =
-          paymentIntent.last_payment_error?.message ?? 'Payment failed';
+          paymentIntent.last_payment_error?.message ?? 'Thanh toán thất bại';
         await this.ordersService.handlePaymentIntentFailed(
           paymentIntent.id,
           errorMessage,
