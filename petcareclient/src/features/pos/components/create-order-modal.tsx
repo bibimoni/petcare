@@ -28,7 +28,7 @@ interface CreateOrderModalProps {
   onClose: () => void;
   onRemoveItem: (cartKey: string) => void;
   onUpdateQuantity: (
-    id: string,
+    cartKey: string,
     delta: number,
     type: "service" | "product",
   ) => void;
@@ -170,9 +170,8 @@ export const CreateOrderModal = ({
     <>
       {/* Non-blocking background overlay just for visual transition (optional, removed to allow clicks) */}
       <div
-        className={`fixed right-0 top-0 z-40 h-full w-[400px] flex flex-col border-l border-[#f0e3dc] bg-white shadow-2xl transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed right-0 top-0 z-40 h-full w-[400px] flex flex-col border-l border-[#f0e3dc] bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         <div className="flex items-center justify-between border-b border-[#f0e3dc] px-6 py-4">
           <h2 className="text-xl font-extrabold text-[#2f231d]">Hóa đơn</h2>
@@ -212,13 +211,12 @@ export const CreateOrderModal = ({
                   onBlur={() =>
                     setTimeout(() => setIsCustomerDropdownOpen(false), 200)
                   }
-                  className={`w-full rounded-xl border bg-[#fdfaf8] py-2.5 pl-10 pr-10 text-sm outline-none transition focus:ring-2 ${
-                    !isCustomerValid && customerSearchTerm === ""
+                  className={`w-full rounded-xl border bg-[#fdfaf8] py-2.5 pl-10 pr-10 text-sm outline-none transition focus:ring-2 ${!isCustomerValid && customerSearchTerm === ""
                       ? "border-[#ecdcd1] focus:border-[#dcae8c] focus:ring-[#f3d8c4]"
                       : !isCustomerValid
                         ? "border-red-300 focus:border-red-400 focus:ring-red-100"
                         : "border-[#ecdcd1] focus:border-[#dcae8c] focus:ring-[#f3d8c4]"
-                  }`}
+                    }`}
                 />
                 <button
                   type="button"
@@ -281,11 +279,10 @@ export const CreateOrderModal = ({
                   value={selectedPetId}
                   onChange={(e) => setSelectedPetId(e.target.value)}
                   disabled={!selectedCustomerId || pets.length === 0}
-                  className={`w-full cursor-pointer appearance-none rounded-xl border bg-[#fdfaf8] py-2.5 pl-12 pr-10 text-sm font-medium outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-                    !isPetValid
+                  className={`w-full cursor-pointer appearance-none rounded-xl border bg-[#fdfaf8] py-2.5 pl-12 pr-10 text-sm font-medium outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${!isPetValid
                       ? "border-red-300 text-red-900 focus:border-red-400 focus:ring-red-100"
                       : "border-[#ecdcd1] text-[#523c30] focus:border-[#dcae8c] focus:ring-[#f3d8c4]"
-                  }`}
+                    }`}
                 >
                   <option value="">
                     {!selectedCustomerId
@@ -321,7 +318,7 @@ export const CreateOrderModal = ({
             ) : (
               items.map((item) => (
                 <div
-                  key={item.id}
+                  key={item.cartKey}
                   className="flex gap-4 rounded-xl border border-[#f0e3dc] p-3 shadow-sm"
                 >
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#dcae8c] text-white">
@@ -352,7 +349,7 @@ export const CreateOrderModal = ({
                         <button
                           className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-[#8d6955] hover:bg-[#efe5df] transition"
                           onClick={() =>
-                            onUpdateQuantity(item.id, -1, item.type)
+                            onUpdateQuantity(item.cartKey, -1, item.type)
                           }
                         >
                           -
@@ -363,7 +360,7 @@ export const CreateOrderModal = ({
                         <button
                           className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-[#8d6955] hover:bg-[#efe5df] transition"
                           onClick={() =>
-                            onUpdateQuantity(item.id, 1, item.type)
+                            onUpdateQuantity(item.cartKey, 1, item.type)
                           }
                         >
                           +

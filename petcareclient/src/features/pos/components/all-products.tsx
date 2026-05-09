@@ -239,16 +239,15 @@ const AllProductsPage = () => {
     });
     setIsCreateOrderOpen(true);
   };
-
   const handleUpdateQuantity = (
-    id: string,
+    cartKey: string,
     delta: number,
     type: "service" | "product",
   ) => {
     setOrderItems((prev) =>
       prev
         .map((item) => {
-          if ((item.cartKey ?? item.id) === id && item.type === type) {
+          if (item.cartKey === cartKey && item.type === type) {
             const newQuantity = Math.max(0, item.quantity + delta);
             return { ...item, quantity: newQuantity };
           }
