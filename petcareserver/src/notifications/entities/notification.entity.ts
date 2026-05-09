@@ -12,12 +12,20 @@ import { Product } from '../../categories/entities/product.entity';
 import { User } from '../../users/entities/user.entity';
 
 export enum NotificationType {
-  LOW_STOCK = 'Sắp hết hàng',
-  EXPIRY_WARNING = 'Sắp hết hạn',
-  EXPIRED = 'Hết hạn',
-  OUT_OF_STOCK = 'Hết hàng',
-  STORE_INVITATION = 'Lời mời cửa hàng',
+  LOW_STOCK = 'LOW_STOCK',
+  EXPIRY_WARNING = 'EXPIRY_WARNING',
+  EXPIRED = 'EXPIRED',
+  OUT_OF_STOCK = 'OUT_OF_STOCK',
+  STORE_INVITATION = 'STORE_INVITATION',
 }
+
+export const NotificationTypeLabel: Record<NotificationType, string> = {
+  [NotificationType.LOW_STOCK]: 'Sắp hết hàng',
+  [NotificationType.EXPIRY_WARNING]: 'Sắp hết hạn',
+  [NotificationType.EXPIRED]: 'Hết hạn',
+  [NotificationType.OUT_OF_STOCK]: 'Hết hàng',
+  [NotificationType.STORE_INVITATION]: 'Lời mời cửa hàng',
+};
 
 export enum NotificationStatus {
   UNREAD = 'UNREAD',
