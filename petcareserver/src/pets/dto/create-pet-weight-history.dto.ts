@@ -6,7 +6,7 @@ export class CreatePetWeightHistoryDto {
     example: 12.5,
     description: 'Pet weight in kilograms',
   })
-  @IsNotEmpty({ message: 'Weight is required' })
+  @IsNotEmpty({ message: 'Cân nặng là bắt buộc' })
   @IsNumber()
   weight: number;
 

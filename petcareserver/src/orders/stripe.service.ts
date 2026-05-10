@@ -1,0 +1,300 @@
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import Stripe from 'stripe';
+
+@Injectable()
+export class StripeService {
+  private stripe: InstanceType<typeof Stripe>;
+
+  constructor(private configService: ConfigService) {
+    const stripeKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+    if (!stripeKey) {
+      throw new Error('STRIPE_SECRET_KEY chưa được cấu hình');
+    }
+    this.stripe = new Stripe(stripeKey, {
+      apiVersion: '2026-04-22.dahlia',
+    });
+  }
+
+  private toStripeAmount(amount: number, currency: string): number {
+    return currency.toLowerCase() === 'vnd'
+      ? Math.round(amount)
+      : Math.round(amount * 100);
+  }
+
+  fromStripeAmount(stripeAmount: number, currency: string): number {
+    return currency.toLowerCase() === 'vnd' ? stripeAmount : stripeAmount / 100;
+  }
+
+  constructWebhookEvent(
+    rawBody: Buffer,
+    signature: string,
+  ): ReturnType<typeof this.stripe.webhooks.constructEvent> {
+    const webhookSecret = this.configService.get<string>(
+      'STRIPE_WEBHOOK_SECRET',
+    );
+    if (!webhookSecret) {
+      throw new InternalServerErrorException(
+        'STRIPE_WEBHOOK_SECRET chưa được cấu hình',
+      );
+    }
+    try {
+      return this.stripe.webhooks.constructEvent(
+        rawBody,
+        signature,
+        webhookSecret,
+      );
+    } catch (error) {
+      throw new BadRequestException(
+        `Xác thực chữ ký webhook thất bại: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  async createPaymentIntent(
+    orderId: number,
+    amount: number,
+    currency: string = 'vnd',
+    description?: string,
+  ): Promise<{
+    client_secret: string;
+    payment_intent_id: string;
+    amount: number;
+    currency: string;
+  }> {
+    try {
+      const paymentIntent = await this.stripe.paymentIntents.create({
+        amount: this.toStripeAmount(amount, currency),
+        currency: currency.toLowerCase(),
+        description: description || `Order #${orderId} payment`,
+        metadata: {
+          order_id: orderId.toString(),
+        },
+      });
+
+      if (!paymentIntent.client_secret) {
+        throw new InternalServerErrorException(
+          'Stripe không trả về client_secret',
+        );
+      }
+
+      return {
+        client_secret: paymentIntent.client_secret,
+        payment_intent_id: paymentIntent.id,
+        amount,
+        currency,
+      };
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeError) {
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Create a Stripe Checkout Session — redirects customer to Stripe-hosted payment page.
+   */
+  async createCheckoutSession(
+    orderId: number,
+    amount: number,
+    currency: string = 'vnd',
+    successUrl: string,
+    cancelUrl: string,
+  ): Promise<{
+    checkout_url: string;
+    session_id: string;
+    payment_intent_id: string | null;
+  }> {
+    try {
+      const session = await this.stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        mode: 'payment',
+        line_items: [
+          {
+            price_data: {
+              currency: currency.toLowerCase(),
+              product_data: {
+                name: `Đơn hàng #${orderId}`,
+                description: `Thanh toán đơn hàng #${orderId}`,
+              },
+              unit_amount: this.toStripeAmount(amount, currency),
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          order_id: orderId.toString(),
+        },
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      });
+
+      if (!session.url) {
+        throw new InternalServerErrorException(
+          'Stripe không trả về URL thanh toán',
+        );
+      }
+
+      // payment_intent may be null initially (set after customer pays)
+      const paymentIntentId =
+        typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : (session.payment_intent?.id ?? null);
+
+      return {
+        checkout_url: session.url,
+        session_id: session.id,
+        payment_intent_id: paymentIntentId,
+      };
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeError) {
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  async retrievePaymentIntent(paymentIntentId: string) {
+    try {
+      return await this.stripe.paymentIntents.retrieve(paymentIntentId);
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeError) {
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
+      }
+      throw new InternalServerErrorException(
+        'Lấy thông tin payment intent thất bại',
+      );
+    }
+  }
+
+  async retrieveCheckoutSession(sessionId: string) {
+    try {
+      return await this.stripe.checkout.sessions.retrieve(sessionId);
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeError) {
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
+      }
+      throw new InternalServerErrorException(
+        'Lấy thông tin checkout session thất bại',
+      );
+    }
+  }
+
+  async confirmPaymentIntent(paymentIntentId: string): Promise<
+    | {
+        success: true;
+        status: string;
+        payment_intent_id: string;
+        charge_id: string | null;
+        amount: number;
+      }
+    | {
+        success: false;
+        status: string;
+        payment_intent_id: string;
+      }
+  > {
+    try {
+      const paymentIntent =
+        await this.stripe.paymentIntents.retrieve(paymentIntentId);
+
+      if (paymentIntent.status === 'succeeded') {
+        const latestCharge = paymentIntent.latest_charge;
+        const chargeId =
+          latestCharge === null
+            ? null
+            : typeof latestCharge === 'string'
+              ? latestCharge
+              : latestCharge.id;
+
+        return {
+          success: true,
+          status: paymentIntent.status,
+          payment_intent_id: paymentIntent.id,
+          charge_id: chargeId,
+          amount: this.fromStripeAmount(
+            paymentIntent.amount,
+            paymentIntent.currency,
+          ),
+        };
+      }
+
+      if (paymentIntent.status === 'requires_payment_method') {
+        throw new BadRequestException('Yêu cầu phương thức thanh toán');
+      }
+
+      if (paymentIntent.status === 'requires_action') {
+        throw new BadRequestException(
+          'Cần thực hiện thêm bước để hoàn tất thanh toán',
+        );
+      }
+
+      return {
+        success: false,
+        status: paymentIntent.status,
+        payment_intent_id: paymentIntent.id,
+      };
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeError) {
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  async cancelPaymentIntent(paymentIntentId: string): Promise<void> {
+    try {
+      const intent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
+
+      // Không cancel nếu đã ở trạng thái terminal
+      if (intent.status === 'succeeded' || intent.status === 'canceled') {
+        return;
+      }
+
+      await this.stripe.paymentIntents.cancel(paymentIntentId);
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeError) {
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
+      }
+      throw new InternalServerErrorException('Hủy payment intent thất bại');
+    }
+  }
+
+  async refundCharge(
+    chargeId: string,
+    currency: string,
+    amount?: number,
+  ): Promise<any> {
+    try {
+      return await this.stripe.refunds.create({
+        charge: chargeId,
+        ...(amount !== undefined
+          ? { amount: this.toStripeAmount(amount, currency) }
+          : {}),
+      });
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeError) {
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
+      }
+      throw new InternalServerErrorException('Hoàn tiền thất bại');
+    }
+  }
+
+  async getChargeDetails(chargeId: string) {
+    try {
+      return await this.stripe.charges.retrieve(chargeId);
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeError) {
+        throw new BadRequestException(`Lỗi Stripe: ${error.message}`);
+      }
+      throw new InternalServerErrorException(
+        'Lấy thông tin giao dịch thất bại',
+      );
+    }
+  }
+}

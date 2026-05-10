@@ -12,6 +12,7 @@ import {
   Patch,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from '../dto/create-product.dto';
@@ -20,12 +21,20 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
+  ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { CurrentUser, PermissionsGuard, RequirePermissions } from 'src/common';
+import {
+  CurrentUser,
+  PermissionsGuard,
+  RequirePermissions,
+  isSuperAdmin,
+} from 'src/common';
 import { STORE_PERMISSIONS } from 'src/common/permissions';
 import { UpdateProductDto } from '../dto/update-product.dto';
+import { ProductStatus } from '../entities/product.entity';
 
 @ApiTags('Products Management')
 @Controller({ path: '/products', version: '1' })
@@ -33,6 +42,33 @@ import { UpdateProductDto } from '../dto/update-product.dto';
 @ApiBearerAuth()
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
+
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.PRODUCT_VIEW)
+  @ApiOperation({ summary: 'Get all products with optional filters' })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'category_id', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: ProductStatus })
+  @ApiQuery({ name: 'low_stock', required: false, type: Boolean })
+  async getAllProducts(
+    @CurrentUser() user: any,
+    @Query('search') search?: string,
+    @Query('category_id') category_id?: string,
+    @Query('status') status?: ProductStatus,
+    @Query('low_stock') low_stock?: string,
+  ) {
+    const admin = isSuperAdmin(user);
+    const storeId = admin ? null : user.store_id;
+    const categoryIdNum = category_id ? parseInt(category_id, 10) : undefined;
+    return this.productsService.findAll(storeId, admin, {
+      search,
+      category_id:
+        categoryIdNum && !isNaN(categoryIdNum) ? categoryIdNum : undefined,
+      status,
+      low_stock: low_stock === 'true',
+    });
+  }
 
   @Get('/alerts')
   @HttpCode(HttpStatus.OK)
@@ -105,7 +141,7 @@ export class ProductsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid category ID',
+    description: 'ID danh mục không hợp lệ',
   })
   async geteachProductSum(
     @Param('categoryId') categoryId: string,
@@ -113,7 +149,7 @@ export class ProductsController {
   ) {
     const categoryIdNum = parseInt(categoryId, 10);
     if (isNaN(categoryIdNum)) {
-      throw new BadRequestException('Invalid category ID');
+      throw new BadRequestException('ID danh mục không hợp lệ');
     }
     return this.productsService.geteachProductSum(user.store_id, categoryIdNum);
   }
@@ -143,6 +179,8 @@ export class ProductsController {
       user.store_id,
       createProductDto,
       expiryWarningDays,
+      user.user_id,
+      user.full_name,
     );
   }
 
@@ -160,7 +198,7 @@ export class ProductsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid category ID',
+    description: 'ID danh mục không hợp lệ',
   })
   async getProductsByCategory(
     @Param('categoryId') categoryId: string,
@@ -168,7 +206,7 @@ export class ProductsController {
   ) {
     const categoryIdNum = parseInt(categoryId, 10);
     if (isNaN(categoryIdNum)) {
-      throw new BadRequestException('Invalid category ID');
+      throw new BadRequestException('ID danh mục không hợp lệ');
     }
     return this.productsService.getProductsByCategory(
       user.store_id,
@@ -188,7 +226,7 @@ export class ProductsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid product ID',
+    description: 'ID sản phẩm không hợp lệ',
   })
   @ApiResponse({
     status: 404,
@@ -200,7 +238,7 @@ export class ProductsController {
   ) {
     const productIdNum = parseInt(productId, 10);
     if (isNaN(productIdNum)) {
-      throw new BadRequestException('Invalid product ID');
+      throw new BadRequestException('ID sản phẩm không hợp lệ');
     }
     if (user.permissions.includes(STORE_PERMISSIONS.PRODUCT_MANAGE)) {
       return this.productsService.findByProduct(user.store_id, productIdNum);
@@ -236,13 +274,15 @@ export class ProductsController {
   ) {
     const productIdNum = parseInt(productId, 10);
     if (isNaN(productIdNum)) {
-      throw new BadRequestException('Invalid product ID');
+      throw new BadRequestException('ID sản phẩm không hợp lệ');
     }
     return this.productsService.updateProduct(
       user.store_id,
       productIdNum,
       updateProductDto,
       expiryWarningDays,
+      user.user_id,
+      user.full_name,
     );
   }
 
@@ -267,8 +307,34 @@ export class ProductsController {
   ) {
     const productIdNum = parseInt(productId, 10);
     if (isNaN(productIdNum)) {
-      throw new BadRequestException('Invalid product ID');
+      throw new BadRequestException('ID sản phẩm không hợp lệ');
     }
-    return this.productsService.deleteProduct(user.store_id, productIdNum);
+    return this.productsService.deleteProduct(
+      user.store_id,
+      productIdNum,
+      user.user_id,
+      user.full_name,
+    );
+  }
+
+  @Get('/:productId/history')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.PRODUCT_VIEW)
+  @ApiOperation({
+    summary: 'Get product audit history',
+    description:
+      'Retrieves the change history for a specific product (create, update, delete events)',
+  })
+  @ApiParam({ name: 'productId', type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Product history retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Product not found' })
+  getHistory(
+    @Param('productId', ParseIntPipe) productId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.productsService.getHistory(user.store_id, productId);
   }
 }
