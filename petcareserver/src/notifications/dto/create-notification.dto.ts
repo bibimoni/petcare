@@ -5,14 +5,14 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateNotificationDto {
   @ApiProperty({
     example: 1,
-    description: 'ID of the store associated with the notification',
+    description: 'ID của cửa hàng liên quan đến thông báo',
   })
   @IsNumber()
   store_id: number;
 
   @ApiProperty({
     example: 1,
-    description: 'ID of the product associated with the notification',
+    description: 'ID của sản phẩm liên quan đến thông báo',
   })
   @IsOptional()
   @IsNumber()
@@ -20,28 +20,28 @@ export class CreateNotificationDto {
 
   @ApiProperty({
     example: NotificationType.LOW_STOCK,
-    description: 'Type of the notification',
+    description: 'Loại thông báo',
   })
   @IsEnum(NotificationType)
   type: NotificationType;
 
   @ApiProperty({
-    example: 'Low Stock Alert',
-    description: 'Title of the notification',
+    example: 'Cảnh báo tồn kho',
+    description: 'Tiêu đề thông báo',
   })
   @IsString()
   title: string;
 
   @ApiProperty({
-    example: 'The stock level for Product A is running low.',
-    description: 'Message of the notification',
+    example: 'Mức tồn kho cho Sản phẩm A đang thấp.',
+    description: 'Nội dung thông báo',
   })
   @IsString()
   message: string;
 
   @ApiProperty({
-    example: 'Product A',
-    description: 'Name of the product associated with the notification',
+    example: 'Sản phẩm A',
+    description: 'Tên sản phẩm liên quan đến thông báo',
   })
   @IsString()
   @IsOptional()
@@ -49,7 +49,7 @@ export class CreateNotificationDto {
 
   @ApiProperty({
     example: 'https://example.com/product/1',
-    description: 'Optional URL for more details about the notification',
+    description: 'Đường dẫn xem chi tiết thông báo',
   })
   @IsString()
   @IsOptional()
@@ -57,7 +57,7 @@ export class CreateNotificationDto {
 
   @ApiProperty({
     example: 1,
-    description: 'ID of the user for user-specific notifications',
+    description: 'ID của người dùng cho thông báo cá nhân',
   })
   @IsNumber()
   @IsOptional()

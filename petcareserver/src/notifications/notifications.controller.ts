@@ -20,17 +20,17 @@ import {
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { PermissionsGuard } from 'src/common/guards/permissions.guard';
 import { CurrentUser, JwtAuthGuard } from 'src/common';
 import { MarkMultipleAsReadDto } from './dto/mark-tuple-notification.req';
 
 @ApiTags('Notifications')
 @Controller({ path: 'notifications', version: '1' })
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
@@ -123,6 +123,7 @@ export class NotificationsController {
     status: 200,
     description: 'Notifications marked as read successfully',
   })
+  @ApiBody({ type: MarkMultipleAsReadDto })
   async markMultipleAsRead(
     @CurrentUser() user: any,
     @Body() body: MarkMultipleAsReadDto,

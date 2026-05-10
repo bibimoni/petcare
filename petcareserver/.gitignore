@@ -46,6 +46,8 @@ lerna-debug.log*
 .temp
 .tmp
 
+analytics-dashboard.html
+
 # Runtime data
 pids
 *.pid

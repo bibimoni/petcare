@@ -20,6 +20,11 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { Invitation } from './entities/invitation.entity';
+import { CustomerHistory } from '../customers/entities/customer-history.entity';
+import { ProductHistory } from '../categories/entities/product-history.entity';
+import { ServiceHistory } from '../categories/entities/service-history.entity';
+import { OrderHistory } from '../orders/entities/order-history.entity';
+import { RoleHistory } from '../roles/entities/role-history.entity';
 import {
   UserStatus,
   StoreStatus,
@@ -51,6 +56,16 @@ export class StoresService {
     private permissionRepository: Repository<Permission>,
     @InjectRepository(Invitation)
     private invitationRepository: Repository<Invitation>,
+    @InjectRepository(CustomerHistory)
+    private customerHistoryRepository: Repository<CustomerHistory>,
+    @InjectRepository(ProductHistory)
+    private productHistoryRepository: Repository<ProductHistory>,
+    @InjectRepository(ServiceHistory)
+    private serviceHistoryRepository: Repository<ServiceHistory>,
+    @InjectRepository(OrderHistory)
+    private orderHistoryRepository: Repository<OrderHistory>,
+    @InjectRepository(RoleHistory)
+    private roleHistoryRepository: Repository<RoleHistory>,
     private readonly mailService: MailService,
     @Inject(forwardRef(() => NotificationScheduler))
     private readonly notificationScheduler: NotificationScheduler,
@@ -89,9 +104,12 @@ export class StoresService {
       notification_cron: createStoreDto.notification_cron ?? null,
     });
 
-    const savedStore = (await this.storeRepository.save(store)) as Store;
+    const savedStore = await this.storeRepository.save(store);
 
-    this.notificationScheduler.registerStoreJob(savedStore.id, savedStore.notification_cron);
+    this.notificationScheduler.registerStoreJob(
+      savedStore.id,
+      savedStore.notification_cron,
+    );
 
     let adminRole = await this.roleRepository.findOne({
       where: { name: 'ADMIN', store_id: savedStore.id },
@@ -106,7 +124,7 @@ export class StoresService {
         is_system_role: false,
       });
 
-      adminRole = (await this.roleRepository.save(newAdminRole)) as Role;
+      adminRole = await this.roleRepository.save(newAdminRole);
 
       const storePermissions = await this.permissionRepository.find({
         where: { scope: PermissionScope.STORE },
@@ -125,6 +143,7 @@ export class StoresService {
     await this.userRepository.update(currentUserId, {
       store_id: savedStore.id,
       role_id: adminRole.id,
+      last_active_at: new Date(),
     });
 
     return {
@@ -139,20 +158,29 @@ export class StoresService {
     };
   }
 
+  private async validateStoreMembership(
+    storeId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    if (isSuperAdmin) return;
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
+    if (!currentUser || currentUser.store_id !== storeId) {
+      throw new ForbiddenException(
+        'Bạn không có quyền thực hiện thao tác này trên cửa hàng',
+      );
+    }
+  }
+
   async inviteStaff(
     storeId: number,
     inviteStaffDto: InviteStaffDto,
     currentUserId: number,
+    isSuperAdmin: boolean = false,
   ) {
-    const currentUser = await this.userRepository.findOne({
-      where: { user_id: currentUserId },
-    });
-
-    if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException(
-        'Bạn không có quyền mời nhân viên vào cửa hàng này',
-      );
-    }
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
 
     const store = await this.storeRepository.findOne({
       where: { id: storeId },
@@ -226,14 +254,17 @@ export class StoresService {
               this.configService.get<string>('FRONTEND_URL') || '';
             const actionUrl = buildInvitationUrl(frontendUrl, token);
 
-            const notification = transactionalEntityManager.create(Notification, {
-              store_id: storeId,
-              user_id: existingUser.user_id,
-              type: NotificationType.STORE_INVITATION,
-              title: `Lời mời tham gia ${store.name}`,
-              message: `Bạn đã được mời tham gia ${store.name} với vai trò ${role.name}. Nhấn để xem chi tiết.`,
-              action_url: actionUrl,
-            });
+            const notification = transactionalEntityManager.create(
+              Notification,
+              {
+                store_id: storeId,
+                user_id: existingUser.user_id,
+                type: NotificationType.STORE_INVITATION,
+                title: `Lời mời tham gia ${store.name}`,
+                message: `Bạn được mời tham gia ${store.name} với vai trò ${role.name}`,
+                action_url: actionUrl,
+              },
+            );
 
             await transactionalEntityManager.save(notification);
           } catch (error) {
@@ -300,14 +331,9 @@ export class StoresService {
     storeId: number,
     updateData: UpdateStoreDto,
     currentUserId: number,
+    isSuperAdmin: boolean = false,
   ) {
-    const currentUser = await this.userRepository.findOne({
-      where: { user_id: currentUserId },
-    });
-
-    if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('Bạn không có quyền cập nhật cửa hàng này');
-    }
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
 
     const store = await this.storeRepository.findOne({
       where: { id: storeId },
@@ -318,14 +344,18 @@ export class StoresService {
     }
 
     // Track if notification_cron was updated
-    const wasNotificationCronUpdated = updateData.notification_cron !== undefined;
+    const wasNotificationCronUpdated =
+      updateData.notification_cron !== undefined;
 
     Object.assign(store, updateData);
-    const updatedStore = (await this.storeRepository.save(store)) as Store;
+    const updatedStore = await this.storeRepository.save(store);
 
     // Register the notification job if cron was updated
     if (wasNotificationCronUpdated && updatedStore.notification_cron) {
-      this.notificationScheduler.registerStoreJob(storeId, updatedStore.notification_cron);
+      this.notificationScheduler.registerStoreJob(
+        storeId,
+        updatedStore.notification_cron,
+      );
     }
 
     return {
@@ -338,14 +368,9 @@ export class StoresService {
     storeId: number,
     cronExpression: string | null,
     currentUserId: number,
+    isSuperAdmin: boolean = false,
   ) {
-    const currentUser = await this.userRepository.findOne({
-      where: { user_id: currentUserId },
-    });
-
-    if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException('Bạn không có quyền cập nhật cửa hàng này');
-    }
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
 
     const store = await this.storeRepository.findOne({
       where: { id: storeId },
@@ -368,16 +393,12 @@ export class StoresService {
     };
   }
 
-  async getStoreStaff(storeId: number, currentUserId: number) {
-    const currentUser = await this.userRepository.findOne({
-      where: { user_id: currentUserId },
-    });
-
-    if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException(
-        'Bạn không có quyền xem danh sách nhân viên của cửa hàng này',
-      );
-    }
+  async getStoreStaff(
+    storeId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
 
     const staff = await this.userRepository.find({
       where: { store_id: storeId },
@@ -404,6 +425,163 @@ export class StoresService {
       store_id: storeId,
       staff,
       total: staff.length,
+    };
+  }
+
+  private async checkLastAdmin(storeId: number, targetUserId: number) {
+    const targetUser = await this.userRepository.findOne({
+      where: { user_id: targetUserId, store_id: storeId },
+      relations: { role: true },
+    });
+
+    if (targetUser && targetUser.role?.name === 'ADMIN') {
+      const adminsInStore = await this.userRepository
+        .createQueryBuilder('user')
+        .innerJoin('user.role', 'role')
+        .where('user.store_id = :storeId', { storeId })
+        .andWhere('role.name = :roleName', { roleName: 'ADMIN' })
+        .getCount();
+
+      if (adminsInStore <= 1) {
+        throw new ForbiddenException(
+          'Không thể xóa quản trị viên cuối cùng của cửa hàng',
+        );
+      }
+    }
+  }
+
+  async removeStaff(
+    storeId: number,
+    targetUserId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
+
+    if (currentUserId === targetUserId) {
+      throw new ForbiddenException(
+        'Không thể tự xóa khỏi cửa hàng. Vui lòng sử dụng chức năng rời cửa hàng',
+      );
+    }
+
+    const targetUser = await this.userRepository.findOne({
+      where: { user_id: targetUserId },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException('Không tìm thấy người dùng');
+    }
+
+    if (targetUser.store_id !== storeId) {
+      throw new ForbiddenException('Người dùng không thuộc cửa hàng này');
+    }
+
+    await this.checkLastAdmin(storeId, targetUserId);
+
+    await this.userRepository.update(targetUserId, {
+      store_id: null as any,
+      role_id: null as any,
+      last_active_at: new Date(),
+    });
+
+    return {
+      message: 'Đã xóa nhân viên khỏi cửa hàng',
+      user: {
+        user_id: targetUser.user_id,
+        email: targetUser.email,
+        full_name: targetUser.full_name,
+      },
+    };
+  }
+
+  async leaveStore(
+    storeId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    if (isSuperAdmin) {
+      const currentUser = await this.userRepository.findOne({
+        where: { user_id: currentUserId },
+      });
+      if (!currentUser || currentUser.store_id !== storeId) {
+        throw new ForbiddenException(
+          'Bạn không phải là thành viên của cửa hàng này',
+        );
+      }
+    } else {
+      await this.validateStoreMembership(storeId, currentUserId, false);
+    }
+
+    await this.checkLastAdmin(storeId, currentUserId);
+
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
+
+    await this.userRepository.update(currentUserId, {
+      store_id: null as any,
+      role_id: null as any,
+      last_active_at: new Date(),
+    });
+
+    return {
+      message: 'Đã rời cửa hàng thành công',
+      user: {
+        user_id: currentUser!.user_id,
+        email: currentUser!.email,
+        full_name: currentUser!.full_name,
+      },
+    };
+  }
+
+  async removeStore(
+    storeId: number,
+    currentUserId: number,
+    isSuperAdmin: boolean = false,
+  ) {
+    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
+
+    const store = await this.storeRepository.findOne({
+      where: { id: storeId },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Không tìm thấy cửa hàng');
+    }
+
+    const staffCount = await this.userRepository.count({
+      where: { store_id: storeId },
+    });
+
+    if (staffCount > 1) {
+      throw new ForbiddenException(
+        'Cửa hàng vẫn còn nhân viên. Vui lòng xóa tất cả nhân viên trước khi xóa cửa hàng',
+      );
+    }
+
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+      relations: { role: true },
+    });
+
+    if (!currentUser || currentUser.role?.name !== 'ADMIN') {
+      throw new ForbiddenException('Chỉ quản trị viên mới có thể xóa cửa hàng');
+    }
+
+    await this.userRepository.update(currentUserId, {
+      store_id: null as any,
+      role_id: null as any,
+      last_active_at: new Date(),
+    });
+
+    await this.storeRepository.delete(storeId);
+
+    return {
+      message: 'Đã xóa cửa hàng thành công',
+      store: {
+        id: store.id,
+        name: store.name,
+      },
     };
   }
 
@@ -485,6 +663,7 @@ export class StoresService {
       store_id: invitation.store_id,
       role_id: invitation.role_id,
       status: UserStatus.ACTIVE,
+      last_active_at: new Date(),
     });
 
     await this.invitationRepository.update(invitation.id, {
@@ -521,5 +700,146 @@ export class StoresService {
     };
 
     return response;
+  }
+
+  async getActivity(
+    storeId: number,
+    filters?: {
+      entity_type?: 'CUSTOMER' | 'PRODUCT' | 'SERVICE' | 'ORDER' | 'ROLE';
+      performed_by?: number;
+    },
+  ) {
+    type ActivityEntry = {
+      id: number;
+      entity_type: 'CUSTOMER' | 'PRODUCT' | 'SERVICE' | 'ORDER' | 'ROLE';
+      entity_id: number;
+      action: string;
+      performed_by: number | null;
+      performed_by_name: string | null;
+      old_values: Record<string, any> | null;
+      new_values: Record<string, any> | null;
+      created_at: Date;
+    };
+
+    const entries: ActivityEntry[] = [];
+
+    if (!filters?.entity_type || filters.entity_type === 'CUSTOMER') {
+      const customerWhere: any = { store_id: storeId };
+      if (filters?.performed_by !== undefined)
+        customerWhere.performed_by = filters.performed_by;
+      const rows = await this.customerHistoryRepository.find({
+        where: customerWhere,
+        order: { created_at: 'DESC' },
+      });
+      for (const r of rows) {
+        entries.push({
+          id: r.id,
+          entity_type: 'CUSTOMER',
+          entity_id: r.customer_id,
+          action: r.action,
+          performed_by: r.performed_by,
+          performed_by_name: r.performed_by_name,
+          old_values: r.old_values,
+          new_values: r.new_values,
+          created_at: r.created_at,
+        });
+      }
+    }
+
+    if (!filters?.entity_type || filters.entity_type === 'PRODUCT') {
+      const productWhere: any = { store_id: storeId };
+      if (filters?.performed_by !== undefined)
+        productWhere.performed_by = filters.performed_by;
+      const rows = await this.productHistoryRepository.find({
+        where: productWhere,
+        order: { created_at: 'DESC' },
+      });
+      for (const r of rows) {
+        entries.push({
+          id: r.id,
+          entity_type: 'PRODUCT',
+          entity_id: r.product_id,
+          action: r.action,
+          performed_by: r.performed_by,
+          performed_by_name: r.performed_by_name,
+          old_values: r.old_values,
+          new_values: r.new_values,
+          created_at: r.created_at,
+        });
+      }
+    }
+
+    if (!filters?.entity_type || filters.entity_type === 'SERVICE') {
+      const serviceWhere: any = { store_id: storeId };
+      if (filters?.performed_by !== undefined)
+        serviceWhere.performed_by = filters.performed_by;
+      const rows = await this.serviceHistoryRepository.find({
+        where: serviceWhere,
+        order: { created_at: 'DESC' },
+      });
+      for (const r of rows) {
+        entries.push({
+          id: r.id,
+          entity_type: 'SERVICE',
+          entity_id: r.service_id,
+          action: r.action,
+          performed_by: r.performed_by,
+          performed_by_name: r.performed_by_name,
+          old_values: r.old_values,
+          new_values: r.new_values,
+          created_at: r.created_at,
+        });
+      }
+    }
+
+    if (!filters?.entity_type || filters.entity_type === 'ORDER') {
+      const orderWhere: any = { store_id: storeId };
+      if (filters?.performed_by !== undefined)
+        orderWhere.performed_by = filters.performed_by;
+      const rows = await this.orderHistoryRepository.find({
+        where: orderWhere,
+        order: { created_at: 'DESC' },
+      });
+      for (const r of rows) {
+        entries.push({
+          id: r.id,
+          entity_type: 'ORDER',
+          entity_id: r.order_id,
+          action: r.action,
+          performed_by: r.performed_by,
+          performed_by_name: r.performed_by_name,
+          old_values: r.old_values,
+          new_values: r.new_values,
+          created_at: r.created_at,
+        });
+      }
+    }
+
+    if (!filters?.entity_type || filters.entity_type === 'ROLE') {
+      const roleWhere: any = { store_id: storeId };
+      if (filters?.performed_by !== undefined)
+        roleWhere.performed_by = filters.performed_by;
+      const rows = await this.roleHistoryRepository.find({
+        where: roleWhere,
+        order: { created_at: 'DESC' },
+      });
+      for (const r of rows) {
+        entries.push({
+          id: r.id,
+          entity_type: 'ROLE',
+          entity_id: r.role_id,
+          action: r.action,
+          performed_by: r.performed_by,
+          performed_by_name: r.performed_by_name,
+          old_values: r.old_values,
+          new_values: r.new_values,
+          created_at: r.created_at,
+        });
+      }
+    }
+
+    entries.sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
+
+    return entries;
   }
 }

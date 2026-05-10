@@ -5,6 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  Unique,
 } from 'typeorm';
 import { Product } from './product.entity';
 import { Service } from './service.entity';
@@ -12,6 +13,7 @@ import { CategoryType } from '../../common/enum';
 import { Store } from '../../stores/entities/store.entity';
 
 @Entity('categories')
+@Unique('UQ_CATEGORY_STORE_NAME_TYPE', ['store_id', 'name', 'type'])
 export class Category {
   @PrimaryGeneratedColumn()
   category_id: number;
@@ -23,7 +25,7 @@ export class Category {
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
-  @Column({ unique: true })
+  @Column()
   name: string;
 
   @Column({ type: 'simple-enum', enum: CategoryType })
