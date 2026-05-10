@@ -13,6 +13,7 @@ import {
   UploadedFile,
   UseInterceptors,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -24,6 +25,7 @@ import {
   ApiConsumes,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -32,6 +34,7 @@ import {
   PermissionsGuard,
   RequirePermissions,
   RolesGuard,
+  isSuperAdmin,
 } from 'src/common';
 import { Customer } from './entities/customer.entity';
 import { STORE_PERMISSIONS } from 'src/common/permissions/store.permissions';
@@ -77,6 +80,8 @@ export class CustomersController {
     return this.customersService.createCustomer(
       user.store_id,
       createCustomerDto,
+      user.user_id,
+      user.full_name,
     );
   }
 
@@ -86,18 +91,70 @@ export class CustomersController {
   @ApiOperation({
     summary: 'Get all customers in a store',
     description:
-      'Retrieves a paginated list of customers for the specified store',
+      'Retrieves a list of customers with optional search and date filters',
   })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'date_from', required: false, type: String })
+  @ApiQuery({ name: 'date_to', required: false, type: String })
   @ApiResponse({
     status: 200,
     description: 'Customers retrieved successfully',
   })
-  @ApiResponse({
-    status: 404,
-    description: 'Deny permission to view customers',
+  findAll(
+    @CurrentUser() user: any,
+    @Query('search') search?: string,
+    @Query('date_from') date_from?: string,
+    @Query('date_to') date_to?: string,
+  ) {
+    const admin = isSuperAdmin(user);
+    const storeId = admin ? null : user.store_id;
+    return this.customersService.findAllByStore(storeId, admin, {
+      search,
+      date_from,
+      date_to,
+    });
+  }
+
+  @Get('/:customerId/history')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.CUSTOMER_VIEW)
+  @ApiOperation({
+    summary: 'Get customer history',
+    description:
+      'Retrieves the change history for a specific customer (create, update, delete events)',
   })
-  findAll(@CurrentUser() user: any) {
-    return this.customersService.findAllByStore(user.store_id);
+  @ApiParam({ name: 'customerId', type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Customer history retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Customer not found' })
+  getHistory(
+    @Param('customerId', ParseIntPipe) customerId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.customersService.getHistory(user.store_id, customerId);
+  }
+
+  @Get('/:customerId/details')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(STORE_PERMISSIONS.CUSTOMER_VIEW)
+  @ApiOperation({
+    summary: 'Get customer details with history, products and services',
+    description:
+      'Retrieves customer info, audit history, and distinct products/services from their orders',
+  })
+  @ApiParam({ name: 'customerId', type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Customer details retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Customer not found' })
+  getCustomerDetails(
+    @Param('customerId', ParseIntPipe) customerId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.customersService.getCustomerDetails(user.store_id, customerId);
   }
 
   @Get('/:customerId')
@@ -115,7 +172,7 @@ export class CustomersController {
   findById(@Param('customerId') customerId: string, @CurrentUser() user: any) {
     const customerIdNum = parseInt(customerId, 10);
     if (isNaN(customerIdNum)) {
-      throw new BadRequestException('ID not valid');
+      throw new BadRequestException('ID không hợp lệ');
     }
     return this.customersService.findById(user.store_id, customerIdNum);
   }
@@ -134,7 +191,7 @@ export class CustomersController {
   })
   findByPhone(@Param('phone') phone: string, @CurrentUser() user: any) {
     if (!phone) {
-      throw new BadRequestException('Phone is required');
+      throw new BadRequestException('Số điện thoại là bắt buộc');
     }
     return this.customersService.findByPhone(user.store_id, phone);
   }
@@ -166,7 +223,7 @@ export class CustomersController {
     @Body() dto: UpdateCustomerDto,
     @CurrentUser() user: any,
   ) {
-    return this.customersService.update(customerId, dto, user.store_id);
+    return this.customersService.update(customerId, dto, user.store_id, user.user_id, user.full_name);
   }
 
   @Delete('/:customerId')
@@ -190,7 +247,7 @@ export class CustomersController {
     @Param('customerId', ParseIntPipe) customerId: number,
     @CurrentUser() user: any,
   ) {
-    return this.customersService.deleteCustomer(customerId, user.store_id);
+    return this.customersService.deleteCustomer(customerId, user.store_id, user.user_id, user.full_name);
   }
 
   @Post('pets/:petId/avatar')

@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import {
-  NotificationsService,
-} from '../src/notifications/notifications.service';
+import { NotificationsService } from '../src/notifications/notifications.service';
 import {
   Notification,
   NotificationType,
@@ -32,6 +30,8 @@ describe('NotificationsService', () => {
     action_url: 'http://localhost:3000/accept-invitation?token=test-token',
     created_at: new Date(),
     updated_at: new Date(),
+    type_label: 'Lời mời cửa hàng',
+    setTypeLabel: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -91,7 +91,7 @@ describe('NotificationsService', () => {
         user_id: userId,
         type: NotificationType.STORE_INVITATION,
         title: `Lời mời tham gia ${storeName}`,
-        message: `Bạn đã được mời tham gia ${storeName} với vai trò ${roleName}. Nhấn để xem chi tiết.`,
+        message: `Bạn được mời tham gia ${storeName} với vai trò ${roleName}`,
         action_url: `${frontendUrl}/accept-invitation?token=${invitationToken}`,
       });
       expect(notificationRepository.save).toHaveBeenCalled();
@@ -126,7 +126,7 @@ describe('NotificationsService', () => {
         user_id: userId,
         type: NotificationType.STORE_INVITATION,
         title: `Lời mời tham gia ${storeName}`,
-        message: `Bạn đã được mời tham gia ${storeName} với vai trò ${roleName}. Nhấn để xem chi tiết.`,
+        message: `Bạn được mời tham gia ${storeName} với vai trò ${roleName}`,
         action_url: undefined,
       });
       expect(result.action_url).toBeUndefined();
@@ -144,7 +144,9 @@ describe('NotificationsService', () => {
         getMany: jest.fn(),
       } as any;
 
-      notificationRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      notificationRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
     });
 
     it('should return both personal and store-wide notifications when user has a store', async () => {
@@ -156,8 +158,13 @@ describe('NotificationsService', () => {
 
       const result = await service.findByUser(userId, storeId);
 
-      expect(notificationRepository.createQueryBuilder).toHaveBeenCalledWith('notification');
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('notification.created_at', 'DESC');
+      expect(notificationRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'notification',
+      );
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'notification.created_at',
+        'DESC',
+      );
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         '(notification.user_id = :userId OR (notification.store_id = :storeId AND notification.user_id IS NULL))',
         { userId, storeId },

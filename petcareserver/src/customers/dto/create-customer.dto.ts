@@ -15,9 +15,9 @@ export class CreateCustomerDto {
     example: 'John Doe',
     description: 'Customer full name',
   })
-  @MinLength(2, { message: 'Full name must be at least 2 characters long' })
-  @MaxLength(200, { message: 'Full name must not exceed 200 characters' })
-  @IsNotEmpty({ message: 'Full name is required' })
+  @MinLength(2, { message: 'Họ tên phải có ít nhất 2 ký tự' })
+  @MaxLength(200, { message: 'Họ tên không được vượt quá 200 ký tự' })
+  @IsNotEmpty({ message: 'Họ tên là bắt buộc' })
   @IsString()
   full_name: string;
 
@@ -25,10 +25,10 @@ export class CreateCustomerDto {
     example: '+1-555-1234',
     description: 'Customer phone number (must be unique within the store)',
   })
-  @IsNotEmpty({ message: 'Phone number is required' })
+  @IsNotEmpty({ message: 'Số điện thoại là bắt buộc' })
   @IsString()
   @Matches(/^[0-9+\-() ]+$/, {
-    message: 'Phone number format is invalid',
+    message: 'Số điện thoại không đúng định dạng',
   })
   phone: string;
 

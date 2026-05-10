@@ -14,8 +14,8 @@ export class InviteStaffDto {
     example: 'staff@pethaven.com',
     description: 'Email address of the staff member to invite',
   })
-  @IsEmail({}, { message: 'Please provide a valid email address' })
-  @IsNotEmpty({ message: 'Email is required' })
+  @IsEmail({}, { message: 'Vui lòng nhập địa chỉ email hợp lệ' })
+  @IsNotEmpty({ message: 'Email là bắt buộc' })
   email: string;
 
   @ApiProperty({
@@ -23,8 +23,8 @@ export class InviteStaffDto {
     description:
       'Role ID to assign to the staff member (must be a valid role in the store)',
   })
-  @IsNumber({}, { message: 'Role ID must be a number' })
-  @IsNotEmpty({ message: 'Role ID is required' })
+  @IsNumber({}, { message: 'Vai trò phải là số' })
+  @IsNotEmpty({ message: 'Vai trò là bắt buộc' })
   role_id: number;
 
   @ApiProperty({
@@ -33,10 +33,10 @@ export class InviteStaffDto {
       'Full name of the staff member (optional, can be set by the user later)',
     required: false,
   })
-  @IsString({ message: 'Full name must be a string' })
+  @IsString({ message: 'Họ tên phải là chuỗi' })
   @IsOptional()
-  @MinLength(2, { message: 'Full name must be at least 2 characters long' })
-  @MaxLength(100, { message: 'Full name must not exceed 100 characters' })
+  @MinLength(2, { message: 'Họ tên phải có ít nhất 2 ký tự' })
+  @MaxLength(100, { message: 'Họ tên không được vượt quá 100 ký tự' })
   full_name?: string;
 
   @ApiProperty({
@@ -44,7 +44,7 @@ export class InviteStaffDto {
     description: 'Phone number of the staff member (optional)',
     required: false,
   })
-  @IsString({ message: 'Phone number must be a string' })
+  @IsString({ message: 'Số điện thoại phải là chuỗi' })
   @IsOptional()
   phone?: string;
 
@@ -53,7 +53,7 @@ export class InviteStaffDto {
     description: 'Custom invitation message (optional)',
     required: false,
   })
-  @IsString({ message: 'Message must be a string' })
+  @IsString({ message: 'Lời nhắn phải là chuỗi' })
   @IsOptional()
   message?: string;
 }
