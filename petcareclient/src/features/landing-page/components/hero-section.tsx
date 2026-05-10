@@ -125,7 +125,7 @@ const HeroSection = ({ menudata }: { menudata: MenuData[] }) => {
                 asChild
                 className="hover:bg-orange-500/10 hover:text-orange-500 text-primary font-bold rounded-full text-base"
               >
-                <a href="#feature">Xem giới thiệu</a>
+                <a href="#features">Xem giới thiệu</a>
               </Button>
             </div>
           </div>

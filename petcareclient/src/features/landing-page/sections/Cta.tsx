@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router";
 
 export function CtaSection() {
+  const navigate = useNavigate();
+
   return (
     <section
       className="section-padding-y border-b"
@@ -30,6 +33,7 @@ export function CtaSection() {
               <Button
                 size="lg"
                 variant="outline"
+                onClick={() => navigate("/register")}
                 className="text-gray-900 font-bold hover:bg-white/90 px-6 md:px-8 w-full sm:w-auto cursor-pointer"
                 aria-label="Get started with our service"
               >
