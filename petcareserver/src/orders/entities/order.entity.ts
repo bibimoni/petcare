@@ -6,7 +6,6 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { OrderStatus } from '../../common/enum';
 import { User } from '../../users/entities/user.entity';
@@ -19,14 +18,14 @@ export class Order {
   @PrimaryGeneratedColumn()
   order_id: number;
 
-  @Column({ name: 'store_id', nullable: true })
+  @Column({ name: 'store_id' })
   store_id: number;
 
-  @ManyToOne(() => Store, (store) => store.orders, { onDelete: 'SET NULL' })
+  @ManyToOne(() => Store, (store) => store.orders, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
-  @Column({ name: 'user_id', nullable: true })
+  @Column({ name: 'user_id' })
   user_id: number;
 
   @ManyToOne(() => User, (user) => user.orders)
@@ -43,14 +42,10 @@ export class Order {
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 
-  @Column('decimal', { precision: 15, scale: 3 })
+  @Column('decimal', { precision: 15, scale: 2 })
   total_amount: number;
 
-  @Column({
-    type: 'simple-enum',
-    enum: OrderStatus,
-    default: OrderStatus.PENDING,
-  })
+  @Column({ type: 'simple-enum', enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
   @Column({ type: 'text', nullable: true })
@@ -71,7 +66,4 @@ export class Order {
 
   @OneToMany(() => OrderDetail, (detail) => detail.order, { cascade: true })
   order_details: OrderDetail[];
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
 }

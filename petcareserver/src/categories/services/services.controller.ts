@@ -11,8 +11,6 @@ import {
   BadRequestException,
   Patch,
   Delete,
-  Query,
-  ParseIntPipe,
 } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from '../dto/create-service.dto';
@@ -21,20 +19,12 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
-  ApiParam,
-  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import {
-  CurrentUser,
-  PermissionsGuard,
-  RequirePermissions,
-  isSuperAdmin,
-} from 'src/common';
+import { CurrentUser, PermissionsGuard, RequirePermissions } from 'src/common';
 import { STORE_PERMISSIONS } from 'src/common/permissions';
 import { UpdateServiceDto } from '../dto/update-service.dto';
-import { ServiceStatus } from '../entities/service.entity';
 
 @ApiTags('Services Management')
 @Controller({ path: '/services', version: '1' })
@@ -42,30 +32,6 @@ import { ServiceStatus } from '../entities/service.entity';
 @ApiBearerAuth()
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
-
-  @Get()
-  @HttpCode(HttpStatus.OK)
-  @RequirePermissions(STORE_PERMISSIONS.SERVICE_VIEW)
-  @ApiOperation({ summary: 'Get all services with optional filters' })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'category_id', required: false, type: Number })
-  @ApiQuery({ name: 'status', required: false, enum: ServiceStatus })
-  async getAllServices(
-    @CurrentUser() user: any,
-    @Query('search') search?: string,
-    @Query('category_id') category_id?: string,
-    @Query('status') status?: ServiceStatus,
-  ) {
-    const admin = isSuperAdmin(user);
-    const storeId = admin ? null : user.store_id;
-    const categoryIdNum = category_id ? parseInt(category_id, 10) : undefined;
-    return this.servicesService.findAll(storeId, admin, {
-      search,
-      category_id:
-        categoryIdNum && !isNaN(categoryIdNum) ? categoryIdNum : undefined,
-      status,
-    });
-  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -87,15 +53,10 @@ export class ServicesController {
     @Body() createServiceDto: CreateServiceDto,
     @CurrentUser() user: any,
   ) {
-    return this.servicesService.create(
-      user.store_id,
-      createServiceDto,
-      user.user_id,
-      user.full_name,
-    );
+    return this.servicesService.create(user.store_id, createServiceDto);
   }
 
-  @Get('/category/:categoryId')
+  @Get('/:categoryId')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(STORE_PERMISSIONS.SERVICE_VIEW)
   @ApiOperation({
@@ -112,7 +73,7 @@ export class ServicesController {
   ) {
     const categoryIdNum = parseInt(categoryId, 10);
     if (isNaN(categoryIdNum)) {
-      throw new BadRequestException('ID danh mục không hợp lệ');
+      throw new BadRequestException('Invalid category ID');
     }
     return this.servicesService.getAll(user.store_id, categoryIdNum);
   }
@@ -130,7 +91,7 @@ export class ServicesController {
   })
   @ApiResponse({
     status: 400,
-    description: 'ID dịch vụ không hợp lệ',
+    description: 'Invalid service ID',
   })
   @ApiResponse({
     status: 404,
@@ -142,7 +103,7 @@ export class ServicesController {
   ) {
     const serviceIdNum = parseInt(serviceId, 10);
     if (isNaN(serviceIdNum)) {
-      throw new BadRequestException('ID dịch vụ không hợp lệ');
+      throw new BadRequestException('Invalid service ID');
     }
     return this.servicesService.findByService(user.store_id, serviceIdNum);
   }
@@ -174,14 +135,12 @@ export class ServicesController {
   ) {
     const serviceIdNum = parseInt(serviceId, 10);
     if (isNaN(serviceIdNum)) {
-      throw new BadRequestException('ID dịch vụ không hợp lệ');
+      throw new BadRequestException('Invalid service ID');
     }
     return this.servicesService.updateService(
       user.store_id,
       serviceIdNum,
       updateServiceDto,
-      user.user_id,
-      user.full_name,
     );
   }
 
@@ -198,7 +157,7 @@ export class ServicesController {
   })
   @ApiResponse({
     status: 400,
-    description: 'ID dịch vụ không hợp lệ',
+    description: 'Invalid service ID',
   })
   @ApiResponse({
     status: 404,
@@ -210,34 +169,8 @@ export class ServicesController {
   ) {
     const serviceIdNum = parseInt(serviceId, 10);
     if (isNaN(serviceIdNum)) {
-      throw new BadRequestException('ID dịch vụ không hợp lệ');
+      throw new BadRequestException('Invalid service ID');
     }
-    return this.servicesService.deleteService(
-      user.store_id,
-      serviceIdNum,
-      user.user_id,
-      user.full_name,
-    );
-  }
-
-  @Get('/:serviceId/history')
-  @HttpCode(HttpStatus.OK)
-  @RequirePermissions(STORE_PERMISSIONS.SERVICE_VIEW)
-  @ApiOperation({
-    summary: 'Get service audit history',
-    description:
-      'Retrieves the change history for a specific service (create, update, delete events)',
-  })
-  @ApiParam({ name: 'serviceId', type: Number })
-  @ApiResponse({
-    status: 200,
-    description: 'Service history retrieved successfully',
-  })
-  @ApiResponse({ status: 404, description: 'Service not found' })
-  getHistory(
-    @Param('serviceId', ParseIntPipe) serviceId: number,
-    @CurrentUser() user: any,
-  ) {
-    return this.servicesService.getHistory(user.store_id, serviceId);
+    return this.servicesService.deleteService(user.store_id, serviceIdNum);
   }
 }

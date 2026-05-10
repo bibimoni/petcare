@@ -14,10 +14,10 @@ export class CreateStoreDto {
     example: 'Pet Paradise Veterinary Clinic',
     description: 'Store name',
   })
-  @IsString({ message: 'Tên cửa hàng phải là chuỗi' })
-  @IsNotEmpty({ message: 'Tên cửa hàng là bắt buộc' })
-  @MinLength(2, { message: 'Tên cửa hàng phải có ít nhất 2 ký tự' })
-  @MaxLength(200, { message: 'Tên cửa hàng không được vượt quá 200 ký tự' })
+  @IsString({ message: 'Store name must be a string' })
+  @IsNotEmpty({ message: 'Store name is required' })
+  @MinLength(2, { message: 'Store name must be at least 2 characters long' })
+  @MaxLength(200, { message: 'Store name must not exceed 200 characters' })
   name: string;
 
   @ApiProperty({
@@ -25,7 +25,7 @@ export class CreateStoreDto {
     description: 'Store phone number',
     required: false,
   })
-  @IsString({ message: 'Số điện thoại phải là chuỗi' })
+  @IsString({ message: 'Phone number must be a string' })
   @IsOptional()
   phone?: string;
 
@@ -34,7 +34,7 @@ export class CreateStoreDto {
     description: 'Store street address',
     required: false,
   })
-  @IsString({ message: 'Địa chỉ phải là chuỗi' })
+  @IsString({ message: 'Address must be a string' })
   @IsOptional()
   address?: string;
 
@@ -43,7 +43,7 @@ export class CreateStoreDto {
     description: 'Store city',
     required: false,
   })
-  @IsString({ message: 'Thành phố phải là chuỗi' })
+  @IsString({ message: 'City must be a string' })
   @IsOptional()
   city?: string;
 
@@ -52,7 +52,7 @@ export class CreateStoreDto {
     description: 'Store state/province',
     required: false,
   })
-  @IsString({ message: 'Tỉnh/Thành phố phải là chuỗi' })
+  @IsString({ message: 'State must be a string' })
   @IsOptional()
   state?: string;
 
@@ -61,7 +61,7 @@ export class CreateStoreDto {
     description: 'Store country',
     required: false,
   })
-  @IsString({ message: 'Quốc gia phải là chuỗi' })
+  @IsString({ message: 'Country must be a string' })
   @IsOptional()
   country?: string;
 
@@ -70,7 +70,7 @@ export class CreateStoreDto {
     description: 'Store postal/ZIP code',
     required: false,
   })
-  @IsString({ message: 'Mã bưu điện phải là chuỗi' })
+  @IsString({ message: 'Postal code must be a string' })
   @IsOptional()
   postal_code?: string;
 
@@ -79,7 +79,7 @@ export class CreateStoreDto {
     description: 'Store logo URL',
     required: false,
   })
-  @IsUrl({}, { message: 'URL logo phải hợp lệ' })
+  @IsUrl({}, { message: 'Logo URL must be a valid URL' })
   @IsOptional()
   logo_url?: string;
 
@@ -89,8 +89,8 @@ export class CreateStoreDto {
       'Cron expression for notification schedule (e.g., "0 0 8 * * *" for 8am daily). If null, uses default system schedule',
     required: false,
   })
-  @IsString({ message: 'Cron thông báo phải là chuỗi' })
-  @IsCronExpression({ message: 'Định dạng cron không hợp lệ' })
+  @IsString({ message: 'Notification cron must be a string' })
+  @IsCronExpression({ message: 'Invalid cron expression format' })
   @IsOptional()
   notification_cron?: string | null;
 }

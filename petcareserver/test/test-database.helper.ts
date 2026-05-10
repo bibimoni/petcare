@@ -16,12 +16,9 @@ import { Category } from '../src/categories/entities/category.entity';
 import { Service } from '../src/categories/entities/service.entity';
 import { Order } from '../src/orders/entities/order.entity';
 import { OrderDetail } from '../src/orders/entities/order-detail.entity';
-import { Payment } from '../src/orders/entities/payment.entity';
 import { Customer } from '../src/customers/entities/customer.entity';
 import { Pet } from '../src/pets/entities/pet.entity';
 import { PetWeightHistory } from '../src/pets/entities/pet-weight-history.entity';
-import { OrderHistory } from '../src/orders/entities/order-history.entity';
-import { ProductHistory } from '../src/categories/entities/product-history.entity';
 
 export const ENTITIES = [
   User,
@@ -36,12 +33,9 @@ export const ENTITIES = [
   Service,
   Order,
   OrderDetail,
-  Payment,
   Customer,
   Pet,
   PetWeightHistory,
-  OrderHistory,
-  ProductHistory,
 ];
 
 export {
@@ -57,20 +51,12 @@ export {
   Service,
   Order,
   OrderDetail,
-  Payment,
   Customer,
   Pet,
   PetWeightHistory,
-  OrderHistory,
-  ProductHistory,
 };
 
-export {
-  UserStatus,
-  StoreStatus,
-  InvitationStatus,
-  PermissionScope,
-} from '../src/common/enum';
+export { UserStatus, StoreStatus, InvitationStatus, PermissionScope } from '../src/common/enum';
 
 export const TEST_CONFIG = {
   POSTGRES_URI: 'sqlite::memory:',
@@ -85,9 +71,6 @@ export const TEST_CONFIG = {
   JWT_SECRET: 'test-secret-key',
   JWT_EXPIRES_IN: '1d',
   NODE_ENV: 'test',
-  STRIPE_SECRET_KEY: 'sk_test_fake_key_for_testing',
-  STRIPE_PUBLIC_KEY: 'pk_test_fake_key_for_testing',
-  STRIPE_WEBHOOK_SECRET: 'whsec_test_fake_key_for_testing',
 };
 
 export const getTypeOrmTestConfig = () => ({
@@ -111,7 +94,6 @@ export interface RepositoryMap {
   Service: Repository<Service>;
   Order: Repository<Order>;
   OrderDetail: Repository<OrderDetail>;
-  Payment: Repository<Payment>;
   Customer: Repository<Customer>;
   Pet: Repository<Pet>;
   PetWeightHistory: Repository<PetWeightHistory>;
@@ -134,12 +116,11 @@ export function getTestRepository<T extends keyof RepositoryMap>(
     Service,
     Order,
     OrderDetail,
-    Payment,
     Customer,
     Pet,
     PetWeightHistory,
   };
-
+  
   return module.get(getRepositoryToken(entityMap[entity]));
 }
 
@@ -163,9 +144,9 @@ export async function createTestApp(modules: any[] = []): Promise<{
 
   const app = moduleFixture.createNestApplication();
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-
+  
   await app.init();
-
+  
   return { app, module: moduleFixture };
 }
 
@@ -173,7 +154,6 @@ export async function cleanDatabase(module: TestingModule): Promise<void> {
   const repositories = [
     getTestRepository(module, 'Notification'),
     getTestRepository(module, 'Invitation'),
-    getTestRepository(module, 'Payment'),
     getTestRepository(module, 'OrderDetail'),
     getTestRepository(module, 'Order'),
     getTestRepository(module, 'PetWeightHistory'),

@@ -5,20 +5,11 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { parseDateInAppTimezone } from '../common/utils/timezone';
+import { Repository } from 'typeorm';
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
-import {
-  CustomerHistory,
-  CustomerHistoryAction,
-} from './entities/customer-history.entity';
 import { Pet } from '../pets/entities/pet.entity';
-import { Order } from '../orders/entities/order.entity';
-import { OrderDetail } from '../orders/entities/order-detail.entity';
-import { Product } from '../categories/entities/product.entity';
-import { Service } from '../categories/entities/service.entity';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
@@ -27,31 +18,14 @@ export class CustomersService {
     @InjectRepository(Customer)
     private customerRepository: Repository<Customer>,
 
-    @InjectRepository(CustomerHistory)
-    private customerHistoryRepository: Repository<CustomerHistory>,
-
     @InjectRepository(Pet)
     private petRepository: Repository<Pet>,
-
-    @InjectRepository(Order)
-    private orderRepository: Repository<Order>,
-
-    @InjectRepository(OrderDetail)
-    private orderDetailRepository: Repository<OrderDetail>,
-
-    @InjectRepository(Product)
-    private productRepository: Repository<Product>,
-
-    @InjectRepository(Service)
-    private serviceRepository: Repository<Service>,
 
     private cloudinaryService: CloudinaryService,
   ) {}
   async createCustomer(
     storeId: number,
     dto: CreateCustomerDto,
-    performedBy?: number,
-    performedByName?: string,
   ): Promise<Customer> {
     const customer = this.customerRepository.create({
       ...dto,
@@ -59,25 +33,7 @@ export class CustomersService {
     });
 
     try {
-      const saved = await this.customerRepository.save(customer);
-
-      await this.customerHistoryRepository.save({
-        customer_id: saved.customer_id,
-        store_id: storeId,
-        action: CustomerHistoryAction.CREATED,
-        performed_by: performedBy ?? null,
-        performed_by_name: performedByName ?? null,
-        old_values: null,
-        new_values: {
-          full_name: saved.full_name,
-          phone: saved.phone,
-          email: saved.email,
-          address: saved.address,
-          notes: saved.notes,
-        },
-      });
-
-      return saved;
+      return await this.customerRepository.save(customer);
     } catch (error: any) {
       if (error.code === '23505') {
         throw new ConflictException('Số điện thoại này đã được đăng ký');
@@ -87,48 +43,12 @@ export class CustomersService {
     }
   }
 
-  async findAllByStore(
-    storeId: number | null,
-    isAdmin: boolean,
-    filters?: { search?: string; date_from?: string; date_to?: string },
-  ): Promise<Customer[]> {
-    const query = this.customerRepository
-      .createQueryBuilder('customer')
-      .leftJoinAndSelect('customer.pets', 'pets')
-      .orderBy('customer.full_name', 'ASC');
-
-    if (!isAdmin && storeId) {
-      query.where('customer.store_id = :storeId', { storeId });
-    }
-
-    if (filters?.search) {
-      query.andWhere(
-        '(customer.full_name ILIKE :search OR customer.phone ILIKE :search OR customer.email ILIKE :search)',
-        {
-          search: `%${filters.search}%`,
-        },
-      );
-    }
-
-    if (filters?.date_from) {
-      const dateFrom = parseDateInAppTimezone(filters.date_from);
-      if (!isNaN(dateFrom.getTime())) {
-        query.andWhere('customer.created_at >= :dateFrom', {
-          dateFrom,
-        });
-      }
-    }
-
-    if (filters?.date_to) {
-      const dateTo = parseDateInAppTimezone(filters.date_to);
-      if (!isNaN(dateTo.getTime())) {
-        query.andWhere('customer.created_at <= :dateTo', {
-          dateTo,
-        });
-      }
-    }
-
-    return query.getMany();
+  async findAllByStore(storeId: number): Promise<Customer[]> {
+    return this.customerRepository.find({
+      where: { store_id: storeId },
+      relations: ['pets'],
+      order: { full_name: 'ASC' },
+    });
   }
 
   async findByPhone(storeId: number, phone: string): Promise<Customer> {
@@ -161,8 +81,6 @@ export class CustomersService {
     id: number,
     dto: UpdateCustomerDto,
     storeId: number,
-    performedBy?: number,
-    performedByName?: string,
   ): Promise<Customer> {
     const customer = await this.customerRepository.findOne({
       where: { customer_id: id, store_id: storeId },
@@ -182,42 +100,14 @@ export class CustomersService {
       }
     }
 
-    const oldValues = {
-      full_name: customer.full_name,
-      phone: customer.phone,
-      email: customer.email,
-      address: customer.address,
-      notes: customer.notes,
-    };
-
     Object.assign(customer, dto);
 
-    const saved = await this.customerRepository.save(customer);
-
-    await this.customerHistoryRepository.save({
-      customer_id: saved.customer_id,
-      store_id: storeId,
-      action: CustomerHistoryAction.UPDATED,
-      performed_by: performedBy ?? null,
-      performed_by_name: performedByName ?? null,
-      old_values: oldValues,
-      new_values: {
-        full_name: saved.full_name,
-        phone: saved.phone,
-        email: saved.email,
-        address: saved.address,
-        notes: saved.notes,
-      },
-    });
-
-    return saved;
+    return this.customerRepository.save(customer);
   }
 
   async deleteCustomer(
     id: number,
     storeId: number,
-    performedBy?: number,
-    performedByName?: string,
   ): Promise<{ message: string }> {
     const customer = await this.customerRepository.findOne({
       where: { customer_id: id, store_id: storeId },
@@ -226,22 +116,6 @@ export class CustomersService {
     if (!customer) {
       throw new NotFoundException('Không tìm thấy khách hàng');
     }
-
-    await this.customerHistoryRepository.save({
-      customer_id: customer.customer_id,
-      store_id: storeId,
-      action: CustomerHistoryAction.DELETED,
-      performed_by: performedBy ?? null,
-      performed_by_name: performedByName ?? null,
-      old_values: {
-        full_name: customer.full_name,
-        phone: customer.phone,
-        email: customer.email,
-        address: customer.address,
-        notes: customer.notes,
-      },
-      new_values: null,
-    });
 
     await this.customerRepository.softRemove(customer);
 
@@ -281,75 +155,5 @@ export class CustomersService {
     }
 
     return cloudinaryResp.secure_url;
-  }
-
-  async getHistory(
-    storeId: number,
-    customerId: number,
-  ): Promise<CustomerHistory[]> {
-    return this.customerHistoryRepository.find({
-      where: { customer_id: customerId, store_id: storeId },
-      order: { created_at: 'DESC' },
-    });
-  }
-
-  async getCustomerDetails(storeId: number, customerId: number) {
-    const customer = await this.customerRepository.findOne({
-      where: { customer_id: customerId, store_id: storeId },
-    });
-    if (!customer) {
-      throw new NotFoundException('Không tìm thấy khách hàng');
-    }
-
-    const history = await this.customerHistoryRepository.find({
-      where: { customer_id: customerId, store_id: storeId },
-      order: { created_at: 'DESC' },
-    });
-
-    const orders = await this.orderRepository.find({
-      where: { customer_id: customerId, store_id: storeId },
-      select: ['order_id'],
-    });
-
-    const orderIds = orders.map((o) => o.order_id);
-
-    let products: Product[] = [];
-    let services: Service[] = [];
-
-    if (orderIds.length > 0) {
-      const orderDetails = await this.orderDetailRepository.find({
-        where: { order_id: In(orderIds) },
-        select: ['product_id', 'service_id'],
-      });
-
-      const productIds = [
-        ...new Set(
-          orderDetails
-            .map((od) => od.product_id)
-            .filter((id): id is number => id !== null),
-        ),
-      ];
-      const serviceIds = [
-        ...new Set(
-          orderDetails
-            .map((od) => od.service_id)
-            .filter((id): id is number => id !== null),
-        ),
-      ];
-
-      if (productIds.length > 0) {
-        products = await this.productRepository.find({
-          where: { product_id: In(productIds) },
-        });
-      }
-
-      if (serviceIds.length > 0) {
-        services = await this.serviceRepository.find({
-          where: { id: In(serviceIds) },
-        });
-      }
-    }
-
-    return { customer, history, products, services };
   }
 }

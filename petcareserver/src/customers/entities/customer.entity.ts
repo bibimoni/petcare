@@ -4,7 +4,6 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  DeleteDateColumn,
   OneToMany,
   ManyToOne,
   JoinColumn,
@@ -53,9 +52,6 @@ export class Customer {
 
   @UpdateDateColumn()
   updated_at: Date;
-
-  @DeleteDateColumn()
-  deleted_at: Date;
 
   @OneToMany(() => Pet, (pet) => pet.customer)
   pets: Pet[];

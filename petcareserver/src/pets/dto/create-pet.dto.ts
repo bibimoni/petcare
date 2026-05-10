@@ -13,7 +13,7 @@ export class CreatePetDto {
     example: 'Buddy',
     description: 'Name of the pet',
   })
-  @IsNotEmpty({ message: 'Tên thú cưng là bắt buộc' })
+  @IsNotEmpty({ message: 'Name is required' })
   @IsString()
   name: string;
 

@@ -14,10 +14,10 @@ export class UpdateRoleDto {
     description: 'Updated name of the role',
     required: false,
   })
-  @IsString({ message: 'Tên vai trò phải là chuỗi' })
+  @IsString({ message: 'Role name must be a string' })
   @IsOptional()
-  @MinLength(2, { message: 'Tên vai trò phải có ít nhất 2 ký tự' })
-  @MaxLength(50, { message: 'Tên vai trò không được vượt quá 50 ký tự' })
+  @MinLength(2, { message: 'Role name must be at least 2 characters long' })
+  @MaxLength(50, { message: 'Role name must not exceed 50 characters' })
   name?: string;
 
   @ApiProperty({
@@ -26,9 +26,9 @@ export class UpdateRoleDto {
     description: 'Updated description of the role permissions',
     required: false,
   })
-  @IsString({ message: 'Mô tả phải là chuỗi' })
+  @IsString({ message: 'Description must be a string' })
   @IsOptional()
-  @MaxLength(500, { message: 'Mô tả không được vượt quá 500 ký tự' })
+  @MaxLength(500, { message: 'Description must not exceed 500 characters' })
   description?: string;
 
   @ApiProperty({
@@ -38,8 +38,8 @@ export class UpdateRoleDto {
     type: [Number],
     required: false,
   })
-  @IsArray({ message: 'Quyền phải là một mảng' })
-  @IsNumber({}, { each: true, message: 'Mỗi quyền phải là số' })
+  @IsArray({ message: 'Permissions must be an array' })
+  @IsNumber({}, { each: true, message: 'Each permission must be a number' })
   @IsOptional()
   permission_ids?: number[];
 }

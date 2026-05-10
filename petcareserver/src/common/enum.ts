@@ -18,7 +18,6 @@ export enum OrderStatus {
   PENDING = 'PENDING',
   PAID = 'PAID',
   CANCELLED = 'CANCELLED',
-  REFUNDED = 'REFUNDED',
 }
 
 export enum PermissionScope {
@@ -36,58 +35,4 @@ export enum InvitationStatus {
   ACCEPTED = 'ACCEPTED',
   DECLINED = 'DECLINED',
   EXPIRED = 'EXPIRED',
-}
-
-export enum PaymentStatus {
-  PENDING = 'PENDING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED',
-}
-
-export enum PaymentMethod {
-  STRIPE = 'STRIPE',
-  CASH = 'CASH',
-}
-
-export enum Currency {
-  VND = 'vnd',
-  USD = 'usd',
-}
-
-export enum InStoreFilter {
-  IN_STORE = 'IN_STORE',
-  NOT_IN_STORE = 'NOT_IN_STORE',
-}
-
-export enum ActivityType {
-  ORDER_CREATED = 'ORDER_CREATED',
-  ORDER_CANCELLED = 'ORDER_CANCELLED',
-  ORDER_PAID = 'ORDER_PAID',
-  PET_ADDED = 'PET_ADDED',
-  CUSTOMER_ADDED = 'CUSTOMER_ADDED',
-  LOW_STOCK = 'LOW_STOCK',
-  OUT_OF_STOCK = 'OUT_OF_STOCK',
-  PRODUCT_EXPIRED = 'PRODUCT_EXPIRED',
-  STORE_INVITATION = 'STORE_INVITATION',
-}
-
-export const ActivityTypeLabel: Record<ActivityType, string> = {
-  [ActivityType.ORDER_CREATED]: 'Đơn hàng đã tạo',
-  [ActivityType.ORDER_CANCELLED]: 'Đơn hàng đã hủy',
-  [ActivityType.ORDER_PAID]: 'Đơn hàng đã thanh toán',
-  [ActivityType.PET_ADDED]: 'Thêm thú cưng',
-  [ActivityType.CUSTOMER_ADDED]: 'Thêm khách hàng',
-  [ActivityType.LOW_STOCK]: 'Sắp hết hàng',
-  [ActivityType.OUT_OF_STOCK]: 'Hết hàng',
-  [ActivityType.PRODUCT_EXPIRED]: 'Sản phẩm hết hạn',
-  [ActivityType.STORE_INVITATION]: 'Lời mời cửa hàng',
-};
-
-export enum ActivityReferenceType {
-  ORDER = 'order',
-  PET = 'pet',
-  CUSTOMER = 'customer',
-  PRODUCT = 'product',
-  NOTIFICATION = 'notification',
 }

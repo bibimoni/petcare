@@ -1,100 +1,99 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UserInfo {
-  @ApiProperty({
+  @ApiProperty({ 
     example: 123,
-    description: 'User ID',
+    description: 'User ID' 
   })
   user_id: number;
 
-  @ApiProperty({
+  @ApiProperty({ 
     example: 'john.doe@example.com',
-    description: 'User email',
+    description: 'User email' 
   })
   email: string;
 
-  @ApiProperty({
+  @ApiProperty({ 
     example: 'John Doe',
-    description: 'User full name',
+    description: 'User full name' 
   })
   full_name: string;
 
-  @ApiProperty({
+  @ApiProperty({ 
     example: 'ACTIVE',
-    description: 'User status',
+    description: 'User status' 
   })
   status: string;
 }
 
 export class RoleInfo {
-  @ApiProperty({
+  @ApiProperty({ 
     example: 2,
-    description: 'Role ID',
+    description: 'Role ID' 
   })
   id: number;
 
-  @ApiProperty({
+  @ApiProperty({ 
     example: 'STAFF',
-    description: 'Role name',
+    description: 'Role name' 
   })
   name: string;
 
-  @ApiProperty({
+  @ApiProperty({ 
     example: 'Store Staff with basic access',
-    description: 'Role description',
+    description: 'Role description' 
   })
   description: string;
 }
 
 export class StoreInfo {
-  @ApiProperty({
+  @ApiProperty({ 
     example: 1,
-    description: 'Store ID',
+    description: 'Store ID' 
   })
   id: number;
 
-  @ApiProperty({
+  @ApiProperty({ 
     example: 'Pet Haven',
-    description: 'Store name',
+    description: 'Store name' 
   })
   name: string;
 
-  @ApiProperty({
+  @ApiProperty({ 
     example: 'ACTIVE',
-    description: 'Store status',
+    description: 'Store status' 
   })
   status: string;
 }
 
 export class AcceptInvitationResponseDto {
-  @ApiProperty({
+  @ApiProperty({ 
     example: 'Invitation accepted successfully',
-    description: 'Status message',
+    description: 'Status message' 
   })
   message: string;
 
-  @ApiProperty({
+  @ApiProperty({ 
     type: UserInfo,
-    description: 'User information',
+    description: 'User information' 
   })
   user: UserInfo;
 
-  @ApiProperty({
+  @ApiProperty({ 
     type: StoreInfo,
-    description: 'Store information',
+    description: 'Store information' 
   })
   store: StoreInfo;
 
-  @ApiProperty({
+  @ApiProperty({ 
     type: RoleInfo,
-    description: 'Role information',
+    description: 'Role information' 
   })
   role: RoleInfo;
 
-  @ApiProperty({
-    example:
-      'You have been successfully added to the store. Please log in to continue.',
-    description: 'Additional instructions',
+  @ApiProperty({ 
+    example: 'You have been successfully added to the store. Please log in to continue.',
+    description: 'Additional instructions' 
   })
   note: string;
 }

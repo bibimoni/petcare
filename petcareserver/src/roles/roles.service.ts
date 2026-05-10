@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from './entities/role.entity';
 import { RolePermission } from './entities/role-permission.entity';
-import { RoleHistory, RoleHistoryAction } from './entities/role-history.entity';
 import { Permission } from '../permissions/entities/permission.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -18,22 +17,6 @@ import { PermissionScope } from '../common/enum';
 
 @Injectable()
 export class RolesService {
-  private async validateStoreMembership(
-    storeId: number,
-    currentUserId: number,
-    isSuperAdmin: boolean = false,
-  ) {
-    if (isSuperAdmin) return;
-    const currentUser = await this.userRepository.findOne({
-      where: { user_id: currentUserId },
-    });
-    if (!currentUser || currentUser.store_id !== storeId) {
-      throw new ForbiddenException(
-        'Bạn không có quyền thực hiện thao tác này trên cửa hàng',
-      );
-    }
-  }
-
   constructor(
     @InjectRepository(Role)
     private roleRepository: Repository<Role>,
@@ -43,27 +26,22 @@ export class RolesService {
     private permissionRepository: Repository<Permission>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @InjectRepository(RoleHistory)
-    private roleHistoryRepository: Repository<RoleHistory>,
   ) {}
-
-  private async getPerformedByName(
-    userId: number | null,
-  ): Promise<string | null> {
-    if (!userId) return null;
-    const user = await this.userRepository.findOne({
-      where: { user_id: userId },
-    });
-    return user?.full_name ?? null;
-  }
 
   async createRole(
     storeId: number,
     createRoleDto: CreateRoleDto,
     currentUserId: number,
-    isSuperAdmin: boolean = false,
   ) {
-    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
+
+    if (!currentUser || currentUser.store_id !== storeId) {
+      throw new ForbiddenException(
+        'Bạn không có quyền tạo vai trò cho cửa hàng này',
+      );
+    }
 
     const existingRole = await this.roleRepository.findOne({
       where: { name: createRoleDto.name, store_id: storeId },
@@ -101,38 +79,26 @@ export class RolesService {
 
     await this.rolePermissionRepository.save(rolePermissions);
 
-    const performedByName = await this.getPerformedByName(currentUserId);
-
-    await this.roleHistoryRepository.save({
-      role_id: savedRole.id,
-      store_id: storeId,
-      action: RoleHistoryAction.CREATED,
-      performed_by: currentUserId,
-      performed_by_name: performedByName,
-      old_values: null,
-      new_values: {
-        name: savedRole.name,
-        description: savedRole.description,
-        permission_ids: createRoleDto.permission_ids,
-      },
-    });
-
-    return await this.getRole(savedRole.id, currentUserId, isSuperAdmin);
+    return await this.getRole(savedRole.id, currentUserId);
   }
 
-  async getRoles(
-    storeId: number,
-    currentUserId: number,
-    isSuperAdmin: boolean = false,
-  ) {
-    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
+  async getRoles(storeId: number, currentUserId: number) {
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
+
+    if (!currentUser || currentUser.store_id !== storeId) {
+      throw new ForbiddenException(
+        'Bạn không có quyền xem vai trò của cửa hàng này',
+      );
+    }
 
     const roles = await this.roleRepository.find({
       where: { store_id: storeId },
       relations: {
-        role_permissions: {
-          permission: true,
-        },
+	     	role_permissions: {
+		      permission: true
+	      }
       },
       order: { id: 'ASC' },
     });
@@ -155,17 +121,13 @@ export class RolesService {
     }));
   }
 
-  async getRole(
-    roleId: number,
-    currentUserId: number,
-    isSuperAdmin: boolean = false,
-  ) {
+  async getRole(roleId: number, currentUserId: number) {
     const role = await this.roleRepository.findOne({
       where: { id: roleId },
       relations: {
-        role_permissions: {
-          permission: true,
-        },
+	     	role_permissions: {
+		      permission: true
+	      }
       },
     });
 
@@ -173,11 +135,15 @@ export class RolesService {
       throw new NotFoundException('Không tìm thấy vai trò');
     }
 
-    await this.validateStoreMembership(
-      role.store_id,
-      currentUserId,
-      isSuperAdmin,
-    );
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
+
+    if (!currentUser || currentUser.store_id !== role.store_id) {
+      throw new ForbiddenException(
+        'Bạn không có quyền xem vai trò này',
+      );
+    }
 
     return {
       id: role.id,
@@ -202,11 +168,9 @@ export class RolesService {
     roleId: number,
     updateRoleDto: UpdateRoleDto,
     currentUserId: number,
-    isSuperAdmin: boolean = false,
   ) {
     const role = await this.roleRepository.findOne({
       where: { id: roleId },
-      relations: { role_permissions: { permission: true } },
     });
 
     if (!role) {
@@ -217,18 +181,15 @@ export class RolesService {
       throw new ForbiddenException('Vai trò này không thể chỉnh sửa');
     }
 
-    await this.validateStoreMembership(
-      role.store_id,
-      currentUserId,
-      isSuperAdmin,
-    );
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
 
-    const oldValues: Record<string, any> = {
-      name: role.name,
-      description: role.description,
-      permission_ids: role.role_permissions.map((rp) => rp.permission_id),
-      permission_slugs: role.role_permissions.map((rp) => rp.permission.slug),
-    };
+    if (!currentUser || currentUser.store_id !== role.store_id) {
+      throw new ForbiddenException(
+        'Bạn không có quyền cập nhật vai trò này',
+      );
+    }
 
     if (updateRoleDto.name) {
       const existingRole = await this.roleRepository.findOne({
@@ -274,39 +235,10 @@ export class RolesService {
     role.updated_at = new Date();
     const updatedRole = await this.roleRepository.save(role);
 
-    const newValues: Record<string, any> = {
-      name: updatedRole.name,
-      description: updatedRole.description,
-    };
-
-    if (updateRoleDto.permission_ids !== undefined) {
-      newValues.permission_ids = updateRoleDto.permission_ids;
-    }
-
-    const performedByName = await this.getPerformedByName(currentUserId);
-    const historyAction =
-      updateRoleDto.permission_ids !== undefined
-        ? RoleHistoryAction.PERMISSIONS_CHANGED
-        : RoleHistoryAction.UPDATED;
-
-    await this.roleHistoryRepository.save({
-      role_id: roleId,
-      store_id: role.store_id,
-      action: historyAction,
-      performed_by: currentUserId,
-      performed_by_name: performedByName,
-      old_values: oldValues,
-      new_values: newValues,
-    });
-
-    return await this.getRole(updatedRole.id, currentUserId, isSuperAdmin);
+    return await this.getRole(updatedRole.id, currentUserId);
   }
 
-  async deleteRole(
-    roleId: number,
-    currentUserId: number,
-    isSuperAdmin: boolean = false,
-  ) {
+  async deleteRole(roleId: number, currentUserId: number) {
     const role = await this.roleRepository.findOne({
       where: { id: roleId },
     });
@@ -319,11 +251,15 @@ export class RolesService {
       throw new ForbiddenException('Không thể xóa vai trò hệ thống');
     }
 
-    await this.validateStoreMembership(
-      role.store_id,
-      currentUserId,
-      isSuperAdmin,
-    );
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
+
+    if (!currentUser || currentUser.store_id !== role.store_id) {
+      throw new ForbiddenException(
+        'Bạn không có quyền xóa vai trò này',
+      );
+    }
 
     const usersWithRole = await this.userRepository.count({
       where: { role_id: roleId },
@@ -335,18 +271,6 @@ export class RolesService {
       );
     }
 
-    const performedByName = await this.getPerformedByName(currentUserId);
-
-    await this.roleHistoryRepository.save({
-      role_id: roleId,
-      store_id: role.store_id,
-      action: RoleHistoryAction.DELETED,
-      performed_by: currentUserId,
-      performed_by_name: performedByName,
-      old_values: { name: role.name, description: role.description },
-      new_values: null,
-    });
-
     await this.rolePermissionRepository.delete({ role_id: roleId });
 
     await this.roleRepository.delete(roleId);
@@ -356,12 +280,16 @@ export class RolesService {
     };
   }
 
-  async getAvailablePermissions(
-    storeId: number,
-    currentUserId: number,
-    isSuperAdmin: boolean = false,
-  ) {
-    await this.validateStoreMembership(storeId, currentUserId, isSuperAdmin);
+  async getAvailablePermissions(storeId: number, currentUserId: number) {
+    const currentUser = await this.userRepository.findOne({
+      where: { user_id: currentUserId },
+    });
+
+    if (!currentUser || currentUser.store_id !== storeId) {
+      throw new ForbiddenException(
+        'Bạn không có quyền xem danh sách quyền của cửa hàng này',
+      );
+    }
 
     const permissions = await this.permissionRepository.find({
       where: { scope: PermissionScope.STORE },
@@ -375,12 +303,5 @@ export class RolesService {
       module: permission.module,
       is_system_defined: permission.is_system_defined,
     }));
-  }
-
-  async getHistory(storeId: number, roleId: number) {
-    return this.roleHistoryRepository.find({
-      where: { role_id: roleId, store_id: storeId },
-      order: { created_at: 'DESC' },
-    });
   }
 }

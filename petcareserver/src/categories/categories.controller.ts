@@ -19,7 +19,6 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
-  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -77,9 +76,8 @@ export class CategoriesController {
     status: 400,
     description: 'Invalid category type',
   })
-  @ApiQuery({ name: 'categoryType', required: false, enum: CategoryType })
   async filterCategoriesByType(
-    @Query('categoryType') type: CategoryType,
+    @Query('type') type: CategoryType,
     @CurrentUser() user: any,
   ) {
     return this.categoriesService.filterByType(user.store_id, type);
@@ -108,7 +106,7 @@ export class CategoriesController {
   ) {
     const categoryIdNum = parseInt(categoryId, 10);
     if (isNaN(categoryIdNum)) {
-      throw new BadRequestException('ID danh mục không hợp lệ');
+      throw new BadRequestException('Invalid category ID');
     }
     return this.categoriesService.updateCategory(
       user.store_id,
@@ -130,7 +128,7 @@ export class CategoriesController {
   })
   @ApiResponse({
     status: 400,
-    description: 'ID danh mục không hợp lệ',
+    description: 'Invalid category ID',
   })
   async deleteCategory(
     @Param('categoryId') categoryId: string,
@@ -138,7 +136,7 @@ export class CategoriesController {
   ) {
     const categoryIdNum = parseInt(categoryId, 10);
     if (isNaN(categoryIdNum)) {
-      throw new BadRequestException('ID danh mục không hợp lệ');
+      throw new BadRequestException('Invalid category ID');
     }
     return this.categoriesService.deleteCategory(user.store_id, categoryIdNum);
   }

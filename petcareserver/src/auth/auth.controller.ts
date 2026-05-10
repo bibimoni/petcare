@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Patch,
-  Body,
-  UseGuards,
-  Query,
-} from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, UseGuards, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -37,14 +29,8 @@ export class AuthController {
   @Post('register')
   @ApiOperation({ summary: 'Register a new user account' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input data (validation errors)',
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'Email or phone number already exists',
-  })
+  @ApiResponse({ status: 400, description: 'Invalid input data (validation errors)' })
+  @ApiResponse({ status: 409, description: 'Email or phone number already exists' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   @ApiBody({ type: RegisterDto })
   async register(@Body() registerDto: RegisterDto) {
@@ -53,33 +39,28 @@ export class AuthController {
 
   @Post('forgot-password')
   @ApiOperation({ summary: 'Restart password for a user account' })
-  @ApiResponse({ status: 200, description: 'Password reset email sent' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiBody({ type: ForgotPasswordDto })
+	@ApiResponse({ status: 200, description: 'Password reset email sent' })
+	@ApiResponse({ status: 404, description: 'User not found' })
+	@ApiBody({ type: ForgotPasswordDto })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(forgotPasswordDto);
+  	return this.authService.forgotPassword(forgotPasswordDto);
   }
 
   @Post('reset-password')
-  @ApiOperation({ summary: 'Reset password using token' })
-  @ApiResponse({ status: 200, description: 'Password reset successfully' })
-  @ApiQuery({
+	@ApiOperation({ summary: 'Reset password using token' })
+	@ApiResponse({ status: 200, description: 'Password reset successfully' })
+	@ApiQuery({
     name: 'token',
     description: 'Reset password token',
     example: 'abc123def456',
   })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        new_password: { type: 'string' },
-      },
-    },
-  })
-  async resetPassword(
-    @Query('token') token: string,
-    @Body('new_password') newPassword: string,
-  ) {
-    return this.authService.resetPassword(token, newPassword);
+	@ApiBody({ schema: {
+		type: 'object',
+		properties: {
+			new_password: { type: 'string' },
+		},
+	}})
+  async resetPassword(@Query('token') token: string, @Body('new_password') newPassword: string) {
+  	return this.authService.resetPassword(token, newPassword);
   }
 }

@@ -4,11 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import {
-  ENTITIES,
-  TEST_CONFIG,
-  getTypeOrmTestConfig,
-} from './test-database.helper';
+import { ENTITIES, TEST_CONFIG, getTypeOrmTestConfig } from './test-database.helper';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 

@@ -7,7 +7,7 @@ export class CreateCategoryDto {
     example: 'Grooming',
     description: 'Name of the service category',
   })
-  @IsNotEmpty({ message: 'Tên danh mục là bắt buộc' })
+  @IsNotEmpty({ message: 'Category name is required' })
   @IsString()
   name: string;
 
@@ -16,7 +16,7 @@ export class CreateCategoryDto {
     description: 'Type of category',
     enum: CategoryType,
   })
-  @IsNotEmpty({ message: 'Loại danh mục là bắt buộc' })
+  @IsNotEmpty({ message: 'Category type is required' })
   @IsEnum(CategoryType)
   type: CategoryType;
 }

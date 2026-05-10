@@ -13,7 +13,7 @@ export class CreateProductDto {
     example: 1,
     description: 'ID of the category this product belongs to',
   })
-  @IsNotEmpty({ message: 'Danh mục là bắt buộc' })
+  @IsNotEmpty({ message: 'Category ID is required' })
   @IsNumber()
   category_id: number;
 
@@ -21,7 +21,7 @@ export class CreateProductDto {
     example: 'Dog Food - Chicken Flavor',
     description: 'Name of the product',
   })
-  @IsNotEmpty({ message: 'Tên sản phẩm là bắt buộc' })
+  @IsNotEmpty({ message: 'Product name is required' })
   @IsString()
   name: string;
 
@@ -29,7 +29,7 @@ export class CreateProductDto {
     example: 12000,
     description: 'Cost price of the product in VND',
   })
-  @Min(1000, { message: 'Giá vốn phải tối thiểu 1000 VND' })
+  @Min(1000, { message: 'Cost price must be at least 1000 VND' })
   @IsNumber()
   cost_price: number;
 
@@ -38,7 +38,7 @@ export class CreateProductDto {
     description: 'Selling price of the product in VND',
   })
   @Min(1000, {
-    message: 'Giá bán phải lớn hơn hoặc bằng giá vốn',
+    message: 'Sell price must be greater than or equal to cost price',
   })
   @IsNumber()
   sell_price: number;

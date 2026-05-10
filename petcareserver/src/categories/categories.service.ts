@@ -34,7 +34,7 @@ export class CategoriesService {
       where: { category_id: categoryId, store_id: storeId },
     });
     if (!category) {
-      throw new BadRequestException('Không tìm thấy danh mục');
+      throw new BadRequestException('Category not found');
     }
     Object.assign(category, updateCategoryDto);
     return await this.categoryRepository.save(category);
@@ -45,7 +45,7 @@ export class CategoriesService {
       where: { category_id: categoryId, store_id: storeId },
     });
     if (!category) {
-      throw new BadRequestException('Không tìm thấy danh mục');
+      throw new BadRequestException('Category not found');
     }
     await this.categoryRepository.delete({
       category_id: category.category_id,

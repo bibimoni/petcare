@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  AfterLoad,
 } from 'typeorm';
 import { Store } from '../../stores/entities/store.entity';
 import { Product } from '../../categories/entities/product.entity';
@@ -19,14 +18,6 @@ export enum NotificationType {
   OUT_OF_STOCK = 'OUT_OF_STOCK',
   STORE_INVITATION = 'STORE_INVITATION',
 }
-
-export const NotificationTypeLabel: Record<NotificationType, string> = {
-  [NotificationType.LOW_STOCK]: 'Sắp hết hàng',
-  [NotificationType.EXPIRY_WARNING]: 'Sắp hết hạn',
-  [NotificationType.EXPIRED]: 'Hết hạn',
-  [NotificationType.OUT_OF_STOCK]: 'Hết hàng',
-  [NotificationType.STORE_INVITATION]: 'Lời mời cửa hàng',
-};
 
 export enum NotificationStatus {
   UNREAD = 'UNREAD',
@@ -96,11 +87,4 @@ export class Notification {
 
   @UpdateDateColumn()
   updated_at: Date;
-
-  type_label: string;
-
-  @AfterLoad()
-  setTypeLabel() {
-    this.type_label = NotificationTypeLabel[this.type] ?? this.type;
-  }
 }

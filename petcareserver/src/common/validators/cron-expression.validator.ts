@@ -81,7 +81,7 @@ export class IsCronExpressionConstraint implements ValidatorConstraintInterface 
 }
 
 export function IsCronExpression(validationOptions?: ValidationOptions) {
-  return function (target: object, propertyName: string) {
+  return function (target: Object, propertyName: string) {
     registerDecorator({
       target: target.constructor,
       propertyName: propertyName,

@@ -9,7 +9,11 @@ import { Order } from './order.entity';
 import { Product } from '../../categories/entities/product.entity';
 import { Service } from '../../categories/entities/service.entity';
 import { Pet } from '../../pets/entities/pet.entity';
-import { CategoryType } from '../../common/enum';
+
+export enum ItemType {
+  PRODUCT = 'PRODUCT',
+  SERVICE = 'SERVICE',
+}
 
 @Entity('order_details')
 export class OrderDetail {
@@ -25,8 +29,8 @@ export class OrderDetail {
   @JoinColumn({ name: 'order_id' })
   order: Order;
 
-  @Column({ name: 'item_type', type: 'simple-enum', enum: CategoryType })
-  item_type: CategoryType;
+  @Column({ name: 'item_type', type: 'simple-enum', enum: ItemType })
+  item_type: ItemType;
 
   @Column({ name: 'product_id', nullable: true })
   product_id: number;

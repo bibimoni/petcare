@@ -17,22 +17,15 @@ import { CreatePetDto } from './dto/create-pet.dto';
 import { UpdatePetDto } from './dto/update-pet.dto';
 import { CreatePetWeightHistoryDto } from './dto/create-pet-weight-history.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import {
-  CurrentUser,
-  PermissionsGuard,
-  RequirePermissions,
-  isSuperAdmin,
-} from 'src/common';
+import { CurrentUser, PermissionsGuard, RequirePermissions } from 'src/common';
 import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
-  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { STORE_PERMISSIONS } from 'src/common/permissions/store.permissions';
-import { PetStatus } from './entities/pet.entity';
 
 @ApiTags('Pets Management')
 @Controller({ path: '/pets', version: '1' })
@@ -40,34 +33,6 @@ import { PetStatus } from './entities/pet.entity';
 @ApiBearerAuth()
 export class PetsController {
   constructor(private readonly petsService: PetsService) {}
-
-  @Get()
-  @HttpCode(HttpStatus.OK)
-  @RequirePermissions(STORE_PERMISSIONS.PET_VIEW)
-  @ApiOperation({
-    summary: 'Get all pets',
-    description:
-      'Retrieves all pets with optional filters. Superadmins see all stores.',
-  })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'status', required: false, enum: PetStatus })
-  @ApiQuery({ name: 'customer_id', required: false, type: Number })
-  async findAll(
-    @CurrentUser() user: any,
-    @Query('search') search?: string,
-    @Query('status') status?: PetStatus,
-    @Query('customer_id') customer_id?: string,
-  ) {
-    const admin = isSuperAdmin(user);
-    const storeId = admin ? null : user.store_id;
-    const customerIdNum = customer_id ? parseInt(customer_id, 10) : undefined;
-    return this.petsService.findAll(storeId, admin, {
-      search,
-      status,
-      customer_id:
-        customerIdNum && !isNaN(customerIdNum) ? customerIdNum : undefined,
-    });
-  }
 
   @Get('/customer/:customerId')
   @HttpCode(HttpStatus.OK)

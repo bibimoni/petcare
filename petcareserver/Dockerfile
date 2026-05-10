@@ -20,14 +20,15 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+COPY package*.json ./
+RUN npm ci
+
 COPY --from=development /app/dist ./dist
 COPY --from=development /app/src ./src
 COPY --from=development /app/scripts ./scripts
-COPY --from=development /app/node_modules ./node_modules
-COPY --from=development /app/package.json ./package.json
 COPY --from=development /app/tsconfig.build.json ./tsconfig.build.json
 COPY --from=development /app/tsconfig.json ./tsconfig.json
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "npm run seed && npm run seed:deploy && npm run seed:analytics && node dist/src/main.js"]
+CMD ["sh", "-c", "npm run seed && node dist/src/main.js"]

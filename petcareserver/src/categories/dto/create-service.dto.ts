@@ -12,7 +12,7 @@ export class CreateServiceDto {
     example: 1,
     description: 'ID of the service category',
   })
-  @IsNotEmpty({ message: 'Danh mục là bắt buộc' })
+  @IsNotEmpty({ message: 'Category ID is required' })
   @IsNumber()
   category_id: number;
 
@@ -20,7 +20,7 @@ export class CreateServiceDto {
     example: 'Wash & Groom Combo',
     description: 'Name of the service combo',
   })
-  @IsNotEmpty({ message: 'Tên combo là bắt buộc' })
+  @IsNotEmpty({ message: 'Combo name is required' })
   @IsString()
   combo_name: string;
 
@@ -28,7 +28,7 @@ export class CreateServiceDto {
     example: 50000,
     description: 'Price of the service (VND)',
   })
-  @Min(1000, { message: 'Giá dịch vụ phải tối thiểu 1000 VND' })
+  @Min(1000, { message: 'Service price must be at least 1000 VND' })
   @IsNumber()
   price: number;
 

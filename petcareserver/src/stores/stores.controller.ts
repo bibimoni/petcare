@@ -3,10 +3,8 @@ import {
   Post,
   Get,
   Patch,
-  Delete,
   Body,
   Param,
-  ParseIntPipe,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -30,7 +28,6 @@ import {
   JwtAuthGuard,
   PermissionsGuard,
   RequirePermissions,
-  isSuperAdmin,
 } from '../common';
 import { AcceptInvitationResponseDto } from './dto/accept-invitation-response.dto';
 import { STORE_PERMISSIONS } from '../common/permissions';
@@ -40,42 +37,6 @@ import { UpdateNotificationScheduleDto } from './dto/update-notification-schedul
 @Controller({ path: 'stores', version: '1' })
 export class StoresController {
   constructor(private readonly storesService: StoresService) {}
-
-  @Get('activity')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @ApiBearerAuth()
-  @RequirePermissions(STORE_PERMISSIONS.REPORTS_VIEW)
-  @ApiOperation({
-    summary: 'Get store activity log',
-    description:
-      'Retrieves a unified timeline of customer, product, service, order, and role audit events for the store, sorted by time. Optional filters: entity_type, performed_by.',
-  })
-  @ApiQuery({
-    name: 'entity_type',
-    required: false,
-    enum: ['CUSTOMER', 'PRODUCT', 'SERVICE', 'ORDER', 'ROLE'],
-  })
-  @ApiQuery({ name: 'performed_by', required: false, type: Number })
-  @ApiResponse({
-    status: 200,
-    description: 'Activity log retrieved successfully',
-  })
-  getActivity(
-    @CurrentUser() user: any,
-    @Query('entity_type')
-    entity_type?: 'CUSTOMER' | 'PRODUCT' | 'SERVICE' | 'ORDER' | 'ROLE',
-    @Query('performed_by') performed_by?: string,
-  ) {
-    const performedByNum = performed_by
-      ? parseInt(performed_by, 10)
-      : undefined;
-    return this.storesService.getActivity(user.store_id, {
-      entity_type,
-      performed_by:
-        performedByNum && !isNaN(performedByNum) ? performedByNum : undefined,
-    });
-  }
 
   @Get()
   @ApiOperation({
@@ -156,12 +117,10 @@ export class StoresController {
     @Body() inviteStaffDto: InviteStaffDto,
     @CurrentUser() user: any,
   ) {
-    const admin = isSuperAdmin(user);
     return this.storesService.inviteStaff(
       parseInt(storeId),
       inviteStaffDto,
       user.user_id,
-      admin,
     );
   }
 
@@ -219,12 +178,10 @@ export class StoresController {
     @Body() updateData: UpdateStoreDto,
     @CurrentUser() user: any,
   ) {
-    const admin = isSuperAdmin(user);
     return this.storesService.updateStore(
       parseInt(storeId),
       updateData,
       user.user_id,
-      admin,
     );
   }
 
@@ -273,12 +230,10 @@ export class StoresController {
     @Body() body: UpdateNotificationScheduleDto,
     @CurrentUser() user: any,
   ) {
-    const admin = isSuperAdmin(user);
     return this.storesService.updateNotificationSchedule(
       parseInt(storeId),
       body.cron_expression,
       user.user_id,
-      admin,
     );
   }
 
@@ -306,90 +261,7 @@ export class StoresController {
     @Param('storeId') storeId: string,
     @CurrentUser() user: any,
   ) {
-    const admin = isSuperAdmin(user);
-    return this.storesService.getStoreStaff(
-      parseInt(storeId),
-      user.user_id,
-      admin,
-    );
-  }
-
-  @Delete(':storeId')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @ApiBearerAuth()
-  @RequirePermissions(STORE_PERMISSIONS.STORE_SETTINGS_MANAGE)
-  @ApiOperation({
-    summary: 'Remove store (soft delete)',
-    description:
-      'Allows the last admin to remove a store. Sets store status to SUSPENDED and removes the admin. The admin must be the only remaining member.',
-  })
-  @ApiParam({ name: 'storeId', description: 'Store ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Store removed successfully' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Not admin or store still has members',
-  })
-  @ApiResponse({ status: 404, description: 'Store not found' })
-  @ApiResponse({ status: 400, description: 'Invalid store ID' })
-  async removeStore(
-    @Param('storeId', ParseIntPipe) storeId: number,
-    @CurrentUser() user: any,
-  ) {
-    const admin = isSuperAdmin(user);
-    return this.storesService.removeStore(storeId, user.user_id, admin);
-  }
-
-  @Delete(':storeId/staff/me')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Leave store (self-removal)',
-    description:
-      'Allows a staff member to leave a store by clearing their own store_id and role_id. No STAFF_DELETE permission required.',
-  })
-  @ApiParam({ name: 'storeId', description: 'Store ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Left store successfully' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Last admin cannot leave',
-  })
-  @ApiResponse({ status: 400, description: 'Invalid store ID' })
-  async leaveStore(
-    @Param('storeId', ParseIntPipe) storeId: number,
-    @CurrentUser() user: any,
-  ) {
-    const admin = isSuperAdmin(user);
-    return this.storesService.leaveStore(storeId, user.user_id, admin);
-  }
-
-  @Delete(':storeId/staff/:userId')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @ApiBearerAuth()
-  @RequirePermissions(STORE_PERMISSIONS.STAFF_DELETE)
-  @ApiOperation({
-    summary: 'Remove staff member from store',
-    description:
-      'Removes a staff member from the store by clearing their store_id and role_id. Requires STAFF_DELETE permission.',
-  })
-  @ApiParam({ name: 'storeId', description: 'Store ID', example: 1 })
-  @ApiParam({ name: 'userId', description: 'User ID to remove', example: 2 })
-  @ApiResponse({ status: 200, description: 'Staff removed successfully' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Insufficient permissions or self-removal',
-  })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 400, description: 'Invalid store ID or user ID' })
-  async removeStaff(
-    @Param('storeId', ParseIntPipe) storeId: number,
-    @Param('userId', ParseIntPipe) userId: number,
-    @CurrentUser() user: any,
-  ) {
-    const admin = isSuperAdmin(user);
-    return this.storesService.removeStaff(storeId, userId, user.user_id, admin);
+    return this.storesService.getStoreStaff(parseInt(storeId), user.user_id);
   }
 
   @Get('invitations/accept')

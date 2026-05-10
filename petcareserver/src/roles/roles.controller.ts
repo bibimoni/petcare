@@ -9,7 +9,6 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
-  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,10 +26,8 @@ import {
   JwtAuthGuard,
   RequirePermissions,
   PermissionsGuard,
-  isSuperAdmin,
 } from '../common';
 import { STORE_PERMISSIONS } from '../common/permissions';
-import { SYSTEM_PERMISSIONS } from '../common/permissions/system.permissions';
 
 @ApiTags('Roles Management')
 @Controller({ path: 'stores/:storeId/roles', version: '1' })
@@ -71,12 +68,10 @@ export class RolesController {
     @Body() createRoleDto: CreateRoleDto,
     @CurrentUser() user: any,
   ) {
-    const admin = isSuperAdmin(user);
     return this.rolesService.createRole(
       parseInt(storeId),
       createRoleDto,
       user.user_id,
-      admin,
     );
   }
 
@@ -100,8 +95,7 @@ export class RolesController {
     description: 'Forbidden - Not a member of this store',
   })
   async getRoles(@Param('storeId') storeId: string, @CurrentUser() user: any) {
-    const admin = isSuperAdmin(user);
-    return this.rolesService.getRoles(parseInt(storeId), user.user_id, admin);
+    return this.rolesService.getRoles(parseInt(storeId), user.user_id);
   }
 
   @Get('permissions')
@@ -127,11 +121,9 @@ export class RolesController {
     @Param('storeId') storeId: string,
     @CurrentUser() user: any,
   ) {
-    const admin = isSuperAdmin(user);
     return this.rolesService.getAvailablePermissions(
       parseInt(storeId),
       user.user_id,
-      admin,
     );
   }
 
@@ -168,8 +160,7 @@ export class RolesController {
     @Param('roleId') roleId: string,
     @CurrentUser() user: any,
   ) {
-    const admin = isSuperAdmin(user);
-    return this.rolesService.getRole(parseInt(roleId), user.user_id, admin);
+    return this.rolesService.getRole(parseInt(roleId), user.user_id);
   }
 
   @Patch(':roleId')
@@ -210,12 +201,10 @@ export class RolesController {
     @Body() updateRoleDto: UpdateRoleDto,
     @CurrentUser() user: any,
   ) {
-    const admin = isSuperAdmin(user);
     return this.rolesService.updateRole(
       parseInt(roleId),
       updateRoleDto,
       user.user_id,
-      admin,
     );
   }
 
@@ -260,35 +249,6 @@ export class RolesController {
     @Param('roleId') roleId: string,
     @CurrentUser() user: any,
   ) {
-    const admin = isSuperAdmin(user);
-    return this.rolesService.deleteRole(parseInt(roleId), user.user_id, admin);
-  }
-
-  @Get(':roleId/history')
-  @ApiOperation({
-    summary: 'Get role audit history',
-    description:
-      'Retrieves the audit history for a specific role including permission changes',
-  })
-  @ApiParam({
-    name: 'storeId',
-    description: 'Store ID',
-    example: 1,
-  })
-  @ApiParam({
-    name: 'roleId',
-    description: 'Role ID',
-    example: 2,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Role history retrieved successfully',
-  })
-  async getRoleHistory(
-    @Param('storeId') storeId: string,
-    @Param('roleId', ParseIntPipe) roleId: number,
-    @CurrentUser() user: any,
-  ) {
-    return this.rolesService.getHistory(parseInt(storeId), roleId);
+    return this.rolesService.deleteRole(parseInt(roleId), user.user_id);
   }
 }

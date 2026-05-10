@@ -16,10 +16,10 @@ export class UpdateStoreDto {
     description: 'Updated store name',
     required: false,
   })
-  @IsString({ message: 'Tên cửa hàng phải là chuỗi' })
+  @IsString({ message: 'Store name must be a string' })
   @IsOptional()
-  @MinLength(2, { message: 'Tên cửa hàng phải có ít nhất 2 ký tự' })
-  @MaxLength(200, { message: 'Tên cửa hàng không được vượt quá 200 ký tự' })
+  @MinLength(2, { message: 'Store name must be at least 2 characters long' })
+  @MaxLength(200, { message: 'Store name must not exceed 200 characters' })
   name?: string;
 
   @ApiProperty({
@@ -28,7 +28,7 @@ export class UpdateStoreDto {
     description: 'Store status',
     required: false,
   })
-  @IsEnum(StoreStatus, { message: 'Trạng thái cửa hàng không hợp lệ' })
+  @IsEnum(StoreStatus, { message: 'Invalid store status' })
   @IsOptional()
   status?: StoreStatus;
 
@@ -37,7 +37,7 @@ export class UpdateStoreDto {
     description: 'Updated store phone number',
     required: false,
   })
-  @IsString({ message: 'Số điện thoại phải là chuỗi' })
+  @IsString({ message: 'Phone number must be a string' })
   @IsOptional()
   phone?: string;
 
@@ -46,7 +46,7 @@ export class UpdateStoreDto {
     description: 'Updated store street address',
     required: false,
   })
-  @IsString({ message: 'Địa chỉ phải là chuỗi' })
+  @IsString({ message: 'Address must be a string' })
   @IsOptional()
   address?: string;
 
@@ -55,9 +55,9 @@ export class UpdateStoreDto {
     description: 'Updated store city',
     required: false,
   })
-  @IsString({ message: 'Thành phố phải là chuỗi' })
+  @IsString({ message: 'City must be a string' })
   @IsOptional()
-  @MaxLength(100, { message: 'Thành phố không được vượt quá 100 ký tự' })
+  @MaxLength(100, { message: 'City must not exceed 100 characters' })
   city?: string;
 
   @ApiProperty({
@@ -65,9 +65,9 @@ export class UpdateStoreDto {
     description: 'Updated store state/province',
     required: false,
   })
-  @IsString({ message: 'Tỉnh/Thành phố phải là chuỗi' })
+  @IsString({ message: 'State must be a string' })
   @IsOptional()
-  @MaxLength(100, { message: 'Tỉnh/Thành phố không được vượt quá 100 ký tự' })
+  @MaxLength(100, { message: 'State must not exceed 100 characters' })
   state?: string;
 
   @ApiProperty({
@@ -75,9 +75,9 @@ export class UpdateStoreDto {
     description: 'Updated store country',
     required: false,
   })
-  @IsString({ message: 'Quốc gia phải là chuỗi' })
+  @IsString({ message: 'Country must be a string' })
   @IsOptional()
-  @MaxLength(100, { message: 'Quốc gia không được vượt quá 100 ký tự' })
+  @MaxLength(100, { message: 'Country must not exceed 100 characters' })
   country?: string;
 
   @ApiProperty({
@@ -85,9 +85,9 @@ export class UpdateStoreDto {
     description: 'Updated store postal/ZIP code',
     required: false,
   })
-  @IsString({ message: 'Mã bưu điện phải là chuỗi' })
+  @IsString({ message: 'Postal code must be a string' })
   @IsOptional()
-  @MaxLength(20, { message: 'Mã bưu điện không được vượt quá 20 ký tự' })
+  @MaxLength(20, { message: 'Postal code must not exceed 20 characters' })
   postal_code?: string;
 
   @ApiProperty({
@@ -95,7 +95,7 @@ export class UpdateStoreDto {
     description: 'Updated store logo URL',
     required: false,
   })
-  @IsUrl({}, { message: 'URL logo phải hợp lệ' })
+  @IsUrl({}, { message: 'Logo URL must be a valid URL' })
   @IsOptional()
   logo_url?: string;
 
@@ -105,8 +105,8 @@ export class UpdateStoreDto {
       'Cron expression for notification schedule (e.g., "0 0 8 * * *" for 8am daily). If null, uses default system schedule',
     required: false,
   })
-  @IsString({ message: 'Cron thông báo phải là chuỗi' })
-  @IsCronExpression({ message: 'Định dạng cron không hợp lệ' })
+  @IsString({ message: 'Notification cron must be a string' })
+  @IsCronExpression({ message: 'Invalid cron expression format' })
   @IsOptional()
   notification_cron?: string | null;
 }

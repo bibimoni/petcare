@@ -23,40 +23,6 @@ export class PetsService {
     private weightHistoryRepository: Repository<PetWeightHistory>,
   ) {}
 
-  async findAll(
-    storeId: number | null,
-    isAdmin: boolean,
-    filters?: { search?: string; status?: PetStatus; customer_id?: number },
-  ): Promise<Pet[]> {
-    const query = this.petRepository
-      .createQueryBuilder('pet')
-      .leftJoinAndSelect('pet.customer', 'customer')
-      .leftJoinAndSelect('pet.weight_history', 'weight_history')
-      .orderBy('pet.created_at', 'DESC');
-
-    if (!isAdmin && storeId) {
-      query.where('pet.store_id = :storeId', { storeId });
-    }
-
-    if (filters?.search) {
-      query.andWhere('(pet.name ILIKE :search OR pet.breed ILIKE :search)', {
-        search: `%${filters.search}%`,
-      });
-    }
-
-    if (filters?.status) {
-      query.andWhere('pet.status = :status', { status: filters.status });
-    }
-
-    if (filters?.customer_id) {
-      query.andWhere('pet.customer_id = :customerId', {
-        customerId: filters.customer_id,
-      });
-    }
-
-    return query.getMany();
-  }
-
   async findByCustomer(storeId: number, customerId: number): Promise<Pet[]> {
     const customer = await this.customerRepository.findOne({
       where: { customer_id: customerId, store_id: storeId },

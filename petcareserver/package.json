@@ -20,9 +20,6 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node scripts/seed-admin.ts",
     "seed:customers": "ts-node scripts/seed-customers.ts",
-    "seed:analytics": "ts-node -r tsconfig-paths/register scripts/seed-analytics.ts",
-    "seed:deploy": "ts-node -r tsconfig-paths/register scripts/seed-deploy.ts",
-    "test:endpoints": "bash scripts/test-endpoints.sh",
     "migration:generate": "npm run typeorm -- -d src/database/data-source.ts migration:generate",
     "migration:create": "npm run typeorm -- migration:create",
     "migration:run": "npm run typeorm -- -d src/database/data-source.ts migration:run",
@@ -53,7 +50,6 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "streamifier": "^0.1.1",
-    "stripe": "^22.1.0",
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.28"
   },
@@ -104,9 +100,6 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node",
-    "moduleNameMapper": {
-      "^src/(.*)$": "<rootDir>/$1"
-    }
+    "testEnvironment": "node"
   }
 }

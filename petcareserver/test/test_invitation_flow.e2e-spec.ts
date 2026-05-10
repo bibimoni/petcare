@@ -10,12 +10,7 @@ import { Role } from '../src/roles/entities/role.entity';
 import { Invitation } from '../src/stores/entities/invitation.entity';
 import { Notification } from '../src/notifications/entities/notification.entity';
 import { Permission } from '../src/permissions/entities/permission.entity';
-import {
-  UserStatus,
-  StoreStatus,
-  InvitationStatus,
-  PermissionScope,
-} from '../src/common/enum';
+import { UserStatus, StoreStatus, InvitationStatus, PermissionScope } from '../src/common/enum';
 import { STORE_PERMISSIONS } from '../src/common/permissions';
 
 /**
@@ -80,17 +75,13 @@ describe('Invitation Flow (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     app.enableVersioning();
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
     userRepository = moduleFixture.get(getRepositoryToken(User));
     storeRepository = moduleFixture.get(getRepositoryToken(Store));
     roleRepository = moduleFixture.get(getRepositoryToken(Role));
     invitationRepository = moduleFixture.get(getRepositoryToken(Invitation));
-    notificationRepository = moduleFixture.get(
-      getRepositoryToken(Notification),
-    );
+    notificationRepository = moduleFixture.get(getRepositoryToken(Notification));
     permissionRepository = moduleFixture.get(getRepositoryToken(Permission));
 
     await app.init();
@@ -104,90 +95,18 @@ describe('Invitation Flow (e2e)', () => {
 
   async function seedPermissions() {
     const permissionsToSeed = [
-      {
-        slug: STORE_PERMISSIONS.PRODUCT_VIEW,
-        scope: PermissionScope.STORE,
-        description: 'View products',
-        module: 'inventory',
-        is_system_defined: true,
-      },
-      {
-        slug: STORE_PERMISSIONS.PRODUCT_MANAGE,
-        scope: PermissionScope.STORE,
-        description: 'Manage products',
-        module: 'inventory',
-        is_system_defined: true,
-      },
-      {
-        slug: STORE_PERMISSIONS.ORDER_VIEW,
-        scope: PermissionScope.STORE,
-        description: 'View orders',
-        module: 'orders',
-        is_system_defined: true,
-      },
-      {
-        slug: STORE_PERMISSIONS.ORDER_VIEW_ALL,
-        scope: PermissionScope.STORE,
-        description: 'View all orders',
-        module: 'orders',
-        is_system_defined: true,
-      },
-      {
-        slug: STORE_PERMISSIONS.STAFF_VIEW,
-        scope: PermissionScope.STORE,
-        description: 'View staff',
-        module: 'staff',
-        is_system_defined: true,
-      },
-      {
-        slug: STORE_PERMISSIONS.STAFF_INVITE,
-        scope: PermissionScope.STORE,
-        description: 'Invite staff',
-        module: 'staff',
-        is_system_defined: true,
-      },
-      {
-        slug: STORE_PERMISSIONS.ROLE_VIEW,
-        scope: PermissionScope.STORE,
-        description: 'View roles',
-        module: 'staff',
-        is_system_defined: true,
-      },
-      {
-        slug: STORE_PERMISSIONS.ROLE_CREATE,
-        scope: PermissionScope.STORE,
-        description: 'Create roles',
-        module: 'staff',
-        is_system_defined: true,
-      },
-      {
-        slug: STORE_PERMISSIONS.ROLE_EDIT,
-        scope: PermissionScope.STORE,
-        description: 'Edit roles',
-        module: 'staff',
-        is_system_defined: true,
-      },
-      {
-        slug: STORE_PERMISSIONS.CATEGORY_MANAGE,
-        scope: PermissionScope.STORE,
-        description: 'Manage categories',
-        module: 'inventory',
-        is_system_defined: true,
-      },
-      {
-        slug: STORE_PERMISSIONS.STORE_VIEW,
-        scope: PermissionScope.STORE,
-        description: 'View store',
-        module: 'store',
-        is_system_defined: true,
-      },
-      {
-        slug: STORE_PERMISSIONS.STORE_SETTINGS_MANAGE,
-        scope: PermissionScope.STORE,
-        description: 'Manage store settings',
-        module: 'store',
-        is_system_defined: true,
-      },
+      { slug: STORE_PERMISSIONS.PRODUCT_VIEW, scope: PermissionScope.STORE, description: 'View products', module: 'inventory', is_system_defined: true },
+      { slug: STORE_PERMISSIONS.PRODUCT_MANAGE, scope: PermissionScope.STORE, description: 'Manage products', module: 'inventory', is_system_defined: true },
+      { slug: STORE_PERMISSIONS.ORDER_VIEW, scope: PermissionScope.STORE, description: 'View orders', module: 'orders', is_system_defined: true },
+      { slug: STORE_PERMISSIONS.ORDER_VIEW_ALL, scope: PermissionScope.STORE, description: 'View all orders', module: 'orders', is_system_defined: true },
+      { slug: STORE_PERMISSIONS.STAFF_VIEW, scope: PermissionScope.STORE, description: 'View staff', module: 'staff', is_system_defined: true },
+      { slug: STORE_PERMISSIONS.STAFF_INVITE, scope: PermissionScope.STORE, description: 'Invite staff', module: 'staff', is_system_defined: true },
+      { slug: STORE_PERMISSIONS.ROLE_VIEW, scope: PermissionScope.STORE, description: 'View roles', module: 'staff', is_system_defined: true },
+      { slug: STORE_PERMISSIONS.ROLE_CREATE, scope: PermissionScope.STORE, description: 'Create roles', module: 'staff', is_system_defined: true },
+      { slug: STORE_PERMISSIONS.ROLE_EDIT, scope: PermissionScope.STORE, description: 'Edit roles', module: 'staff', is_system_defined: true },
+      { slug: STORE_PERMISSIONS.CATEGORY_MANAGE, scope: PermissionScope.STORE, description: 'Manage categories', module: 'inventory', is_system_defined: true },
+      { slug: STORE_PERMISSIONS.STORE_VIEW, scope: PermissionScope.STORE, description: 'View store', module: 'store', is_system_defined: true },
+      { slug: STORE_PERMISSIONS.STORE_SETTINGS_MANAGE, scope: PermissionScope.STORE, description: 'Manage store settings', module: 'store', is_system_defined: true },
     ];
 
     for (const perm of permissionsToSeed) {
@@ -262,9 +181,7 @@ describe('Invitation Flow (e2e)', () => {
 
       storeId = response.body.store.id;
 
-      const updatedUser = await userRepository.findOne({
-        where: { user_id: user1Id },
-      });
+      const updatedUser = await userRepository.findOne({ where: { user_id: user1Id } });
       expect(updatedUser!.store_id).toBe(storeId);
       expect(updatedUser!.role_id).toBe(response.body.admin_role.id);
     });
@@ -275,8 +192,8 @@ describe('Invitation Flow (e2e)', () => {
       });
 
       const staffPermissions = permissions
-        .filter((p) => p.slug.includes('view_'))
-        .map((p) => p.id);
+        .filter(p => p.slug.includes('view_'))
+        .map(p => p.id);
 
       const response = await request(app.getHttpServer())
         .post(`/v1/stores/${storeId}/roles`)

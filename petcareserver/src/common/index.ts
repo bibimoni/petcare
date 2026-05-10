@@ -9,6 +9,5 @@ export * from './decorators/permissions.decorator';
 export * from './enum';
 
 export * from './utils/token';
-export * from './utils/is-super-admin';
 
-export * from './constants/constants';
+export * from './constants/constants'

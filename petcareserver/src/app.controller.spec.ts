@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { DataSource } from 'typeorm';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -9,15 +8,7 @@ describe('AppController', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [
-        AppService,
-        {
-          provide: DataSource,
-          useValue: {
-            query: jest.fn().mockResolvedValue([{ '1': 1 }]),
-          },
-        },
-      ],
+      providers: [AppService],
     }).compile();
 
     appController = app.get<AppController>(AppController);

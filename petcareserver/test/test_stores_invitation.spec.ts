@@ -7,26 +7,14 @@ import { Store } from '../src/stores/entities/store.entity';
 import { User } from '../src/users/entities/user.entity';
 import { Role } from '../src/roles/entities/role.entity';
 import { Invitation } from '../src/stores/entities/invitation.entity';
-import {
-  Notification,
-  NotificationType,
-} from '../src/notifications/entities/notification.entity';
+import { Notification, NotificationType } from '../src/notifications/entities/notification.entity';
 import { RolePermission } from '../src/roles/entities/role-permission.entity';
 import { Permission } from '../src/permissions/entities/permission.entity';
-import { CustomerHistory } from '../src/customers/entities/customer-history.entity';
-import { ProductHistory } from '../src/categories/entities/product-history.entity';
-import { ServiceHistory } from '../src/categories/entities/service-history.entity';
-import { OrderHistory } from '../src/orders/entities/order-history.entity';
-import { RoleHistory } from '../src/roles/entities/role-history.entity';
 import { MailService } from '../src/mail/mail.service';
 import { NotificationsService } from '../src/notifications/notifications.service';
 import { NotificationScheduler } from '../src/notifications/notification.scheduler';
 import { InvitationStatus, UserStatus, StoreStatus } from '../src/common/enum';
-import {
-  ConflictException,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
 
 describe('StoresService - Invitation Flow', () => {
   let service: StoresService;
@@ -172,26 +160,6 @@ describe('StoresService - Invitation Flow', () => {
           useValue: createMockRepository(),
         },
         {
-          provide: getRepositoryToken(CustomerHistory),
-          useValue: createMockRepository(),
-        },
-        {
-          provide: getRepositoryToken(ProductHistory),
-          useValue: createMockRepository(),
-        },
-        {
-          provide: getRepositoryToken(ServiceHistory),
-          useValue: createMockRepository(),
-        },
-        {
-          provide: getRepositoryToken(OrderHistory),
-          useValue: createMockRepository(),
-        },
-        {
-          provide: getRepositoryToken(RoleHistory),
-          useValue: createMockRepository(),
-        },
-        {
           provide: MailService,
           useValue: {
             sendInvitationEmail: jest.fn(),
@@ -221,9 +189,7 @@ describe('StoresService - Invitation Flow', () => {
             transaction: jest.fn((cb) => {
               mockTransactionalEntityManager = {
                 create: jest.fn((entity, data) => ({ ...data })),
-                save: jest.fn((entity) =>
-                  Promise.resolve({ ...entity, id: 1 }),
-                ),
+                save: jest.fn((entity) => Promise.resolve({ ...entity, id: 1 })),
               };
               return cb(mockTransactionalEntityManager);
             }),
@@ -262,15 +228,9 @@ describe('StoresService - Invitation Flow', () => {
       storeRepository.findOne.mockResolvedValue(mockStore);
       roleRepository.findOne.mockResolvedValue(mockRole);
       mailService.sendInvitationEmail.mockResolvedValue(undefined);
-      notificationsService.createInvitationNotification.mockResolvedValue(
-        {} as any,
-      );
+      notificationsService.createInvitationNotification.mockResolvedValue({} as any);
 
-      const result = await service.inviteStaff(
-        storeId,
-        inviteStaffDto,
-        currentUserId,
-      );
+      const result = await service.inviteStaff(storeId, inviteStaffDto, currentUserId);
 
       expect(userRepository.findOne).toHaveBeenCalledTimes(2);
       expect(dataSource.transaction).toHaveBeenCalled();
@@ -285,7 +245,7 @@ describe('StoresService - Invitation Flow', () => {
         }),
       );
       expect(mockTransactionalEntityManager.save).toHaveBeenCalled();
-
+      
       expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
         Notification,
         expect.objectContaining({
@@ -294,7 +254,7 @@ describe('StoresService - Invitation Flow', () => {
           type: NotificationType.STORE_INVITATION,
         }),
       );
-
+      
       expect(mailService.sendInvitationEmail).toHaveBeenCalled();
       expect(result.message).toBe('Gửi lời mời thành công');
     });
@@ -325,15 +285,9 @@ describe('StoresService - Invitation Flow', () => {
       });
       mailService.sendInvitationEmail.mockResolvedValue(undefined);
 
-      const result = await service.inviteStaff(
-        storeId,
-        inviteStaffDto,
-        currentUserId,
-      );
+      const result = await service.inviteStaff(storeId, inviteStaffDto, currentUserId);
 
-      expect(
-        notificationsService.createInvitationNotification,
-      ).not.toHaveBeenCalled();
+      expect(notificationsService.createInvitationNotification).not.toHaveBeenCalled();
       expect(result.message).toBe('Gửi lời mời thành công');
     });
 
@@ -345,10 +299,7 @@ describe('StoresService - Invitation Flow', () => {
         role_id: 2,
       };
 
-      userRepository.findOne.mockResolvedValue({
-        ...mockAdminUser,
-        store_id: 999,
-      });
+      userRepository.findOne.mockResolvedValue({ ...mockAdminUser, store_id: 999 });
 
       await expect(
         service.inviteStaff(storeId, inviteStaffDto, currentUserId),
@@ -401,15 +352,11 @@ describe('StoresService - Invitation Flow', () => {
           store_id: mockInvitation.store_id,
           role_id: mockInvitation.role_id,
           status: UserStatus.ACTIVE,
-          last_active_at: expect.any(Date),
         },
       );
-      expect(invitationRepository.update).toHaveBeenCalledWith(
-        mockInvitation.id,
-        {
-          status: InvitationStatus.ACCEPTED,
-        },
-      );
+      expect(invitationRepository.update).toHaveBeenCalledWith(mockInvitation.id, {
+        status: InvitationStatus.ACCEPTED,
+      });
       expect(result.message).toBe('Chấp nhận lời mời thành công');
       expect(result.store.id).toBe(mockStore.id);
       expect(result.role.id).toBe(mockRole.id);
@@ -420,9 +367,7 @@ describe('StoresService - Invitation Flow', () => {
 
       invitationRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.acceptInvitation(token)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.acceptInvitation(token)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException for already accepted invitation', async () => {
@@ -434,9 +379,7 @@ describe('StoresService - Invitation Flow', () => {
 
       invitationRepository.findOne.mockResolvedValue(acceptedInvitation);
 
-      await expect(service.acceptInvitation(token)).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(service.acceptInvitation(token)).rejects.toThrow(ConflictException);
     });
 
     it('should throw ConflictException for expired invitation', async () => {
@@ -449,9 +392,7 @@ describe('StoresService - Invitation Flow', () => {
       invitationRepository.findOne.mockResolvedValue(expiredInvitation);
       invitationRepository.update.mockResolvedValue(undefined);
 
-      await expect(service.acceptInvitation(token)).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(service.acceptInvitation(token)).rejects.toThrow(ConflictException);
     });
 
     it('should throw NotFoundException when user not found for invitation email', async () => {
@@ -462,9 +403,7 @@ describe('StoresService - Invitation Flow', () => {
       roleRepository.findOne.mockResolvedValue(mockRole);
       userRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.acceptInvitation(token)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.acceptInvitation(token)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException when user already in another store', async () => {
@@ -479,9 +418,7 @@ describe('StoresService - Invitation Flow', () => {
       roleRepository.findOne.mockResolvedValue(mockRole);
       userRepository.findOne.mockResolvedValue(userInOtherStore);
 
-      await expect(service.acceptInvitation(token)).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(service.acceptInvitation(token)).rejects.toThrow(ConflictException);
     });
   });
 });
