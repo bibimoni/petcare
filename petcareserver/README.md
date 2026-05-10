@@ -282,17 +282,9 @@ This command will output your webhook signing secret. **Copy this value** and up
 STRIPE_WEBHOOK_SECRET=whsec_...  # Copy from the command output
 ```
 
-#### 5. Start the Backend Server
-
-In a separate terminal, start your backend application:
-
-```bash
-npm run start:dev
-```
-
 The backend should now receive real Stripe webhook events in your local development environment.
 
-#### 6. Testing Webhooks
+#### 5. Testing Webhooks
 
 With the Stripe CLI listening and your backend running, you can trigger test events:
 
@@ -352,17 +344,7 @@ npm test
 # Run tests in watch mode (re-runs on file changes)
 npm run test:watch
 
-# Run tests with coverage report
-npm run test:cov
-
-# Run tests with Node debugger
-npm run test:debug
 ```
-
-**Test files location:**
-
-- `src/**/*.spec.ts` — Individual module unit tests
-- Example: `src/app.controller.spec.ts`
 
 ### End-to-End (E2E) Testing
 
@@ -395,30 +377,6 @@ npm run test:e2e
 E2E tests use a separate test database configuration defined in `test/jest-e2e.json`. This isolates test data from development data.
 
 The test setup is configured in `test/setup-env.ts` and uses helper functions from `test/test-database.helper.ts`.
-
-### Running Tests with Coverage
-
-To generate a coverage report showing which parts of the codebase are tested:
-
-```bash
-npm run test:cov
-```
-
-This generates a coverage report and opens it in your browser, showing:
-
-- Line coverage
-- Branch coverage
-- Function coverage
-- Statement coverage
-
-### Best Practices
-
-- **Unit Tests**: Write unit tests for services, utilities, and business logic
-- **E2E Tests**: Write E2E tests for critical user workflows and API integrations
-- **Test Isolation**: Each test should be independent and not rely on other tests
-- **Database Cleanup**: E2E tests should clean up data after execution to avoid test pollution
-- **Mock External Services**: Use mocks for external APIs (Stripe, email, etc.) in unit tests
-- **Meaningful Assertions**: Write clear assertions that validate expected behavior
 
 ---
 
