@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Phone, MapPin, Calendar, PawPrint } from "lucide-react";
+import { Phone, MapPin, Calendar, PawPrint, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -64,6 +64,8 @@ export default function CustomerProfilePage() {
   const [selectedYear, setSelectedYear] = useState<number>(
     new Date().getFullYear(),
   );
+  const [currentPage, setCurrentPage] = useState(1);
+  const [jumpPage, setJumpPage] = useState("");
 
   // Auth check
   useEffect(() => {
@@ -251,6 +253,46 @@ export default function CustomerProfilePage() {
     if (activeFilter === "all") return true;
     return order.status === activeFilter;
   });
+
+  const pageSize = 3;
+  const totalPages = Math.ceil(filteredOrders.length / pageSize);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  const startItem =
+    filteredOrders.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, filteredOrders.length);
+
+  const paginationItems = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, "...", totalPages];
+    }
+    if (currentPage >= totalPages - 3) {
+      return [
+        1,
+        "...",
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
+    }
+    return [
+      1,
+      "...",
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      "...",
+      totalPages,
+    ];
+  }, [currentPage, totalPages]);
 
   const chartData = useMemo(() => {
     const now = new Date();
@@ -743,7 +785,10 @@ export default function CustomerProfilePage() {
                   </h3>
                   <select
                     value={activeFilter}
-                    onChange={(e) => setActiveFilter(e.target.value)}
+                    onChange={(e) => {
+                      setActiveFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none"
                   >
                     <option value="all">Tất cả dịch vụ</option>
@@ -765,8 +810,8 @@ export default function CustomerProfilePage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {filteredOrders.length > 0 ? (
-                        filteredOrders.slice(0, 3).map((order) => (
+                      {paginatedOrders.length > 0 ? (
+                        paginatedOrders.map((order) => (
                           <tr
                             key={order.order_id}
                             className="hover:bg-gray-50 cursor-pointer transition-colors group"
@@ -836,16 +881,90 @@ export default function CustomerProfilePage() {
                   </table>
                 </div>
 
-                {filteredOrders.length > 4 && (
-                  <div className="p-4 border-t text-center">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#f0e6df] p-4">
+                  <p className="shrink-0 text-xs text-[#a07f6b]">
+                    Hiển thị {startItem} - {endItem} của {filteredOrders.length} hóa
+                    đơn
+                  </p>
+
+                  <div className="flex flex-wrap items-center justify-end gap-1 text-sm font-bold">
                     <button
-                      onClick={() => navigate("/pos/history")}
-                      className="text-orange-500 text-sm font-bold hover:underline"
+                      type="button"
+                      onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                      disabled={currentPage === 1}
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5] disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      Xem toàn bộ lịch sử
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
+
+                    {paginationItems.map((item, index) => {
+                      if (item === "...") {
+                        return (
+                          <span
+                            key={`ellipsis-${index}`}
+                            className="flex h-8 w-8 items-center justify-center text-[#a07f6b]"
+                          >
+                            ...
+                          </span>
+                        );
+                      }
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => setCurrentPage(item as number)}
+                          className={`flex h-8 w-8 items-center justify-center rounded-full ${item === currentPage
+                              ? "bg-[#f5a882] text-white"
+                              : "text-[#523c30] hover:bg-[#f5ebe5]"
+                            }`}
+                        >
+                          {item}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((page) => Math.min(totalPages, page + 1))
+                      }
+                      disabled={currentPage === totalPages || totalPages === 0}
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-[#a07f6b] hover:bg-[#f5ebe5] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+
+                    {totalPages > 7 && (
+                      <div className="ml-2 flex items-center gap-2 border-l border-[#f0e6df] pl-4">
+                        <span className="text-xs font-normal text-[#a07f6b]">
+                          Đến trang:
+                        </span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={totalPages}
+                          value={jumpPage}
+                          onChange={(e) => setJumpPage(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const page = parseInt(jumpPage, 10);
+                              if (
+                                !isNaN(page) &&
+                                page >= 1 &&
+                                page <= totalPages
+                              ) {
+                                setCurrentPage(page);
+                                setJumpPage("");
+                              }
+                            }
+                          }}
+                          className="h-8 w-14 rounded-md border border-[#ecdcd1] bg-white px-1 text-center text-sm font-normal text-[#523c30] outline-none transition focus:border-[#f5a882] focus:ring-1 focus:ring-[#f5a882]"
+                          placeholder="..."
+                        />
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>

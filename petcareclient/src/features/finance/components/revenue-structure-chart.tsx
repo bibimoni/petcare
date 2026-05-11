@@ -8,8 +8,8 @@ export const RevenueStructureChart = ({ data }: RevenueStructureChartProps) => {
   const { products, services } = data;
 
   // Total for the chart (value based or percentage based)
-  const radius = 70;
-  const strokeWidth = 35;
+  const radius = 90;
+  const strokeWidth = 25;
   const normalizedRadius = radius - strokeWidth / 2;
   const circumference = normalizedRadius * 2 * Math.PI;
 
@@ -18,6 +18,14 @@ export const RevenueStructureChart = ({ data }: RevenueStructureChartProps) => {
   const serviceOffset =
     circumference - (services.percentage / 100) * circumference;
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 h-full">
       <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-8">
@@ -25,7 +33,16 @@ export const RevenueStructureChart = ({ data }: RevenueStructureChartProps) => {
       </h3>
 
       <div className="flex flex-col items-center">
+
         <div className="relative mb-8">
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">
+              Tổng
+            </p>
+            <p className="text-xl font-black text-gray-900 dark:text-white">
+              {formatCurrency(products.value + services.value)}
+            </p>
+          </div>
           <svg
             height={radius * 2}
             width={radius * 2}
@@ -75,14 +92,7 @@ export const RevenueStructureChart = ({ data }: RevenueStructureChartProps) => {
             />
           </svg>
 
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              Tổng
-            </p>
-            <p className="text-lg font-black text-gray-900 dark:text-white">
-              100%
-            </p>
-          </div>
+
         </div>
 
         <div className="w-full space-y-4">
