@@ -18,6 +18,14 @@ export const RevenueStructureChart = ({ data }: RevenueStructureChartProps) => {
   const serviceOffset =
     circumference - (services.percentage / 100) * circumference;
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 h-full">
       <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-8">
@@ -94,7 +102,7 @@ export const RevenueStructureChart = ({ data }: RevenueStructureChartProps) => {
               </span>
             </div>
             <span className="text-sm font-black text-gray-900 dark:text-white">
-              {products.percentage.toFixed(0)}%
+              {formatCurrency(products.value)}
             </span>
           </div>
 
@@ -106,7 +114,7 @@ export const RevenueStructureChart = ({ data }: RevenueStructureChartProps) => {
               </span>
             </div>
             <span className="text-sm font-black text-gray-900 dark:text-white">
-              {services.percentage.toFixed(0)}%
+              {formatCurrency(services.value)}
             </span>
           </div>
         </div>
